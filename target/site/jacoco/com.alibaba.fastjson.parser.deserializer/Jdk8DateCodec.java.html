@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Jdk8DateCodec.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">Jdk8DateCodec.java</span></div><h1>Jdk8DateCodec.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.chrono.ChronoZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONScanner;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.serializer.*;
+import com.alibaba.fastjson.util.TypeUtils;
+
+<span class="fc" id="L31">public class Jdk8DateCodec extends ContextObjectDeserializer implements ObjectSerializer, ContextObjectSerializer, ObjectDeserializer {</span>
+
+<span class="fc" id="L33">    public static final Jdk8DateCodec      instance            = new Jdk8DateCodec();</span>
+
+    private final static String            defaultPatttern     = &quot;yyyy-MM-dd HH:mm:ss&quot;;
+<span class="fc" id="L36">    private final static DateTimeFormatter defaultFormatter    = DateTimeFormatter.ofPattern(defaultPatttern);</span>
+<span class="fc" id="L37">    private final static DateTimeFormatter defaultFormatter_23 = DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd HH:mm:ss.SSS&quot;);</span>
+<span class="fc" id="L38">    private final static DateTimeFormatter formatter_dt19_tw   = DateTimeFormatter.ofPattern(&quot;yyyy/MM/dd HH:mm:ss&quot;);</span>
+<span class="fc" id="L39">    private final static DateTimeFormatter formatter_dt19_cn   = DateTimeFormatter.ofPattern(&quot;yyyy年M月d日 HH:mm:ss&quot;);</span>
+<span class="fc" id="L40">    private final static DateTimeFormatter formatter_dt19_cn_1 = DateTimeFormatter.ofPattern(&quot;yyyy年M月d日 H时m分s秒&quot;);</span>
+<span class="fc" id="L41">    private final static DateTimeFormatter formatter_dt19_kr   = DateTimeFormatter.ofPattern(&quot;yyyy년M월d일 HH:mm:ss&quot;);</span>
+<span class="fc" id="L42">    private final static DateTimeFormatter formatter_dt19_us   = DateTimeFormatter.ofPattern(&quot;MM/dd/yyyy HH:mm:ss&quot;);</span>
+<span class="fc" id="L43">    private final static DateTimeFormatter formatter_dt19_eur  = DateTimeFormatter.ofPattern(&quot;dd/MM/yyyy HH:mm:ss&quot;);</span>
+<span class="fc" id="L44">    private final static DateTimeFormatter formatter_dt19_de   = DateTimeFormatter.ofPattern(&quot;dd.MM.yyyy HH:mm:ss&quot;);</span>
+<span class="fc" id="L45">    private final static DateTimeFormatter formatter_dt19_in   = DateTimeFormatter.ofPattern(&quot;dd-MM-yyyy HH:mm:ss&quot;);</span>
+
+<span class="fc" id="L47">    private final static DateTimeFormatter formatter_d8        = DateTimeFormatter.ofPattern(&quot;yyyyMMdd&quot;);</span>
+<span class="fc" id="L48">    private final static DateTimeFormatter formatter_d10_tw    = DateTimeFormatter.ofPattern(&quot;yyyy/MM/dd&quot;);</span>
+<span class="fc" id="L49">    private final static DateTimeFormatter formatter_d10_cn    = DateTimeFormatter.ofPattern(&quot;yyyy年M月d日&quot;);</span>
+<span class="fc" id="L50">    private final static DateTimeFormatter formatter_d10_kr    = DateTimeFormatter.ofPattern(&quot;yyyy년M월d일&quot;);</span>
+<span class="fc" id="L51">    private final static DateTimeFormatter formatter_d10_us    = DateTimeFormatter.ofPattern(&quot;MM/dd/yyyy&quot;);</span>
+<span class="fc" id="L52">    private final static DateTimeFormatter formatter_d10_eur   = DateTimeFormatter.ofPattern(&quot;dd/MM/yyyy&quot;);</span>
+<span class="fc" id="L53">    private final static DateTimeFormatter formatter_d10_de    = DateTimeFormatter.ofPattern(&quot;dd.MM.yyyy&quot;);</span>
+<span class="fc" id="L54">    private final static DateTimeFormatter formatter_d10_in    = DateTimeFormatter.ofPattern(&quot;dd-MM-yyyy&quot;);</span>
+
+<span class="fc" id="L56">    private final static DateTimeFormatter ISO_FIXED_FORMAT =</span>
+<span class="fc" id="L57">            DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd HH:mm:ss&quot;).withZone(ZoneId.systemDefault());</span>
+
+    private final static String formatter_iso8601_pattern     = &quot;yyyy-MM-dd'T'HH:mm:ss&quot;;
+    private final static String formatter_iso8601_pattern_23     = &quot;yyyy-MM-dd'T'HH:mm:ss.SSS&quot;;
+    private final static String formatter_iso8601_pattern_29     = &quot;yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS&quot;;
+<span class="fc" id="L62">    private final static DateTimeFormatter formatter_iso8601  = DateTimeFormatter.ofPattern(formatter_iso8601_pattern);</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName, String format, int feature) {
+<span class="fc" id="L66">        JSONLexer lexer = parser.lexer;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (lexer.token() == JSONToken.NULL){</span>
+<span class="fc" id="L68">            lexer.nextToken();</span>
+<span class="fc" id="L69">            return null;</span>
+        }
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L73">            String text = lexer.stringVal();</span>
+<span class="fc" id="L74">            lexer.nextToken();</span>
+
+<span class="fc" id="L76">            DateTimeFormatter formatter = null;</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            if (format != null) {</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                if (defaultPatttern.equals(format)) {</span>
+<span class="fc" id="L79">                    formatter = defaultFormatter;</span>
+                } else {
+<span class="fc" id="L81">                    formatter = DateTimeFormatter.ofPattern(format);</span>
+                }
+            }
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            if (&quot;&quot;.equals(text)) {</span>
+<span class="fc" id="L86">                return null;</span>
+            }
+
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            if (type == LocalDateTime.class) {</span>
+                LocalDateTime localDateTime;
+<span class="fc bfc" id="L91" title="All 4 branches covered.">                if (text.length() == 10 || text.length() == 8) {</span>
+<span class="fc" id="L92">                    LocalDate localDate = parseLocalDate(text, format, formatter);</span>
+<span class="fc" id="L93">                    localDateTime = LocalDateTime.of(localDate, LocalTime.MIN);</span>
+<span class="fc" id="L94">                } else {</span>
+<span class="fc" id="L95">                    localDateTime = parseDateTime(text, formatter);</span>
+                }
+<span class="fc" id="L97">                return (T) localDateTime;</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            } else if (type == LocalDate.class) {</span>
+                LocalDate localDate;
+<span class="fc bfc" id="L100" title="All 2 branches covered.">                if (text.length() == 23) {</span>
+<span class="fc" id="L101">                    LocalDateTime localDateTime = LocalDateTime.parse(text);</span>
+<span class="fc" id="L102">                    localDate = LocalDate.of(localDateTime.getYear(), localDateTime.getMonthValue(),</span>
+<span class="fc" id="L103">                            localDateTime.getDayOfMonth());</span>
+<span class="fc" id="L104">                } else {</span>
+<span class="fc" id="L105">                    localDate = parseLocalDate(text, format, formatter);</span>
+                }
+
+<span class="fc" id="L108">                return (T) localDate;</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            } else if (type == LocalTime.class) {</span>
+                LocalTime localTime;
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                if (text.length() == 23) {</span>
+<span class="fc" id="L112">                    LocalDateTime localDateTime = LocalDateTime.parse(text);</span>
+<span class="fc" id="L113">                    localTime = LocalTime.of(localDateTime.getHour(), localDateTime.getMinute(),</span>
+<span class="fc" id="L114">                            localDateTime.getSecond(), localDateTime.getNano());</span>
+<span class="fc" id="L115">                } else {</span>
+<span class="fc" id="L116">                    boolean digit = true;</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                    for (int i = 0; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L118">                        char ch = text.charAt(i);</span>
+<span class="pc bpc" id="L119" title="1 of 4 branches missed.">                        if (ch &lt; '0' || ch &gt; '9') {</span>
+<span class="fc" id="L120">                            digit = false;</span>
+<span class="fc" id="L121">                            break;</span>
+                        }
+                    }
+
+<span class="pc bpc" id="L125" title="2 of 6 branches missed.">                    if (digit &amp;&amp; text.length() &gt; 8 &amp;&amp; text.length() &lt; 19) {</span>
+<span class="fc" id="L126">                        long epochMillis = Long.parseLong(text);</span>
+<span class="fc" id="L127">                        localTime = LocalDateTime</span>
+<span class="fc" id="L128">                                .ofInstant(</span>
+<span class="fc" id="L129">                                        Instant.ofEpochMilli(epochMillis),</span>
+<span class="fc" id="L130">                                        JSON.defaultTimeZone.toZoneId())</span>
+<span class="fc" id="L131">                                .toLocalTime();</span>
+<span class="fc" id="L132">                    } else {</span>
+<span class="fc" id="L133">                        localTime = LocalTime.parse(text);</span>
+                    }
+                }
+<span class="fc" id="L136">                return (T) localTime;</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">            } else if (type == ZonedDateTime.class) {</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">                if (formatter == defaultFormatter) {</span>
+<span class="fc" id="L139">                    formatter = ISO_FIXED_FORMAT;</span>
+                }
+
+<span class="fc bfc" id="L142" title="All 2 branches covered.">                if (formatter == null) {</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">                    if (text.length() &lt;= 19) {</span>
+<span class="fc" id="L144">                        JSONScanner s = new JSONScanner(text);</span>
+<span class="fc" id="L145">                        TimeZone timeZone = parser.lexer.getTimeZone();</span>
+<span class="fc" id="L146">                        s.setTimeZone(timeZone);</span>
+<span class="fc" id="L147">                        boolean match = s.scanISO8601DateIfMatch(false);</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                        if (match) {</span>
+<span class="fc" id="L149">                            Date date = s.getCalendar().getTime();</span>
+<span class="fc" id="L150">                            return (T) ZonedDateTime.ofInstant(date.toInstant(), timeZone.toZoneId());</span>
+                        }
+                    }
+
+                }
+
+<span class="fc" id="L156">                ZonedDateTime zonedDateTime = parseZonedDateTime(text, formatter);</span>
+
+<span class="fc" id="L158">                return (T) zonedDateTime;</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            } else if (type == OffsetDateTime.class) {</span>
+<span class="fc" id="L160">                OffsetDateTime offsetDateTime = OffsetDateTime.parse(text);</span>
+
+<span class="fc" id="L162">                return (T) offsetDateTime;</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            } else if (type == OffsetTime.class) {</span>
+<span class="fc" id="L164">                OffsetTime offsetTime = OffsetTime.parse(text);</span>
+
+<span class="fc" id="L166">                return (T) offsetTime;</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">            } else if (type == ZoneId.class) {</span>
+<span class="fc" id="L168">                ZoneId offsetTime = ZoneId.of(text);</span>
+
+<span class="fc" id="L170">                return (T) offsetTime;</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">            } else if (type == Period.class) {</span>
+<span class="fc" id="L172">                Period period = Period.parse(text);</span>
+
+<span class="fc" id="L174">                return (T) period;</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">            } else if (type == Duration.class) {</span>
+<span class="fc" id="L176">                Duration duration = Duration.parse(text);</span>
+
+<span class="fc" id="L178">                return (T) duration;</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">            } else if (type == Instant.class) {</span>
+<span class="fc" id="L180">                boolean digit = true;</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">                for (int i = 0; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L182">                    char ch = text.charAt(i);</span>
+<span class="pc bpc" id="L183" title="1 of 4 branches missed.">                    if (ch &lt; '0' || ch &gt; '9') {</span>
+<span class="fc" id="L184">                        digit = false;</span>
+<span class="fc" id="L185">                        break;</span>
+                    }
+                }
+<span class="pc bpc" id="L188" title="2 of 6 branches missed.">                if (digit &amp;&amp; text.length() &gt; 8 &amp;&amp; text.length() &lt; 19) {</span>
+<span class="fc" id="L189">                    long epochMillis = Long.parseLong(text);</span>
+<span class="fc" id="L190">                    return (T) Instant.ofEpochMilli(epochMillis);</span>
+                }
+
+<span class="fc" id="L193">                Instant instant = Instant.parse(text);</span>
+
+<span class="fc" id="L195">                return (T) instant;</span>
+            }
+<span class="pc bfc" id="L197" title="All 2 branches covered.">        } else if (lexer.token() == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L198">            long millis = lexer.longValue();</span>
+<span class="fc" id="L199">            lexer.nextToken();</span>
+
+<span class="fc bfc" id="L201" title="All 2 branches covered.">            if (&quot;unixtime&quot;.equals(format)) {</span>
+<span class="fc" id="L202">                millis *= 1000;</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">            } else if (&quot;yyyyMMddHHmmss&quot;.equals(format)) {</span>
+<span class="fc" id="L204">                int yyyy = (int) (millis / 10000000000L);</span>
+<span class="fc" id="L205">                int MM = (int) ((millis / 100000000L) % 100);</span>
+<span class="fc" id="L206">                int dd = (int) ((millis / 1000000L) % 100);</span>
+<span class="fc" id="L207">                int HH = (int) ((millis / 10000L) % 100);</span>
+<span class="fc" id="L208">                int mm = (int) ((millis / 100L) % 100);</span>
+<span class="fc" id="L209">                int ss = (int) (millis % 100);</span>
+
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">                if (type == LocalDateTime.class) {</span>
+<span class="fc" id="L212">                    return (T) LocalDateTime.of(yyyy, MM, dd, HH, mm, ss);</span>
+                }
+            }
+
+<span class="fc bfc" id="L216" title="All 2 branches covered.">            if (type == LocalDateTime.class) {</span>
+<span class="fc" id="L217">                return (T) LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), JSON.defaultTimeZone.toZoneId());</span>
+            }
+
+<span class="fc bfc" id="L220" title="All 2 branches covered.">            if (type == LocalDate.class) {</span>
+<span class="fc" id="L221">                return (T) LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), JSON.defaultTimeZone.toZoneId()).toLocalDate();</span>
+            }
+<span class="fc bfc" id="L223" title="All 2 branches covered.">            if (type == LocalTime.class) {</span>
+<span class="fc" id="L224">                return (T) LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), JSON.defaultTimeZone.toZoneId()).toLocalTime();</span>
+            }
+
+<span class="fc bfc" id="L227" title="All 2 branches covered.">            if (type == ZonedDateTime.class) {</span>
+<span class="fc" id="L228">                return (T) ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), JSON.defaultTimeZone.toZoneId());</span>
+            }
+
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">            if (type == Instant.class) {</span>
+<span class="fc" id="L232">                return (T) Instant.ofEpochMilli(millis);</span>
+            }
+
+<span class="nc" id="L235">            throw new UnsupportedOperationException();</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        } else if (lexer.token() == JSONToken.LBRACE) {</span>
+<span class="fc" id="L237">            JSONObject object = parser.parseObject();</span>
+
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">            if (type == Instant.class) {</span>
+<span class="fc" id="L240">                Object epochSecond = object.get(&quot;epochSecond&quot;);</span>
+<span class="fc" id="L241">                Object nano = object.get(&quot;nano&quot;);</span>
+<span class="pc bpc" id="L242" title="2 of 4 branches missed.">                if (epochSecond instanceof Number &amp;&amp; nano instanceof Number) {</span>
+<span class="fc" id="L243">                    return (T) Instant.ofEpochSecond(</span>
+<span class="fc" id="L244">                            TypeUtils.longExtractValue((Number) epochSecond)</span>
+<span class="fc" id="L245">                            , TypeUtils.longExtractValue((Number) nano));</span>
+                }
+
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                if (epochSecond instanceof Number) {</span>
+<span class="nc" id="L249">                    return (T) Instant.ofEpochSecond(</span>
+<span class="nc" id="L250">                            TypeUtils.longExtractValue((Number) epochSecond));</span>
+                }
+            }
+<span class="nc" id="L253">        } else {</span>
+<span class="fc" id="L254">            throw new UnsupportedOperationException();</span>
+        }
+<span class="nc" id="L256">        return null;</span>
+    }
+
+    protected LocalDateTime parseDateTime(String text, DateTimeFormatter formatter) {
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        if (formatter == null) {</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">            if (text.length() == 19) {</span>
+<span class="fc" id="L262">                char c4 = text.charAt(4);</span>
+<span class="fc" id="L263">                char c7 = text.charAt(7);</span>
+<span class="fc" id="L264">                char c10 = text.charAt(10);</span>
+<span class="fc" id="L265">                char c13 = text.charAt(13);</span>
+<span class="fc" id="L266">                char c16 = text.charAt(16);</span>
+<span class="pc bpc" id="L267" title="2 of 4 branches missed.">                if (c13 == ':' &amp;&amp; c16 == ':') {</span>
+<span class="pc bpc" id="L268" title="1 of 4 branches missed.">                    if (c4 == '-' &amp;&amp; c7 == '-') {</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">                        if (c10 == 'T') {</span>
+<span class="fc" id="L270">                            formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;</span>
+<span class="pc bpc" id="L271" title="1 of 2 branches missed.">                        } else if (c10 == ' ') {</span>
+<span class="fc" id="L272">                            formatter = defaultFormatter;</span>
+                        }
+<span class="pc bpc" id="L274" title="1 of 4 branches missed.">                    } else if (c4 == '/' &amp;&amp; c7 == '/') { // tw yyyy/mm/dd</span>
+<span class="fc" id="L275">                        formatter = formatter_dt19_tw;</span>
+                    } else {
+<span class="fc" id="L277">                        char c0 = text.charAt(0);</span>
+<span class="fc" id="L278">                        char c1 = text.charAt(1);</span>
+<span class="fc" id="L279">                        char c2 = text.charAt(2);</span>
+<span class="fc" id="L280">                        char c3 = text.charAt(3);</span>
+<span class="fc" id="L281">                        char c5 = text.charAt(5);</span>
+<span class="pc bpc" id="L282" title="1 of 4 branches missed.">                        if (c2 == '/' &amp;&amp; c5 == '/') { // mm/dd/yyyy or mm/dd/yyyy</span>
+<span class="fc" id="L283">                            int v0 = (c0 - '0') * 10 + (c1 - '0');</span>
+<span class="fc" id="L284">                            int v1 = (c3 - '0') * 10 + (c4 - '0');</span>
+<span class="fc bfc" id="L285" title="All 2 branches covered.">                            if (v0 &gt; 12) {</span>
+<span class="fc" id="L286">                                formatter = formatter_dt19_eur;</span>
+<span class="fc bfc" id="L287" title="All 2 branches covered.">                            } else if (v1 &gt; 12) {</span>
+<span class="fc" id="L288">                                formatter = formatter_dt19_us;</span>
+                            } else {
+<span class="fc" id="L290">                                String country = Locale.getDefault().getCountry();</span>
+
+<span class="fc bfc" id="L292" title="All 2 branches covered.">                                if (country.equals(&quot;US&quot;)) {</span>
+<span class="fc" id="L293">                                    formatter = formatter_dt19_us;</span>
+<span class="fc bfc" id="L294" title="All 2 branches covered.">                                } else if (country.equals(&quot;BR&quot;) //</span>
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">                                           || country.equals(&quot;AU&quot;)) {</span>
+<span class="fc" id="L296">                                    formatter = formatter_dt19_eur;</span>
+                                }
+                            }
+<span class="pc bpc" id="L299" title="1 of 4 branches missed.">                        } else if (c2 == '.' &amp;&amp; c5 == '.') { // dd.mm.yyyy</span>
+<span class="fc" id="L300">                            formatter = formatter_dt19_de;</span>
+<span class="pc bpc" id="L301" title="2 of 4 branches missed.">                        } else if (c2 == '-' &amp;&amp; c5 == '-') { // dd-mm-yyyy</span>
+<span class="fc" id="L302">                            formatter = formatter_dt19_in;</span>
+                        }
+                    }
+                }
+<span class="fc bfc" id="L306" title="All 2 branches covered.">            } else if (text.length() == 23) {</span>
+<span class="fc" id="L307">                char c4 = text.charAt(4);</span>
+<span class="fc" id="L308">                char c7 = text.charAt(7);</span>
+<span class="fc" id="L309">                char c10 = text.charAt(10);</span>
+<span class="fc" id="L310">                char c13 = text.charAt(13);</span>
+<span class="fc" id="L311">                char c16 = text.charAt(16);</span>
+<span class="fc" id="L312">                char c19 = text.charAt(19);</span>
+
+<span class="pc bpc" id="L314" title="5 of 12 branches missed.">                if (c13 == ':'</span>
+                        &amp;&amp; c16 == ':'
+                        &amp;&amp; c4 == '-'
+                        &amp;&amp; c7 == '-'
+                        &amp;&amp; c10 == ' '
+                        &amp;&amp; c19 == '.'
+                ) {
+<span class="fc" id="L321">                    formatter = defaultFormatter_23;</span>
+                }
+            }
+
+<span class="fc bfc" id="L325" title="All 2 branches covered.">            if (text.length() &gt;= 17) {</span>
+<span class="fc" id="L326">                char c4 = text.charAt(4);</span>
+<span class="fc bfc" id="L327" title="All 2 branches covered.">                if (c4 == '年') {</span>
+<span class="fc bfc" id="L328" title="All 2 branches covered.">                    if (text.charAt(text.length() - 1) == '秒') {</span>
+<span class="fc" id="L329">                        formatter = formatter_dt19_cn_1;    </span>
+                    } else {
+<span class="fc" id="L331">                        formatter = formatter_dt19_cn;</span>
+                    }
+<span class="fc bfc" id="L333" title="All 2 branches covered.">                } else if (c4 == '년') {</span>
+<span class="fc" id="L334">                    formatter = formatter_dt19_kr;</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        if (formatter == null) {</span>
+<span class="fc" id="L340">            JSONScanner dateScanner = new JSONScanner(text);</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">            if (dateScanner.scanISO8601DateIfMatch(false)) {</span>
+<span class="fc" id="L342">                Instant instant = dateScanner.getCalendar().toInstant();</span>
+<span class="fc" id="L343">                return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());</span>
+            }
+
+<span class="fc" id="L346">            boolean digit = true;</span>
+<span class="fc bfc" id="L347" title="All 2 branches covered.">            for (int i = 0; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L348">                char ch = text.charAt(i);</span>
+<span class="pc bpc" id="L349" title="1 of 4 branches missed.">                if (ch &lt; '0' || ch &gt; '9') {</span>
+<span class="fc" id="L350">                    digit = false;</span>
+<span class="fc" id="L351">                    break;</span>
+                }
+            }
+<span class="pc bpc" id="L354" title="2 of 6 branches missed.">            if (digit &amp;&amp; text.length() &gt; 8 &amp;&amp; text.length() &lt; 19) {</span>
+<span class="fc" id="L355">                long epochMillis = Long.parseLong(text);</span>
+<span class="fc" id="L356">                return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), JSON.defaultTimeZone.toZoneId());</span>
+            }
+        }
+
+<span class="fc bfc" id="L360" title="All 2 branches covered.">        return formatter == null ? //</span>
+<span class="fc" id="L361">            LocalDateTime.parse(text) //</span>
+<span class="fc" id="L362">            : LocalDateTime.parse(text, formatter);</span>
+    }
+
+    protected LocalDate parseLocalDate(String text, String format, DateTimeFormatter formatter) {
+<span class="fc bfc" id="L366" title="All 2 branches covered.">        if (formatter == null) {</span>
+<span class="fc bfc" id="L367" title="All 2 branches covered.">            if (text.length() == 8) {</span>
+<span class="fc" id="L368">                formatter = formatter_d8;</span>
+            }
+
+<span class="fc bfc" id="L371" title="All 2 branches covered.">            if (text.length() == 10) {</span>
+<span class="fc" id="L372">                char c4 = text.charAt(4);</span>
+<span class="fc" id="L373">                char c7 = text.charAt(7);</span>
+<span class="pc bpc" id="L374" title="1 of 4 branches missed.">                if (c4 == '/' &amp;&amp; c7 == '/') { // tw yyyy/mm/dd</span>
+<span class="fc" id="L375">                    formatter = formatter_d10_tw;</span>
+                }
+
+<span class="fc" id="L378">                char c0 = text.charAt(0);</span>
+<span class="fc" id="L379">                char c1 = text.charAt(1);</span>
+<span class="fc" id="L380">                char c2 = text.charAt(2);</span>
+<span class="fc" id="L381">                char c3 = text.charAt(3);</span>
+<span class="fc" id="L382">                char c5 = text.charAt(5);</span>
+<span class="pc bpc" id="L383" title="1 of 4 branches missed.">                if (c2 == '/' &amp;&amp; c5 == '/') { // mm/dd/yyyy or mm/dd/yyyy</span>
+<span class="fc" id="L384">                    int v0 = (c0 - '0') * 10 + (c1 - '0');</span>
+<span class="fc" id="L385">                    int v1 = (c3 - '0') * 10 + (c4 - '0');</span>
+<span class="fc bfc" id="L386" title="All 2 branches covered.">                    if (v0 &gt; 12) {</span>
+<span class="fc" id="L387">                        formatter = formatter_d10_eur;</span>
+<span class="fc bfc" id="L388" title="All 2 branches covered.">                    } else if (v1 &gt; 12) {</span>
+<span class="fc" id="L389">                        formatter = formatter_d10_us;</span>
+                    } else {
+<span class="fc" id="L391">                        String country = Locale.getDefault().getCountry();</span>
+
+<span class="fc bfc" id="L393" title="All 2 branches covered.">                        if (country.equals(&quot;US&quot;)) {</span>
+<span class="fc" id="L394">                            formatter = formatter_d10_us;</span>
+<span class="fc bfc" id="L395" title="All 2 branches covered.">                        } else if (country.equals(&quot;BR&quot;) //</span>
+<span class="pc bpc" id="L396" title="1 of 2 branches missed.">                                   || country.equals(&quot;AU&quot;)) {</span>
+<span class="fc" id="L397">                            formatter = formatter_d10_eur;</span>
+                        }
+                    }
+<span class="pc bpc" id="L400" title="1 of 4 branches missed.">                } else if (c2 == '.' &amp;&amp; c5 == '.') { // dd.mm.yyyy</span>
+<span class="fc" id="L401">                    formatter = formatter_d10_de;</span>
+<span class="pc bpc" id="L402" title="1 of 4 branches missed.">                } else if (c2 == '-' &amp;&amp; c5 == '-') { // dd-mm-yyyy</span>
+<span class="fc" id="L403">                    formatter = formatter_d10_in;</span>
+                }
+            }
+
+<span class="fc bfc" id="L407" title="All 2 branches covered.">            if (text.length() &gt;= 9) {</span>
+<span class="fc" id="L408">                char c4 = text.charAt(4);</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">                if (c4 == '年') {</span>
+<span class="fc" id="L410">                    formatter = formatter_d10_cn;</span>
+<span class="fc bfc" id="L411" title="All 2 branches covered.">                } else if (c4 == '년') {</span>
+<span class="fc" id="L412">                    formatter = formatter_d10_kr;</span>
+                }
+            }
+
+<span class="fc" id="L416">            boolean digit = true;</span>
+<span class="fc bfc" id="L417" title="All 2 branches covered.">            for (int i = 0; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L418">                char ch = text.charAt(i);</span>
+<span class="fc bfc" id="L419" title="All 4 branches covered.">                if (ch &lt; '0' || ch &gt; '9') {</span>
+<span class="fc" id="L420">                    digit = false;</span>
+<span class="fc" id="L421">                    break;</span>
+                }
+            }
+<span class="pc bpc" id="L424" title="1 of 6 branches missed.">            if (digit &amp;&amp; text.length() &gt; 8 &amp;&amp; text.length() &lt; 19) {</span>
+<span class="fc" id="L425">                long epochMillis = Long.parseLong(text);</span>
+<span class="fc" id="L426">                return LocalDateTime</span>
+<span class="fc" id="L427">                        .ofInstant(</span>
+<span class="fc" id="L428">                                Instant.ofEpochMilli(epochMillis),</span>
+<span class="fc" id="L429">                                JSON.defaultTimeZone.toZoneId())</span>
+<span class="fc" id="L430">                        .toLocalDate();</span>
+            }
+        }
+
+<span class="fc bfc" id="L434" title="All 2 branches covered.">        return formatter == null ? //</span>
+<span class="fc" id="L435">            LocalDate.parse(text) //</span>
+<span class="fc" id="L436">            : LocalDate.parse(text, formatter);</span>
+    }
+
+    protected ZonedDateTime parseZonedDateTime(String text, DateTimeFormatter formatter) {
+<span class="fc bfc" id="L440" title="All 2 branches covered.">        if (formatter == null) {</span>
+<span class="pc bpc" id="L441" title="1 of 2 branches missed.">            if (text.length() == 19) {</span>
+<span class="nc" id="L442">                char c4 = text.charAt(4);</span>
+<span class="nc" id="L443">                char c7 = text.charAt(7);</span>
+<span class="nc" id="L444">                char c10 = text.charAt(10);</span>
+<span class="nc" id="L445">                char c13 = text.charAt(13);</span>
+<span class="nc" id="L446">                char c16 = text.charAt(16);</span>
+<span class="nc bnc" id="L447" title="All 4 branches missed.">                if (c13 == ':' &amp;&amp; c16 == ':') {</span>
+<span class="nc bnc" id="L448" title="All 4 branches missed.">                    if (c4 == '-' &amp;&amp; c7 == '-') {</span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">                        if (c10 == 'T') {</span>
+<span class="nc" id="L450">                            formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;</span>
+<span class="nc bnc" id="L451" title="All 2 branches missed.">                        } else if (c10 == ' ') {</span>
+<span class="nc" id="L452">                            formatter = defaultFormatter;</span>
+                        }
+<span class="nc bnc" id="L454" title="All 4 branches missed.">                    } else if (c4 == '/' &amp;&amp; c7 == '/') { // tw yyyy/mm/dd</span>
+<span class="nc" id="L455">                        formatter = formatter_dt19_tw;</span>
+                    } else {
+<span class="nc" id="L457">                        char c0 = text.charAt(0);</span>
+<span class="nc" id="L458">                        char c1 = text.charAt(1);</span>
+<span class="nc" id="L459">                        char c2 = text.charAt(2);</span>
+<span class="nc" id="L460">                        char c3 = text.charAt(3);</span>
+<span class="nc" id="L461">                        char c5 = text.charAt(5);</span>
+<span class="nc bnc" id="L462" title="All 4 branches missed.">                        if (c2 == '/' &amp;&amp; c5 == '/') { // mm/dd/yyyy or mm/dd/yyyy</span>
+<span class="nc" id="L463">                            int v0 = (c0 - '0') * 10 + (c1 - '0');</span>
+<span class="nc" id="L464">                            int v1 = (c3 - '0') * 10 + (c4 - '0');</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">                            if (v0 &gt; 12) {</span>
+<span class="nc" id="L466">                                formatter = formatter_dt19_eur;</span>
+<span class="nc bnc" id="L467" title="All 2 branches missed.">                            } else if (v1 &gt; 12) {</span>
+<span class="nc" id="L468">                                formatter = formatter_dt19_us;</span>
+                            } else {
+<span class="nc" id="L470">                                String country = Locale.getDefault().getCountry();</span>
+
+<span class="nc bnc" id="L472" title="All 2 branches missed.">                                if (country.equals(&quot;US&quot;)) {</span>
+<span class="nc" id="L473">                                    formatter = formatter_dt19_us;</span>
+<span class="nc bnc" id="L474" title="All 2 branches missed.">                                } else if (country.equals(&quot;BR&quot;) //</span>
+<span class="nc bnc" id="L475" title="All 2 branches missed.">                                        || country.equals(&quot;AU&quot;)) {</span>
+<span class="nc" id="L476">                                    formatter = formatter_dt19_eur;</span>
+                                }
+                            }
+<span class="nc bnc" id="L479" title="All 4 branches missed.">                        } else if (c2 == '.' &amp;&amp; c5 == '.') { // dd.mm.yyyy</span>
+<span class="nc" id="L480">                            formatter = formatter_dt19_de;</span>
+<span class="nc bnc" id="L481" title="All 4 branches missed.">                        } else if (c2 == '-' &amp;&amp; c5 == '-') { // dd-mm-yyyy</span>
+<span class="nc" id="L482">                            formatter = formatter_dt19_in;</span>
+                        }
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L488" title="All 2 branches covered.">            if (text.length() &gt;= 17) {</span>
+<span class="fc" id="L489">                char c4 = text.charAt(4);</span>
+<span class="pc bpc" id="L490" title="1 of 2 branches missed.">                if (c4 == '年') {</span>
+<span class="nc bnc" id="L491" title="All 2 branches missed.">                    if (text.charAt(text.length() - 1) == '秒') {</span>
+<span class="nc" id="L492">                        formatter = formatter_dt19_cn_1;</span>
+                    } else {
+<span class="nc" id="L494">                        formatter = formatter_dt19_cn;</span>
+                    }
+<span class="pc bpc" id="L496" title="1 of 2 branches missed.">                } else if (c4 == '년') {</span>
+<span class="nc" id="L497">                    formatter = formatter_dt19_kr;</span>
+                }
+            }
+
+<span class="fc" id="L501">            boolean digit = true;</span>
+<span class="fc bfc" id="L502" title="All 2 branches covered.">            for (int i = 0; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L503">                char ch = text.charAt(i);</span>
+<span class="pc bpc" id="L504" title="1 of 4 branches missed.">                if (ch &lt; '0' || ch &gt; '9') {</span>
+<span class="fc" id="L505">                    digit = false;</span>
+<span class="fc" id="L506">                    break;</span>
+                }
+            }
+<span class="pc bpc" id="L509" title="2 of 6 branches missed.">            if (digit &amp;&amp; text.length() &gt; 8 &amp;&amp; text.length() &lt; 19) {</span>
+<span class="fc" id="L510">                long epochMillis = Long.parseLong(text);</span>
+<span class="fc" id="L511">                return ZonedDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), JSON.defaultTimeZone.toZoneId());</span>
+            }
+        }
+
+<span class="fc bfc" id="L515" title="All 2 branches covered.">        return formatter == null ? //</span>
+<span class="fc" id="L516">                ZonedDateTime.parse(text) //</span>
+<span class="fc" id="L517">                : ZonedDateTime.parse(text, formatter);</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L521">        return JSONToken.LITERAL_STRING;</span>
+    }
+
+    public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType,
+                      int features) throws IOException {
+<span class="fc" id="L526">        SerializeWriter out = serializer.out;</span>
+<span class="pc bpc" id="L527" title="1 of 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L528">            out.writeNull();</span>
+        } else {
+<span class="fc bfc" id="L530" title="All 2 branches covered.">            if (fieldType == null) {</span>
+<span class="fc" id="L531">                fieldType = object.getClass();</span>
+            }
+
+<span class="fc bfc" id="L534" title="All 2 branches covered.">            if (fieldType == LocalDateTime.class) {</span>
+<span class="fc" id="L535">                final int mask = SerializerFeature.UseISO8601DateFormat.getMask();</span>
+<span class="fc" id="L536">                LocalDateTime dateTime = (LocalDateTime) object;</span>
+<span class="fc" id="L537">                String format = serializer.getDateFormatPattern();</span>
+
+<span class="fc bfc" id="L539" title="All 2 branches covered.">                if (format == null) {</span>
+<span class="pc bpc" id="L540" title="1 of 4 branches missed.">                    if ((features &amp; mask) != 0 || serializer.isEnabled(SerializerFeature.UseISO8601DateFormat)) {</span>
+<span class="fc" id="L541">                        format = formatter_iso8601_pattern;</span>
+<span class="fc bfc" id="L542" title="All 2 branches covered.">                    } else if (serializer.isEnabled(SerializerFeature.WriteDateUseDateFormat)) {</span>
+<span class="pc bpc" id="L543" title="1 of 2 branches missed.">                        if (serializer.getFastJsonConfigDateFormatPattern() != null &amp;&amp; </span>
+<span class="nc bnc" id="L544" title="All 2 branches missed.">                                serializer.getFastJsonConfigDateFormatPattern().length() &gt; 0){</span>
+<span class="nc" id="L545">                            format = serializer.getFastJsonConfigDateFormatPattern();</span>
+                        }else{
+<span class="fc" id="L547">                            format = JSON.DEFFAULT_DATE_FORMAT; </span>
+                        }
+                    } else {
+<span class="fc" id="L550">                        int nano = dateTime.getNano();</span>
+<span class="fc bfc" id="L551" title="All 2 branches covered.">                        if (nano == 0) {</span>
+<span class="fc" id="L552">                            format = formatter_iso8601_pattern;</span>
+<span class="fc bfc" id="L553" title="All 2 branches covered.">                        } else if (nano % 1000000 == 0) {</span>
+<span class="fc" id="L554">                            format = formatter_iso8601_pattern_23;</span>
+                        } else {
+<span class="fc" id="L556">                            format = formatter_iso8601_pattern_29;</span>
+                        }
+                    }
+                }
+
+<span class="pc bpc" id="L561" title="1 of 2 branches missed.">                if (format != null) {</span>
+<span class="fc" id="L562">                    write(out, dateTime, format);</span>
+                } else {
+<span class="nc" id="L564">                    out.writeLong(dateTime.atZone(JSON.defaultTimeZone.toZoneId()).toInstant().toEpochMilli());</span>
+                }
+<span class="fc" id="L566">            } else {</span>
+<span class="fc" id="L567">                out.writeString(object.toString());</span>
+            }
+        }
+<span class="fc" id="L570">    }</span>
+
+    public void write(JSONSerializer serializer, Object object, BeanContext context) throws IOException {
+<span class="fc" id="L573">        SerializeWriter out = serializer.out;</span>
+<span class="fc" id="L574">        String format = context.getFormat();</span>
+<span class="fc" id="L575">        write(out, (TemporalAccessor) object, format);</span>
+<span class="fc" id="L576">    }</span>
+
+    private void write(SerializeWriter out, TemporalAccessor object, String format) {
+        DateTimeFormatter formatter;
+<span class="fc bfc" id="L580" title="All 2 branches covered.">        if (&quot;unixtime&quot;.equals(format)) {</span>
+<span class="fc" id="L581">            Instant instant = null;</span>
+<span class="fc bfc" id="L582" title="All 2 branches covered.">            if (object instanceof ChronoZonedDateTime) {</span>
+<span class="fc" id="L583">                long seconds = ((ChronoZonedDateTime) object).toEpochSecond();</span>
+<span class="fc" id="L584">                out.writeInt((int) seconds);</span>
+<span class="fc" id="L585">                return;</span>
+            }
+
+<span class="pc bpc" id="L588" title="1 of 2 branches missed.">            if (object instanceof LocalDateTime) {</span>
+<span class="fc" id="L589">                long seconds = ((LocalDateTime) object).atZone(JSON.defaultTimeZone.toZoneId()).toEpochSecond();</span>
+<span class="fc" id="L590">                out.writeInt((int) seconds);</span>
+<span class="fc" id="L591">                return;</span>
+            }
+        }
+
+<span class="fc bfc" id="L595" title="All 2 branches covered.">        if (&quot;millis&quot;.equals(format)) {</span>
+<span class="fc" id="L596">            Instant instant = null;</span>
+<span class="fc bfc" id="L597" title="All 2 branches covered.">            if (object instanceof ChronoZonedDateTime) {</span>
+<span class="fc" id="L598">                instant = ((ChronoZonedDateTime) object).toInstant();</span>
+<span class="pc bpc" id="L599" title="1 of 2 branches missed.">            } else if (object instanceof LocalDateTime) {</span>
+<span class="fc" id="L600">                instant = ((LocalDateTime) object).atZone(JSON.defaultTimeZone.toZoneId()).toInstant();</span>
+            }
+<span class="pc bpc" id="L602" title="1 of 2 branches missed.">            if (instant != null) {</span>
+<span class="fc" id="L603">                long millis = instant.toEpochMilli();</span>
+<span class="fc" id="L604">                out.writeLong(millis);</span>
+<span class="fc" id="L605">                return;</span>
+            }
+        }
+
+<span class="fc bfc" id="L609" title="All 2 branches covered.">        if (format == formatter_iso8601_pattern) {</span>
+<span class="fc" id="L610">            formatter = formatter_iso8601;</span>
+        } else {
+<span class="fc" id="L612">            formatter = DateTimeFormatter.ofPattern(format);</span>
+        }
+
+<span class="fc" id="L615">        String text = formatter.format((TemporalAccessor) object);</span>
+<span class="fc" id="L616">        out.writeString(text);</span>
+<span class="fc" id="L617">    }</span>
+
+    public static Object castToLocalDateTime(Object value, String format) {
+<span class="nc bnc" id="L620" title="All 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L621">            return null;</span>
+        }
+
+<span class="nc bnc" id="L624" title="All 2 branches missed.">        if (format == null) {</span>
+<span class="nc" id="L625">            format = &quot;yyyy-MM-dd HH:mm:ss&quot;;</span>
+        }
+
+<span class="nc" id="L628">        DateTimeFormatter df = DateTimeFormatter.ofPattern(format);</span>
+<span class="nc" id="L629">        return LocalDateTime.parse(value.toString(), df);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

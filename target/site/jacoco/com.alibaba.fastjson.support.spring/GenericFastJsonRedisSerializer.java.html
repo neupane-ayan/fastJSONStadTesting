@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GenericFastJsonRedisSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.spring</a> &gt; <span class="el_source">GenericFastJsonRedisSerializer.java</span></div><h1>GenericFastJsonRedisSerializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.spring;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson.util.IOUtils;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.SerializationException;
+
+/**
+ * {@link RedisSerializer} FastJson Generic Impl
+ * @author lihengming
+ * @since 1.2.36
+ */
+<span class="fc" id="L15">public class GenericFastJsonRedisSerializer implements RedisSerializer&lt;Object&gt; {</span>
+<span class="fc" id="L16">    private final static ParserConfig defaultRedisConfig = new ParserConfig();</span>
+<span class="fc" id="L17">    static { defaultRedisConfig.setAutoTypeSupport(true);}</span>
+
+    public byte[] serialize(Object object) throws SerializationException {
+<span class="fc bfc" id="L20" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L21">            return new byte[0];</span>
+        }
+        try {
+<span class="fc" id="L24">            return JSON.toJSONBytes(object, SerializerFeature.WriteClassName);</span>
+<span class="nc" id="L25">        } catch (Exception ex) {</span>
+<span class="nc" id="L26">            throw new SerializationException(&quot;Could not serialize: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    public Object deserialize(byte[] bytes) throws SerializationException {
+<span class="fc bfc" id="L31" title="All 4 branches covered.">        if (bytes == null || bytes.length == 0) {</span>
+<span class="fc" id="L32">            return null;</span>
+        }
+        try {
+<span class="fc" id="L35">            return JSON.parseObject(new String(bytes, IOUtils.UTF8), Object.class, defaultRedisConfig);</span>
+<span class="fc" id="L36">        } catch (Exception ex) {</span>
+<span class="fc" id="L37">            throw new SerializationException(&quot;Could not deserialize: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

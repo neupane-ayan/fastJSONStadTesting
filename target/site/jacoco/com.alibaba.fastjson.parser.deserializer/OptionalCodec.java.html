@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OptionalCodec.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">OptionalCodec.java</span></div><h1>OptionalCodec.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.serializer.JSONSerializer;
+import com.alibaba.fastjson.serializer.ObjectSerializer;
+import com.alibaba.fastjson.util.TypeUtils;
+
+<span class="fc" id="L17">public class OptionalCodec implements ObjectSerializer, ObjectDeserializer {</span>
+
+<span class="fc" id="L19">    public static OptionalCodec instance = new OptionalCodec();</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+        
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if (type == OptionalInt.class) {</span>
+<span class="fc" id="L25">            Object obj = parser.parseObject(Integer.class);</span>
+<span class="fc" id="L26">            Integer value = TypeUtils.castToInt(obj);</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">            if (value == null) {</span>
+<span class="fc" id="L28">                return (T) OptionalInt.empty();</span>
+            } else {
+<span class="fc" id="L30">                return (T) OptionalInt.of(value);</span>
+            }
+        }
+        
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (type == OptionalLong.class) {</span>
+<span class="fc" id="L35">            Object obj = parser.parseObject(Long.class);</span>
+<span class="fc" id="L36">            Long value = TypeUtils.castToLong(obj);</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">            if (value == null) {</span>
+<span class="fc" id="L38">                return (T) OptionalLong.empty();</span>
+            } else {
+<span class="fc" id="L40">                return (T) OptionalLong.of(value);</span>
+            }
+        }
+        
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (type == OptionalDouble.class) {</span>
+<span class="fc" id="L45">            Object obj = parser.parseObject(Double.class);</span>
+<span class="fc" id="L46">            Double value = TypeUtils.castToDouble(obj);</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            if (value == null) {</span>
+<span class="fc" id="L48">                return (T) OptionalDouble.empty();</span>
+            } else {
+<span class="fc" id="L50">                return (T) OptionalDouble.of(value);</span>
+            }
+        }
+        
+<span class="fc" id="L54">        type = TypeUtils.unwrapOptional(type);</span>
+<span class="fc" id="L55">        Object value = parser.parseObject(type);</span>
+        
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L58">            return (T) Optional.empty();</span>
+        }
+        
+<span class="fc" id="L61">        return (T) Optional.of(value);</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="nc" id="L65">        return JSONToken.LBRACE;</span>
+    }
+
+    public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType,
+                      int features) throws IOException {
+
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L72">            serializer.writeNull();</span>
+<span class="nc" id="L73">            return;</span>
+        }
+
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (object instanceof Optional) {</span>
+<span class="fc" id="L77">            Optional&lt;?&gt; optional = (Optional&lt;?&gt;) object;</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            Object value = optional.isPresent() ? optional.get() : null;</span>
+<span class="fc" id="L79">            serializer.write(value);</span>
+<span class="fc" id="L80">            return;</span>
+        }
+
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (object instanceof OptionalDouble) {</span>
+<span class="fc" id="L84">            OptionalDouble optional = (OptionalDouble) object;</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            if (optional.isPresent()) {</span>
+<span class="fc" id="L86">                double value = optional.getAsDouble();</span>
+<span class="fc" id="L87">                serializer.write(value);</span>
+<span class="fc" id="L88">            } else {</span>
+<span class="fc" id="L89">                serializer.writeNull();</span>
+            }
+<span class="fc" id="L91">            return;</span>
+        }
+        
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (object instanceof OptionalInt) {</span>
+<span class="fc" id="L95">            OptionalInt optional = (OptionalInt) object;</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            if (optional.isPresent()) {</span>
+<span class="fc" id="L97">                int value = optional.getAsInt();</span>
+<span class="fc" id="L98">                serializer.out.writeInt(value);</span>
+<span class="fc" id="L99">            } else {</span>
+<span class="fc" id="L100">                serializer.writeNull();</span>
+            }
+<span class="fc" id="L102">            return;</span>
+        }
+        
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        if (object instanceof OptionalLong) {</span>
+<span class="fc" id="L106">            OptionalLong optional = (OptionalLong) object;</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if (optional.isPresent()) {</span>
+<span class="fc" id="L108">                long value = optional.getAsLong();</span>
+<span class="fc" id="L109">                serializer.out.writeLong(value);</span>
+<span class="fc" id="L110">            } else {</span>
+<span class="fc" id="L111">                serializer.writeNull();</span>
+            }
+<span class="fc" id="L113">            return;</span>
+        }
+        
+<span class="nc" id="L116">        throw new JSONException(&quot;not support optional : &quot; + object.getClass());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

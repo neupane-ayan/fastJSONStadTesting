@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteBufferCodec.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">ByteBufferCodec.java</span></div><h1>ByteBufferCodec.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
+
+<span class="fc" id="L11">public class ByteBufferCodec implements ObjectSerializer, ObjectDeserializer {</span>
+<span class="fc" id="L12">    public final static ByteBufferCodec instance = new ByteBufferCodec();</span>
+
+    @Override
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+<span class="fc" id="L16">        ByteBufferBean bean = parser.parseObject(ByteBufferBean.class);</span>
+<span class="fc" id="L17">        return (T) bean.byteBuffer();</span>
+    }
+
+    @Override
+    public int getFastMatchToken() {
+<span class="nc" id="L22">        return JSONToken.LBRACKET;</span>
+    }
+
+    @Override
+    public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType, int features) throws IOException {
+<span class="fc" id="L27">        ByteBuffer byteBuf = (ByteBuffer) object;</span>
+
+<span class="fc" id="L29">        byte[] array = byteBuf.array();</span>
+
+<span class="fc" id="L31">        SerializeWriter out = serializer.out;</span>
+<span class="fc" id="L32">        out.write('{');</span>
+
+<span class="fc" id="L34">        out.writeFieldName(&quot;array&quot;);</span>
+<span class="fc" id="L35">        out.writeByteArray(array);</span>
+<span class="fc" id="L36">        out.writeFieldValue(',', &quot;limit&quot;, byteBuf.limit());</span>
+<span class="fc" id="L37">        out.writeFieldValue(',', &quot;position&quot;, byteBuf.position());</span>
+
+<span class="fc" id="L39">        out.write('}');</span>
+<span class="fc" id="L40">    }</span>
+
+<span class="fc" id="L42">    public static class ByteBufferBean {</span>
+        public byte[] array;
+        public int limit;
+        public int position;
+
+        public ByteBuffer byteBuffer() {
+<span class="fc" id="L48">            ByteBuffer buf = ByteBuffer.wrap(array);</span>
+<span class="fc" id="L49">            buf.limit(limit);</span>
+<span class="fc" id="L50">            buf.position(position);</span>
+<span class="fc" id="L51">            return buf;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

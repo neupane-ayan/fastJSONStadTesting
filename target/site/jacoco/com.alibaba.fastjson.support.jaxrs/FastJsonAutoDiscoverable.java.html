@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastJsonAutoDiscoverable.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.jaxrs</a> &gt; <span class="el_source">FastJsonAutoDiscoverable.java</span></div><h1>FastJsonAutoDiscoverable.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.jaxrs;
+
+import org.glassfish.jersey.internal.spi.AutoDiscoverable;
+
+import javax.annotation.Priority;
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.FeatureContext;
+
+/**
+ * &lt;p&gt;Title: FastJsonAutoDiscoverable&lt;/p&gt;
+ * &lt;p&gt;Description: FastJsonAutoDiscoverable&lt;/p&gt;
+ *
+ * @author Victor.Zxy
+ * @see AutoDiscoverable
+ * @since 1.2.37
+ */
+@Priority(AutoDiscoverable.DEFAULT_PRIORITY - 1)
+<span class="fc" id="L18">public class FastJsonAutoDiscoverable implements AutoDiscoverable {</span>
+
+    public static final String FASTJSON_AUTO_DISCOVERABLE = &quot;fastjson.auto.discoverable&quot;;
+
+<span class="fc" id="L22">    public volatile static boolean autoDiscover = true;</span>
+
+    static {
+        try {
+<span class="fc" id="L26">            autoDiscover = Boolean.parseBoolean(</span>
+<span class="fc" id="L27">                    System.getProperty(FASTJSON_AUTO_DISCOVERABLE, String.valueOf(autoDiscover)));</span>
+<span class="nc" id="L28">        } catch (Throwable ex) {</span>
+            //skip
+<span class="fc" id="L30">        }</span>
+<span class="fc" id="L31">    }</span>
+
+    public void configure(final FeatureContext context) {
+
+<span class="fc" id="L35">        final Configuration config = context.getConfiguration();</span>
+
+        // Register FastJson.
+<span class="pc bpc" id="L38" title="1 of 4 branches missed.">        if (!config.isRegistered(FastJsonFeature.class) &amp;&amp; autoDiscover) {</span>
+
+<span class="fc" id="L40">            context.register(FastJsonFeature.class);</span>
+        }
+<span class="fc" id="L42">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RyuFloat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.util</a> &gt; <span class="el_source">RyuFloat.java</span></div><h1>RyuFloat.java</h1><pre class="source lang-java linenums">// Copyright 2018 Ulf Adams
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.alibaba.fastjson.util;
+
+/**
+ * An implementation of Ryu for float.
+ */
+<span class="nc" id="L20">public final class RyuFloat {</span>
+<span class="fc" id="L21">    private static final int[][] POW5_SPLIT = {</span>
+            {536870912, 0},
+            {671088640, 0},
+            {838860800, 0},
+            {1048576000, 0},
+            {655360000, 0},
+            {819200000, 0},
+            {1024000000, 0},
+            {640000000, 0},
+            {800000000, 0},
+            {1000000000, 0},
+            {625000000, 0},
+            {781250000, 0},
+            {976562500, 0},
+            {610351562, 1073741824},
+            {762939453, 268435456},
+            {953674316, 872415232},
+            {596046447, 1619001344},
+            {745058059, 1486880768},
+            {931322574, 1321730048},
+            {582076609, 289210368},
+            {727595761, 898383872},
+            {909494701, 1659850752},
+            {568434188, 1305842176},
+            {710542735, 1632302720},
+            {888178419, 1503507488},
+            {555111512, 671256724},
+            {693889390, 839070905},
+            {867361737, 2122580455},
+            {542101086, 521306416},
+            {677626357, 1725374844},
+            {847032947, 546105819},
+            {1058791184, 145761362},
+            {661744490, 91100851},
+            {827180612, 1187617888},
+            {1033975765, 1484522360},
+            {646234853, 1196261931},
+            {807793566, 2032198326},
+            {1009741958, 1466506084},
+            {631088724, 379695390},
+            {788860905, 474619238},
+            {986076131, 1130144959},
+            {616297582, 437905143},
+            {770371977, 1621123253},
+            {962964972, 415791331},
+            {601853107, 1333611405},
+            {752316384, 1130143345},
+            {940395480, 1412679181},
+    };
+
+<span class="fc" id="L71">    private static final int[][] POW5_INV_SPLIT = {</span>
+            {268435456, 1},
+            {214748364, 1717986919},
+            {171798691, 1803886265},
+            {137438953, 1013612282},
+            {219902325, 1192282922},
+            {175921860, 953826338},
+            {140737488, 763061070},
+            {225179981, 791400982},
+            {180143985, 203624056},
+            {144115188, 162899245},
+            {230584300, 1978625710},
+            {184467440, 1582900568},
+            {147573952, 1266320455},
+            {236118324, 308125809},
+            {188894659, 675997377},
+            {151115727, 970294631},
+            {241785163, 1981968139},
+            {193428131, 297084323},
+            {154742504, 1955654377},
+            {247588007, 1840556814},
+            {198070406, 613451992},
+            {158456325, 61264864},
+            {253530120, 98023782},
+            {202824096, 78419026},
+            {162259276, 1780722139},
+            {259614842, 1990161963},
+            {207691874, 733136111},
+            {166153499, 1016005619},
+            {265845599, 337118801},
+            {212676479, 699191770},
+            {170141183, 988850146},
+    };
+
+    public static String toString(float value) {
+<span class="fc" id="L106">        char[] result = new char[15];</span>
+<span class="fc" id="L107">        int len = toString(value, result, 0);</span>
+<span class="fc" id="L108">        return new String(result, 0, len);</span>
+    }
+
+    public static int toString(float value, char[] result, int off) {
+<span class="fc" id="L112">        final int FLOAT_MANTISSA_MASK = 8388607; // (1 &lt;&lt; 23) - 1;</span>
+<span class="fc" id="L113">        final int FLOAT_EXPONENT_MASK = 255; // (1 &lt;&lt; 8) - 1;</span>
+<span class="fc" id="L114">        final int FLOAT_EXPONENT_BIAS = 127; // (1 &lt;&lt; (8 - 1)) - 1;</span>
+<span class="fc" id="L115">        final long LOG10_2_NUMERATOR = 3010299; // (long) (10000000L * Math.log10(2));</span>
+<span class="fc" id="L116">        final long LOG10_5_DENOMINATOR = 10000000L;</span>
+<span class="fc" id="L117">        final long LOG10_5_NUMERATOR = 6989700L; // (long) (LOG10_5_DENOMINATOR * Math.log10(5));</span>
+
+
+        // Step 1: Decode the floating point number, and unify normalized and subnormal cases.
+        // First, handle all the trivial cases.
+<span class="fc" id="L122">        int index = off;</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (Float.isNaN(value)) {</span>
+<span class="fc" id="L124">            result[index++] = 'N';</span>
+<span class="fc" id="L125">            result[index++] = 'a';</span>
+<span class="fc" id="L126">            result[index++] = 'N';</span>
+<span class="fc" id="L127">            return index - off;</span>
+        }
+
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        if (value == Float.POSITIVE_INFINITY) {</span>
+<span class="fc" id="L131">            result[index++] = 'I';</span>
+<span class="fc" id="L132">            result[index++] = 'n';</span>
+<span class="fc" id="L133">            result[index++] = 'f';</span>
+<span class="fc" id="L134">            result[index++] = 'i';</span>
+<span class="fc" id="L135">            result[index++] = 'n';</span>
+<span class="fc" id="L136">            result[index++] = 'i';</span>
+<span class="fc" id="L137">            result[index++] = 't';</span>
+<span class="fc" id="L138">            result[index++] = 'y';</span>
+<span class="fc" id="L139">            return index - off;</span>
+        }
+
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        if (value == Float.NEGATIVE_INFINITY) {</span>
+<span class="fc" id="L143">            result[index++] = '-';</span>
+<span class="fc" id="L144">            result[index++] = 'I';</span>
+<span class="fc" id="L145">            result[index++] = 'n';</span>
+<span class="fc" id="L146">            result[index++] = 'f';</span>
+<span class="fc" id="L147">            result[index++] = 'i';</span>
+<span class="fc" id="L148">            result[index++] = 'n';</span>
+<span class="fc" id="L149">            result[index++] = 'i';</span>
+<span class="fc" id="L150">            result[index++] = 't';</span>
+<span class="fc" id="L151">            result[index++] = 'y';</span>
+<span class="fc" id="L152">            return index - off;</span>
+        }
+
+<span class="fc" id="L155">        int bits = Float.floatToIntBits(value);</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (bits == 0) {</span>
+<span class="fc" id="L157">            result[index++] = '0';</span>
+<span class="fc" id="L158">            result[index++] = '.';</span>
+<span class="fc" id="L159">            result[index++] = '0';</span>
+<span class="fc" id="L160">            return index - off;</span>
+        }
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (bits == 0x80000000) {</span>
+<span class="fc" id="L163">            result[index++] = '-';</span>
+<span class="fc" id="L164">            result[index++] = '0';</span>
+<span class="fc" id="L165">            result[index++] = '.';</span>
+<span class="fc" id="L166">            result[index++] = '0';</span>
+<span class="fc" id="L167">            return index - off;</span>
+        }
+
+        // Otherwise extract the mantissa and exponent bits and run the full algorithm.
+<span class="fc" id="L171">        int ieeeExponent = (bits &gt;&gt; 23) &amp; FLOAT_EXPONENT_MASK;</span>
+<span class="fc" id="L172">        int ieeeMantissa = bits &amp; FLOAT_MANTISSA_MASK;</span>
+        // By default, the correct mantissa starts with a 1, except for denormal numbers.
+        int e2;
+        int m2;
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        if (ieeeExponent == 0) {</span>
+<span class="fc" id="L177">            e2 = 1 - FLOAT_EXPONENT_BIAS - 23;</span>
+<span class="fc" id="L178">            m2 = ieeeMantissa;</span>
+        } else {
+<span class="fc" id="L180">            e2 = ieeeExponent - FLOAT_EXPONENT_BIAS - 23;</span>
+<span class="fc" id="L181">            m2 = ieeeMantissa | (1 &lt;&lt; 23);</span>
+        }
+
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        boolean sign = bits &lt; 0;</span>
+
+        // Step 2: Determine the interval of legal decimal representations.
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        boolean even = (m2 &amp; 1) == 0;</span>
+<span class="fc" id="L188">        int mv = 4 * m2;</span>
+<span class="fc" id="L189">        int mp = 4 * m2 + 2;</span>
+<span class="fc bfc" id="L190" title="All 4 branches covered.">        int mm = 4 * m2 - ((m2 != (1L &lt;&lt; 23)) || (ieeeExponent &lt;= 1) ? 2 : 1);</span>
+<span class="fc" id="L191">        e2 -= 2;</span>
+
+        // Step 3: Convert to a decimal power base using 128-bit arithmetic.
+        // -151 = 1 - 127 - 23 - 2 &lt;= e_2 - 2 &lt;= 254 - 127 - 23 - 2 = 102
+        int dp, dv, dm;
+        int e10;
+        boolean dpIsTrailingZeros, dvIsTrailingZeros, dmIsTrailingZeros;
+<span class="fc" id="L198">        int lastRemovedDigit = 0;</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (e2 &gt;= 0) {</span>
+            // Compute m * 2^e_2 / 10^q = m * 2^(e_2 - q) / 5^q
+<span class="fc" id="L201">            int q = (int) (e2 * LOG10_2_NUMERATOR / 10000000L);</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            int k = 59 + (q == 0 ? 1 : (int) ((q * 23219280L + 10000000L - 1) / 10000000L)) - 1;</span>
+<span class="fc" id="L203">            int i = -e2 + q + k;</span>
+<span class="fc" id="L204">            long pis0 = (long) POW5_INV_SPLIT[q][0];</span>
+<span class="fc" id="L205">            long pis1 = (long) POW5_INV_SPLIT[q][1];</span>
+<span class="fc" id="L206">            dv = (int) ((mv * pis0 + ((mv * pis1) &gt;&gt; 31)) &gt;&gt; (i - 31));</span>
+<span class="fc" id="L207">            dp = (int) ((mp * pis0 + ((mp * pis1) &gt;&gt; 31)) &gt;&gt; (i - 31));</span>
+<span class="fc" id="L208">            dm = (int) ((mm * pis0 + ((mm * pis1) &gt;&gt; 31)) &gt;&gt; (i - 31));</span>
+<span class="fc bfc" id="L209" title="All 4 branches covered.">            if (q != 0 &amp;&amp; ((dp - 1) / 10 &lt;= dm / 10)) {</span>
+                // We need to know one removed digit even if we are not going to loop below. We could use
+                // q = X - 1 above, except that would require 33 bits for the result, and we've found that
+                // 32-bit arithmetic is faster even on 64-bit machines.
+<span class="fc" id="L213">                int e = q - 1;</span>
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">                int l = 59 + (e == 0 ? 1 : (int) ((e * 23219280L + 10000000L - 1) / 10000000L)) - 1;</span>
+<span class="fc" id="L215">                int qx = q - 1, ii = -e2 + q - 1 + l;</span>
+<span class="fc" id="L216">                long mulPow5InvDivPow2 =  (mv * (long) POW5_INV_SPLIT[qx][0] + ((mv * (long) POW5_INV_SPLIT[qx][1]) &gt;&gt; 31)) &gt;&gt; (ii - 31);</span>
+<span class="fc" id="L217">                lastRemovedDigit = (int) (mulPow5InvDivPow2 % 10);</span>
+            }
+<span class="fc" id="L219">            e10 = q;</span>
+
+<span class="fc" id="L221">            int pow5Factor_mp = 0;</span>
+            {
+<span class="fc" id="L223">                int v = mp;</span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">                while (v &gt; 0) {</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">                    if (v % 5 != 0) {</span>
+<span class="fc" id="L226">                        break;</span>
+                    }
+<span class="fc" id="L228">                    v /= 5;</span>
+<span class="fc" id="L229">                    pow5Factor_mp++;</span>
+                }
+            }
+
+<span class="fc" id="L233">            int pow5Factor_mv = 0;</span>
+            {
+<span class="fc" id="L235">                int v = mv;</span>
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">                while (v &gt; 0) {</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">                    if (v % 5 != 0) {</span>
+<span class="fc" id="L238">                        break;</span>
+                    }
+<span class="fc" id="L240">                    v /= 5;</span>
+<span class="fc" id="L241">                    pow5Factor_mv++;</span>
+                }
+            }
+
+<span class="fc" id="L245">            int pow5Factor_mm = 0;</span>
+            {
+<span class="fc" id="L247">                int v = mm;</span>
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">                while (v &gt; 0) {</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">                    if (v % 5 != 0) {</span>
+<span class="fc" id="L250">                        break;</span>
+                    }
+<span class="fc" id="L252">                    v /= 5;</span>
+<span class="fc" id="L253">                    pow5Factor_mm++;</span>
+                }
+            }
+
+<span class="fc bfc" id="L257" title="All 2 branches covered.">            dpIsTrailingZeros = pow5Factor_mp &gt;= q;</span>
+<span class="fc bfc" id="L258" title="All 2 branches covered.">            dvIsTrailingZeros = pow5Factor_mv &gt;= q;</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">            dmIsTrailingZeros = pow5Factor_mm &gt;= q;</span>
+<span class="fc" id="L260">        } else {</span>
+            // Compute m * 5^(-e_2) / 10^q = m * 5^(-e_2 - q) / 2^q
+<span class="fc" id="L262">            int q = (int) (-e2 * LOG10_5_NUMERATOR / LOG10_5_DENOMINATOR);</span>
+<span class="fc" id="L263">            int i = -e2 - q;</span>
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">            int k = (i == 0 ? 1 : (int) ((i * 23219280L + 10000000L - 1) / 10000000L)) - 61;</span>
+<span class="fc" id="L265">            int j = q - k;</span>
+
+<span class="fc" id="L267">            long ps0 = POW5_SPLIT[i][0];</span>
+<span class="fc" id="L268">            long ps1 = POW5_SPLIT[i][1];</span>
+<span class="fc" id="L269">            int j31 = j - 31;</span>
+<span class="fc" id="L270">            dv = (int) ((mv * ps0 + ((mv * ps1) &gt;&gt; 31)) &gt;&gt; j31);</span>
+<span class="fc" id="L271">            dp = (int) ((mp * ps0 + ((mp * ps1) &gt;&gt; 31)) &gt;&gt; j31);</span>
+<span class="fc" id="L272">            dm = (int) ((mm * ps0 + ((mm * ps1) &gt;&gt; 31)) &gt;&gt; j31);</span>
+
+<span class="fc bfc" id="L274" title="All 4 branches covered.">            if (q != 0 &amp;&amp; ((dp - 1) / 10 &lt;= dm / 10)) {</span>
+<span class="fc" id="L275">                int e = i + 1;</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">                j = q - 1 - ((e == 0 ? 1 : (int) ((e * 23219280L + 10000000L - 1) / 10000000L)) - 61);</span>
+<span class="fc" id="L277">                int ix = i + 1;</span>
+<span class="fc" id="L278">                long mulPow5divPow2 = (mv * (long) POW5_SPLIT[ix][0] + ((mv * (long) POW5_SPLIT[ix][1]) &gt;&gt; 31)) &gt;&gt; (j - 31);</span>
+<span class="fc" id="L279">                lastRemovedDigit = (int) (mulPow5divPow2 % 10);</span>
+            }
+<span class="fc" id="L281">            e10 = q + e2; // Note: e2 and e10 are both negative here.</span>
+
+<span class="fc bfc" id="L283" title="All 2 branches covered.">            dpIsTrailingZeros = 1 &gt;= q;</span>
+<span class="fc bfc" id="L284" title="All 4 branches covered.">            dvIsTrailingZeros = (q &lt; 23) &amp;&amp; (mv &amp; ((1 &lt;&lt; (q - 1)) - 1)) == 0;</span>
+<span class="fc bfc" id="L285" title="All 4 branches covered.">            dmIsTrailingZeros = (mm % 2 == 1 ? 0 : 1) &gt;= q;</span>
+        }
+
+        // Step 4: Find the shortest decimal representation in the interval of legal representations.
+        //
+        // We do some extra work here in order to follow Float/Double.toString semantics. In particular,
+        // that requires printing in scientific format if and only if the exponent is between -3 and 7,
+        // and it requires printing at least two decimal digits.
+        //
+        // Above, we moved the decimal dot all the way to the right, so now we need to count digits to
+        // figure out the correct exponent for scientific notation.
+
+<span class="fc" id="L297">        int dplength = 10;</span>
+<span class="fc" id="L298">        int factor = 1000000000;</span>
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">        for (; dplength &gt; 0; dplength--) {</span>
+<span class="fc bfc" id="L300" title="All 2 branches covered.">            if (dp &gt;= factor) {</span>
+<span class="fc" id="L301">                break;</span>
+            }
+<span class="fc" id="L303">            factor /= 10;</span>
+        }
+<span class="fc" id="L305">        int exp = e10 + dplength - 1;</span>
+
+        // Float.toString semantics requires using scientific notation if and only if outside this range.
+<span class="fc bfc" id="L308" title="All 4 branches covered.">        boolean scientificNotation = !((exp &gt;= -3) &amp;&amp; (exp &lt; 7));</span>
+
+<span class="fc" id="L310">        int removed = 0;</span>
+<span class="fc bfc" id="L311" title="All 4 branches covered.">        if (dpIsTrailingZeros &amp;&amp; !even) {</span>
+<span class="fc" id="L312">            dp--;</span>
+        }
+
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        while (dp / 10 &gt; dm / 10) {</span>
+<span class="fc bfc" id="L316" title="All 4 branches covered.">            if ((dp &lt; 100) &amp;&amp; scientificNotation) {</span>
+                // We print at least two digits, so we might as well stop now.
+<span class="fc" id="L318">                break;</span>
+            }
+<span class="fc bfc" id="L320" title="All 2 branches covered.">            dmIsTrailingZeros &amp;= dm % 10 == 0;</span>
+<span class="fc" id="L321">            dp /= 10;</span>
+<span class="fc" id="L322">            lastRemovedDigit = dv % 10;</span>
+<span class="fc" id="L323">            dv /= 10;</span>
+<span class="fc" id="L324">            dm /= 10;</span>
+<span class="fc" id="L325">            removed++;</span>
+        }
+<span class="fc bfc" id="L327" title="All 4 branches covered.">        if (dmIsTrailingZeros &amp;&amp; even) {</span>
+<span class="pc bpc" id="L328" title="1 of 2 branches missed.">            while (dm % 10 == 0) {</span>
+<span class="nc bnc" id="L329" title="All 4 branches missed.">                if ((dp &lt; 100) &amp;&amp; scientificNotation) {</span>
+                    // We print at least two digits, so we might as well stop now.
+<span class="nc" id="L331">                    break;</span>
+                }
+<span class="nc" id="L333">                dp /= 10;</span>
+<span class="nc" id="L334">                lastRemovedDigit = dv % 10;</span>
+<span class="nc" id="L335">                dv /= 10;</span>
+<span class="nc" id="L336">                dm /= 10;</span>
+<span class="nc" id="L337">                removed++;</span>
+            }
+        }
+
+<span class="fc bfc" id="L341" title="All 6 branches covered.">        if (dvIsTrailingZeros &amp;&amp; (lastRemovedDigit == 5) &amp;&amp; (dv % 2 == 0)) {</span>
+            // Round down not up if the number ends in X50000 and the number is even.
+<span class="fc" id="L343">            lastRemovedDigit = 4;</span>
+        }
+<span class="pc bpc" id="L345" title="3 of 8 branches missed.">        int output = dv +</span>
+                ((dv == dm &amp;&amp; !(dmIsTrailingZeros &amp;&amp; even)) || (lastRemovedDigit &gt;= 5) ? 1 : 0);
+<span class="fc" id="L347">        int olength = dplength - removed;</span>
+
+        // Step 5: Print the decimal representation.
+        // We follow Float.toString semantics here.
+<span class="fc bfc" id="L351" title="All 2 branches covered.">        if (sign) {</span>
+<span class="fc" id="L352">            result[index++] = '-';</span>
+        }
+
+<span class="fc bfc" id="L355" title="All 2 branches covered.">        if (scientificNotation) {</span>
+            // Print in the format x.xxxxxE-yy.
+<span class="fc bfc" id="L357" title="All 2 branches covered.">            for (int i = 0; i &lt; olength - 1; i++) {</span>
+<span class="fc" id="L358">                int c = output % 10;</span>
+<span class="fc" id="L359">                output /= 10;</span>
+<span class="fc" id="L360">                result[index + olength - i] = (char) ('0' + c);</span>
+            }
+<span class="fc" id="L362">            result[index] = (char) ('0' + output % 10);</span>
+<span class="fc" id="L363">            result[index + 1] = '.';</span>
+<span class="fc" id="L364">            index += olength + 1;</span>
+<span class="pc bpc" id="L365" title="1 of 2 branches missed.">            if (olength == 1) {</span>
+<span class="nc" id="L366">                result[index++] = '0';</span>
+            }
+
+            // Print 'E', the exponent sign, and the exponent, which has at most two digits.
+<span class="fc" id="L370">            result[index++] = 'E';</span>
+<span class="fc bfc" id="L371" title="All 2 branches covered.">            if (exp &lt; 0) {</span>
+<span class="fc" id="L372">                result[index++] = '-';</span>
+<span class="fc" id="L373">                exp = -exp;</span>
+            }
+<span class="fc bfc" id="L375" title="All 2 branches covered.">            if (exp &gt;= 10) {</span>
+<span class="fc" id="L376">                result[index++] = (char) ('0' + exp / 10);</span>
+            }
+<span class="fc" id="L378">            result[index++] = (char) ('0' + exp % 10);</span>
+        } else {
+            // Otherwise follow the Java spec for values in the interval [1E-3, 1E7).
+<span class="fc bfc" id="L381" title="All 2 branches covered.">            if (exp &lt; 0) {</span>
+                // Decimal dot is before any of the digits.
+<span class="fc" id="L383">                result[index++] = '0';</span>
+<span class="fc" id="L384">                result[index++] = '.';</span>
+<span class="fc bfc" id="L385" title="All 2 branches covered.">                for (int i = -1; i &gt; exp; i--) {</span>
+<span class="fc" id="L386">                    result[index++] = '0';</span>
+                }
+<span class="fc" id="L388">                int current = index;</span>
+<span class="fc bfc" id="L389" title="All 2 branches covered.">                for (int i = 0; i &lt; olength; i++) {</span>
+<span class="fc" id="L390">                    result[current + olength - i - 1] = (char) ('0' + output % 10);</span>
+<span class="fc" id="L391">                    output /= 10;</span>
+<span class="fc" id="L392">                    index++;</span>
+                }
+<span class="fc bfc" id="L394" title="All 2 branches covered.">            } else if (exp + 1 &gt;= olength) {</span>
+                // Decimal dot is after any of the digits.
+<span class="fc bfc" id="L396" title="All 2 branches covered.">                for (int i = 0; i &lt; olength; i++) {</span>
+<span class="fc" id="L397">                    result[index + olength - i - 1] = (char) ('0' + output % 10);</span>
+<span class="fc" id="L398">                    output /= 10;</span>
+                }
+<span class="fc" id="L400">                index += olength;</span>
+<span class="fc bfc" id="L401" title="All 2 branches covered.">                for (int i = olength; i &lt; exp + 1; i++) {</span>
+<span class="fc" id="L402">                    result[index++] = '0';</span>
+                }
+<span class="fc" id="L404">                result[index++] = '.';</span>
+<span class="fc" id="L405">                result[index++] = '0';</span>
+            } else {
+                // Decimal dot is somewhere between the digits.
+<span class="fc" id="L408">                int current = index + 1;</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">                for (int i = 0; i &lt; olength; i++) {</span>
+<span class="fc bfc" id="L410" title="All 2 branches covered.">                    if (olength - i - 1 == exp) {</span>
+<span class="fc" id="L411">                        result[current + olength - i - 1] = '.';</span>
+<span class="fc" id="L412">                        current--;</span>
+                    }
+<span class="fc" id="L414">                    result[current + olength - i - 1] = (char) ('0' + output % 10);</span>
+<span class="fc" id="L415">                    output /= 10;</span>
+                }
+<span class="fc" id="L417">                index += olength + 1;</span>
+            }
+        }
+<span class="fc" id="L420">        return index - off;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSONSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">JSONSerializer.java</span></div><h1>JSONSerializer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2018 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.serializer;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Writer;
+import java.lang.reflect.Type;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.zip.GZIPOutputStream;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.util.IOUtils;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public class JSONSerializer extends SerializeFilterable {
+
+    protected final SerializeConfig                  config;
+    public final SerializeWriter                     out;
+
+<span class="fc" id="L39">    private int                                      indentCount = 0;</span>
+<span class="fc" id="L40">    private String                                   indent      = &quot;\t&quot;;</span>
+
+    /**
+     * #1868 为了区分全局配置（FastJsonConfig）的日期格式配置以及toJSONString传入的日期格式配置
+     * 建议使用以下调整：
+     * 1. dateFormatPattern、dateFormat只作为toJSONString传入配置使用；
+     * 2. 新增fastJsonConfigDateFormatPattern，用于存储通过（FastJsonConfig）配置的日期格式
+     */
+    private String                                   dateFormatPattern;
+    private DateFormat                               dateFormat;
+
+    private String                                   fastJsonConfigDateFormatPattern;
+
+<span class="fc" id="L53">    protected IdentityHashMap&lt;Object, SerialContext&gt; references  = null;</span>
+    protected SerialContext                          context;
+
+<span class="fc" id="L56">    protected TimeZone                               timeZone    = JSON.defaultTimeZone;</span>
+<span class="fc" id="L57">    protected Locale                                 locale      = JSON.defaultLocale;</span>
+
+    public JSONSerializer(){
+<span class="fc" id="L60">        this(new SerializeWriter(), SerializeConfig.getGlobalInstance());</span>
+<span class="fc" id="L61">    }</span>
+
+    public JSONSerializer(SerializeWriter out){
+<span class="fc" id="L64">        this(out, SerializeConfig.getGlobalInstance());</span>
+<span class="fc" id="L65">    }</span>
+
+    public JSONSerializer(SerializeConfig config){
+<span class="fc" id="L68">        this(new SerializeWriter(), config);</span>
+<span class="fc" id="L69">    }</span>
+
+<span class="fc" id="L71">    public JSONSerializer(SerializeWriter out, SerializeConfig config){</span>
+<span class="fc" id="L72">        this.out = out;</span>
+<span class="fc" id="L73">        this.config = config;</span>
+<span class="fc" id="L74">    }</span>
+
+    public String getDateFormatPattern() {
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (dateFormat instanceof SimpleDateFormat) {</span>
+<span class="fc" id="L78">            return ((SimpleDateFormat) dateFormat).toPattern();</span>
+        }
+<span class="fc" id="L80">        return dateFormatPattern;</span>
+    }
+
+    public DateFormat getDateFormat() {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (dateFormat == null) {</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            if (dateFormatPattern != null) {</span>
+<span class="fc" id="L86">                dateFormat = this.generateDateFormat( dateFormatPattern );</span>
+            }
+        }
+
+<span class="fc" id="L90">        return dateFormat;</span>
+    }
+
+    private DateFormat generateDateFormat(String dateFormatPattern) {
+<span class="fc" id="L94">        DateFormat dateFormat = new SimpleDateFormat(dateFormatPattern, locale);</span>
+<span class="fc" id="L95">        dateFormat.setTimeZone(timeZone);</span>
+
+<span class="fc" id="L97">        return dateFormat;</span>
+    }
+
+    public void setDateFormat(DateFormat dateFormat) {
+<span class="fc" id="L101">        this.dateFormat = dateFormat;</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (dateFormatPattern != null) {</span>
+<span class="fc" id="L103">            dateFormatPattern = null;</span>
+        }
+<span class="fc" id="L105">    }</span>
+
+    public void setDateFormat(String dateFormat) {
+<span class="fc" id="L108">        this.dateFormatPattern = dateFormat;</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (this.dateFormat != null) {</span>
+<span class="fc" id="L110">            this.dateFormat = null;</span>
+        }
+<span class="fc" id="L112">    }</span>
+
+    /**
+     * Set global date format pattern in FastJsonConfig
+     *
+     * @param dateFormatPattern global date format pattern
+     */
+    public void setFastJsonConfigDateFormatPattern(String dateFormatPattern) {
+<span class="fc" id="L120">        this.fastJsonConfigDateFormatPattern = dateFormatPattern;</span>
+<span class="fc" id="L121">    }</span>
+
+    public String getFastJsonConfigDateFormatPattern() {
+<span class="fc" id="L124">        return this.fastJsonConfigDateFormatPattern;</span>
+    }
+
+    public SerialContext getContext() {
+<span class="fc" id="L128">        return context;</span>
+    }
+
+    public void setContext(SerialContext context) {
+<span class="fc" id="L132">        this.context = context;</span>
+<span class="fc" id="L133">    }</span>
+
+    public void setContext(SerialContext parent, Object object, Object fieldName, int features) {
+<span class="fc" id="L136">        this.setContext(parent, object, fieldName, features, 0);</span>
+<span class="fc" id="L137">    }</span>
+
+    public void setContext(SerialContext parent, Object object, Object fieldName, int features, int fieldFeatures) {
+<span class="fc bfc" id="L140" title="All 2 branches covered.">        if (out.disableCircularReferenceDetect) {</span>
+<span class="fc" id="L141">            return;</span>
+        }
+
+<span class="fc" id="L144">        this.context = new SerialContext(parent, object, fieldName, features, fieldFeatures);</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        if (references == null) {</span>
+<span class="fc" id="L146">            references = new IdentityHashMap&lt;Object, SerialContext&gt;();</span>
+        }
+<span class="fc" id="L148">        this.references.put(object, context);</span>
+<span class="fc" id="L149">    }</span>
+
+    public void setContext(Object object, Object fieldName) {
+<span class="fc" id="L152">        this.setContext(context, object, fieldName, 0);</span>
+<span class="fc" id="L153">    }</span>
+
+    public void popContext() {
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">        if (context != null) {</span>
+<span class="fc" id="L157">            this.context = this.context.parent;</span>
+        }
+<span class="fc" id="L159">    }</span>
+
+    public final boolean isWriteClassName(Type fieldType, Object obj) {
+<span class="fc bfc" id="L162" title="All 4 branches covered.">        return out.isEnabled(SerializerFeature.WriteClassName) //</span>
+               &amp;&amp; (fieldType != null //
+<span class="fc bfc" id="L164" title="All 6 branches covered.">                   || (!out.isEnabled(SerializerFeature.NotWriteRootClassName)) //</span>
+                   || (context != null &amp;&amp; (context.parent != null)));
+    }
+
+    public boolean containsReference(Object value) {
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        if (references == null) {</span>
+<span class="fc" id="L170">            return false;</span>
+        }
+
+<span class="fc" id="L173">        SerialContext refContext = references.get(value);</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (refContext == null) {</span>
+<span class="fc" id="L175">            return false;</span>
+        }
+
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if (value == Collections.emptyMap()) {</span>
+<span class="fc" id="L179">            return false;</span>
+        }
+
+<span class="fc" id="L182">        Object fieldName = refContext.fieldName;</span>
+
+<span class="pc bpc" id="L184" title="1 of 6 branches missed.">        return fieldName == null || fieldName instanceof Integer || fieldName instanceof String;</span>
+    }
+
+    public void writeReference(Object object) {
+<span class="fc" id="L188">        SerialContext context = this.context;</span>
+<span class="fc" id="L189">        Object current = context.object;</span>
+
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (object == current) {</span>
+<span class="fc" id="L192">            out.write(&quot;{\&quot;$ref\&quot;:\&quot;@\&quot;}&quot;);</span>
+<span class="fc" id="L193">            return;</span>
+        }
+
+<span class="fc" id="L196">        SerialContext parentContext = context.parent;</span>
+
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (parentContext != null) {</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">            if (object == parentContext.object) {</span>
+<span class="fc" id="L200">                out.write(&quot;{\&quot;$ref\&quot;:\&quot;..\&quot;}&quot;);</span>
+<span class="fc" id="L201">                return;</span>
+            }
+        }
+
+<span class="fc" id="L205">        SerialContext rootContext = context;</span>
+        for (;;) {
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            if (rootContext.parent == null) {</span>
+<span class="fc" id="L208">                break;</span>
+            }
+<span class="fc" id="L210">            rootContext = rootContext.parent;</span>
+        }
+
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        if (object == rootContext.object) {</span>
+<span class="fc" id="L214">            out.write(&quot;{\&quot;$ref\&quot;:\&quot;$\&quot;}&quot;);</span>
+        } else {
+<span class="fc" id="L216">            out.write(&quot;{\&quot;$ref\&quot;:\&quot;&quot;);</span>
+<span class="fc" id="L217">            String path = references.get(object).toString();</span>
+<span class="fc" id="L218">            out.write(path);</span>
+<span class="fc" id="L219">            out.write(&quot;\&quot;}&quot;);</span>
+        }
+<span class="fc" id="L221">    }</span>
+
+    public boolean checkValue(SerializeFilterable filterable) {
+<span class="pc bpc" id="L224" title="2 of 6 branches missed.">        return (valueFilters != null &amp;&amp; valueFilters.size() &gt; 0) //</span>
+<span class="pc bpc" id="L225" title="2 of 4 branches missed.">               || (contextValueFilters != null &amp;&amp; contextValueFilters.size() &gt; 0) //</span>
+<span class="pc bpc" id="L226" title="1 of 4 branches missed.">               || (filterable.valueFilters != null &amp;&amp; filterable.valueFilters.size() &gt; 0)</span>
+<span class="pc bpc" id="L227" title="1 of 4 branches missed.">               || (filterable.contextValueFilters != null &amp;&amp; filterable.contextValueFilters.size() &gt; 0)</span>
+               || out.writeNonStringValueAsString;
+    }
+    
+    public boolean hasNameFilters(SerializeFilterable filterable) {
+<span class="pc bpc" id="L232" title="1 of 6 branches missed.">        return (nameFilters != null &amp;&amp; nameFilters.size() &gt; 0) //</span>
+<span class="pc bpc" id="L233" title="1 of 2 branches missed.">               || (filterable.nameFilters != null &amp;&amp; filterable.nameFilters.size() &gt; 0);</span>
+    }
+
+    public boolean hasPropertyFilters(SerializeFilterable filterable) {
+<span class="pc bpc" id="L237" title="4 of 6 branches missed.">        return (propertyFilters != null &amp;&amp; propertyFilters.size() &gt; 0) //</span>
+<span class="pc bnc" id="L238" title="All 2 branches missed.">                || (filterable.propertyFilters != null &amp;&amp; filterable.propertyFilters.size() &gt; 0);</span>
+    }
+
+    public int getIndentCount() {
+<span class="fc" id="L242">        return indentCount;</span>
+    }
+
+    public void incrementIndent() {
+<span class="fc" id="L246">        indentCount++;</span>
+<span class="fc" id="L247">    }</span>
+
+    public void decrementIdent() {
+<span class="fc" id="L250">        indentCount--;</span>
+<span class="fc" id="L251">    }</span>
+
+    public void println() {
+<span class="fc" id="L254">        out.write('\n');</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">        for (int i = 0; i &lt; indentCount; ++i) {</span>
+<span class="fc" id="L256">            out.write(indent);</span>
+        }
+<span class="fc" id="L258">    }</span>
+
+    public SerializeWriter getWriter() {
+<span class="fc" id="L261">        return out;</span>
+    }
+
+    public String toString() {
+<span class="fc" id="L265">        return out.toString();</span>
+    }
+
+    public void config(SerializerFeature feature, boolean state) {
+<span class="fc" id="L269">        out.config(feature, state);</span>
+<span class="fc" id="L270">    }</span>
+
+    public boolean isEnabled(SerializerFeature feature) {
+<span class="fc" id="L273">        return out.isEnabled(feature);</span>
+    }
+
+    public void writeNull() {
+<span class="fc" id="L277">        this.out.writeNull();</span>
+<span class="fc" id="L278">    }</span>
+
+    public SerializeConfig getMapping() {
+<span class="fc" id="L281">        return config;</span>
+    }
+
+    public static void write(Writer out, Object object) {
+<span class="fc" id="L285">        SerializeWriter writer = new SerializeWriter();</span>
+        try {
+<span class="fc" id="L287">            JSONSerializer serializer = new JSONSerializer(writer);</span>
+<span class="fc" id="L288">            serializer.write(object);</span>
+<span class="fc" id="L289">            writer.writeTo(out);</span>
+<span class="fc" id="L290">        } catch (IOException ex) {</span>
+<span class="fc" id="L291">            throw new JSONException(ex.getMessage(), ex);</span>
+        } finally {
+<span class="fc" id="L293">            writer.close();</span>
+        }
+<span class="fc" id="L295">    }</span>
+
+    public static void write(SerializeWriter out, Object object) {
+<span class="fc" id="L298">        JSONSerializer serializer = new JSONSerializer(out);</span>
+<span class="fc" id="L299">        serializer.write(object);</span>
+<span class="fc" id="L300">    }</span>
+
+    public final void write(Object object) {
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L304">            out.writeNull();</span>
+<span class="fc" id="L305">            return;</span>
+        }
+
+<span class="fc" id="L308">        Class&lt;?&gt; clazz = object.getClass();</span>
+<span class="fc" id="L309">        ObjectSerializer writer = getObjectWriter(clazz);</span>
+
+        try {
+<span class="fc" id="L312">            writer.write(this, object, null, null, 0);</span>
+<span class="fc" id="L313">        } catch (IOException e) {</span>
+<span class="fc" id="L314">            throw new JSONException(e.getMessage(), e);</span>
+<span class="fc" id="L315">        }</span>
+<span class="fc" id="L316">    }</span>
+
+    /**
+     * @since 1.2.57
+     *
+     */
+    public final void writeAs(Object object, Class type) {
+<span class="pc bpc" id="L323" title="1 of 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L324">            out.writeNull();</span>
+<span class="nc" id="L325">            return;</span>
+        }
+
+<span class="fc" id="L328">        ObjectSerializer writer = getObjectWriter(type);</span>
+
+        try {
+<span class="fc" id="L331">            writer.write(this, object, null, null, 0);</span>
+<span class="nc" id="L332">        } catch (IOException e) {</span>
+<span class="nc" id="L333">            throw new JSONException(e.getMessage(), e);</span>
+<span class="fc" id="L334">        }</span>
+<span class="fc" id="L335">    }</span>
+
+    public final void writeWithFieldName(Object object, Object fieldName) {
+<span class="fc" id="L338">        writeWithFieldName(object, fieldName, null, 0);</span>
+<span class="fc" id="L339">    }</span>
+
+    protected final void writeKeyValue(char seperator, String key, Object value) {
+<span class="fc bfc" id="L342" title="All 2 branches covered.">        if (seperator != '\0') {</span>
+<span class="fc" id="L343">            out.write(seperator);</span>
+        }
+<span class="fc" id="L345">        out.writeFieldName(key);</span>
+<span class="fc" id="L346">        write(value);</span>
+<span class="fc" id="L347">    }</span>
+
+    public final void writeWithFieldName(Object object, Object fieldName, Type fieldType, int fieldFeatures) {
+        try {
+<span class="pc bpc" id="L351" title="1 of 2 branches missed.">            if (object == null) {</span>
+<span class="nc" id="L352">                out.writeNull();</span>
+<span class="nc" id="L353">                return;</span>
+            }
+
+<span class="fc" id="L356">            Class&lt;?&gt; clazz = object.getClass();</span>
+
+<span class="fc" id="L358">            ObjectSerializer writer = getObjectWriter(clazz);</span>
+
+<span class="fc" id="L360">            writer.write(this, object, fieldName, fieldType, fieldFeatures);</span>
+<span class="nc" id="L361">        } catch (IOException e) {</span>
+<span class="nc" id="L362">            throw new JSONException(e.getMessage(), e);</span>
+<span class="fc" id="L363">        }</span>
+<span class="fc" id="L364">    }</span>
+
+    public final void writeWithFormat(Object object, String format) {
+<span class="fc bfc" id="L367" title="All 2 branches covered.">        if (object instanceof Date) {</span>
+<span class="fc bfc" id="L368" title="All 2 branches covered.">            if (&quot;unixtime&quot;.equals(format)) {</span>
+<span class="fc" id="L369">                long seconds = ((Date) object).getTime() / 1000L;</span>
+<span class="fc" id="L370">                out.writeInt((int) seconds);</span>
+<span class="fc" id="L371">                return;</span>
+            }
+
+<span class="fc bfc" id="L374" title="All 2 branches covered.">            if (&quot;millis&quot;.equals(format)) {</span>
+<span class="fc" id="L375">                out.writeLong(((Date) object).getTime());</span>
+<span class="fc" id="L376">                return;</span>
+            }
+
+<span class="fc" id="L379">            DateFormat dateFormat = this.getDateFormat();</span>
+<span class="fc bfc" id="L380" title="All 2 branches covered.">            if (dateFormat == null) {</span>
+<span class="fc bfc" id="L381" title="All 2 branches covered.">                if (format != null) {</span>
+                    try {
+<span class="fc" id="L383">                        dateFormat = this.generateDateFormat(format);</span>
+<span class="fc" id="L384">                    } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L385">                        String format2 = format.replaceAll(&quot;T&quot;, &quot;'T'&quot;);</span>
+<span class="fc" id="L386">                        dateFormat = this.generateDateFormat(format2);</span>
+<span class="fc" id="L387">                    }</span>
+<span class="pc bpc" id="L388" title="1 of 2 branches missed.">                } else if (fastJsonConfigDateFormatPattern != null) {</span>
+<span class="nc" id="L389">                    dateFormat = this.generateDateFormat(fastJsonConfigDateFormatPattern);</span>
+                } else {
+<span class="fc" id="L391">                    dateFormat = this.generateDateFormat(JSON.DEFFAULT_DATE_FORMAT);</span>
+                }
+            }
+<span class="fc" id="L394">            String text = dateFormat.format((Date) object);</span>
+<span class="fc" id="L395">            out.writeString(text);</span>
+<span class="fc" id="L396">            return;</span>
+        }
+
+<span class="fc bfc" id="L399" title="All 2 branches covered.">        if (object instanceof byte[]) {</span>
+<span class="fc" id="L400">            byte[] bytes = (byte[]) object;</span>
+<span class="fc bfc" id="L401" title="All 4 branches covered.">            if (&quot;gzip&quot;.equals(format) || &quot;gzip,base64&quot;.equals(format)) {</span>
+<span class="fc" id="L402">                GZIPOutputStream gzipOut = null;</span>
+                try {
+<span class="fc" id="L404">                    ByteArrayOutputStream byteOut = new ByteArrayOutputStream();</span>
+<span class="pc bpc" id="L405" title="1 of 2 branches missed.">                    if (bytes.length &lt; 512) {</span>
+<span class="nc" id="L406">                        gzipOut = new GZIPOutputStream(byteOut, bytes.length);</span>
+                    } else {
+<span class="fc" id="L408">                        gzipOut = new GZIPOutputStream(byteOut);</span>
+                    }
+<span class="fc" id="L410">                    gzipOut.write(bytes);</span>
+<span class="fc" id="L411">                    gzipOut.finish();</span>
+<span class="fc" id="L412">                    out.writeByteArray(byteOut.toByteArray());</span>
+<span class="nc" id="L413">                } catch (IOException ex) {</span>
+<span class="nc" id="L414">                    throw new JSONException(&quot;write gzipBytes error&quot;, ex);</span>
+                } finally {
+<span class="fc" id="L416">                    IOUtils.close(gzipOut);</span>
+                }
+<span class="fc bfc" id="L418" title="All 2 branches covered.">            } else if (&quot;hex&quot;.equals(format)) {</span>
+<span class="fc" id="L419">                out.writeHex(bytes);</span>
+            } else {
+<span class="fc" id="L421">                out.writeByteArray(bytes);</span>
+            }
+<span class="fc" id="L423">            return;</span>
+        }
+
+<span class="fc bfc" id="L426" title="All 2 branches covered.">        if (object instanceof Collection) {</span>
+<span class="fc" id="L427">            Collection collection = (Collection) object;</span>
+<span class="fc" id="L428">            Iterator iterator = collection.iterator();</span>
+<span class="fc" id="L429">            out.write('[');</span>
+<span class="fc bfc" id="L430" title="All 2 branches covered.">            for (int i = 0; i &lt; collection.size(); i++) {</span>
+<span class="fc" id="L431">                Object item = iterator.next();</span>
+<span class="pc bpc" id="L432" title="1 of 2 branches missed.">                if (i != 0) {</span>
+<span class="nc" id="L433">                    out.write(',');</span>
+                }
+<span class="fc" id="L435">                writeWithFormat(item, format);</span>
+            }
+<span class="fc" id="L437">            out.write(']');</span>
+<span class="fc" id="L438">            return;</span>
+        }
+<span class="fc" id="L440">        write(object);</span>
+<span class="fc" id="L441">    }</span>
+
+    public final void write(String text) {
+<span class="fc" id="L444">        StringCodec.instance.write(this, text);</span>
+<span class="fc" id="L445">    }</span>
+
+    public ObjectSerializer getObjectWriter(Class&lt;?&gt; clazz) {
+<span class="fc" id="L448">        return config.getObjectWriter(clazz);</span>
+    }
+
+    public void close() {
+<span class="fc" id="L452">        this.out.close();</span>
+<span class="fc" id="L453">    }</span>
+   
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

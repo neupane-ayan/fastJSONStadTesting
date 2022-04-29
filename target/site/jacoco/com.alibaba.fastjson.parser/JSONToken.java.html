@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSONToken.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser</a> &gt; <span class="el_source">JSONToken.java</span></div><h1>JSONToken.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.parser;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+<span class="fc" id="L21">public class JSONToken {</span>
+
+    //
+    public final static int ERROR                = 1;
+    //
+    public final static int LITERAL_INT          = 2;
+    //
+    public final static int LITERAL_FLOAT        = 3;
+    //
+    public final static int LITERAL_STRING       = 4;
+    //
+    public final static int LITERAL_ISO8601_DATE = 5;
+
+    public final static int TRUE                 = 6;
+    //
+    public final static int FALSE                = 7;
+    //
+    public final static int NULL                 = 8;
+    //
+    public final static int NEW                  = 9;
+    //
+    public final static int LPAREN               = 10; // (&quot;(&quot;),
+    //
+    public final static int RPAREN               = 11; // (&quot;)&quot;),
+    //
+    public final static int LBRACE               = 12; // (&quot;{&quot;),
+    //
+    public final static int RBRACE               = 13; // (&quot;}&quot;),
+    //
+    public final static int LBRACKET             = 14; // (&quot;[&quot;),
+    //
+    public final static int RBRACKET             = 15; // (&quot;]&quot;),
+    //
+    public final static int COMMA                = 16; // (&quot;,&quot;),
+    //
+    public final static int COLON                = 17; // (&quot;:&quot;),
+    //
+    public final static int IDENTIFIER           = 18;
+    //
+    public final static int FIELD_NAME           = 19;
+
+    public final static int EOF                  = 20;
+
+    public final static int SET                  = 21;
+    public final static int TREE_SET             = 22;
+    
+    public final static int UNDEFINED            = 23; // undefined
+
+    public final static int SEMI                 = 24;
+    public final static int DOT                  = 25;
+    public final static int HEX                  = 26;
+
+    public static String name(int value) {
+<span class="pc bpc" id="L74" title="4 of 27 branches missed.">        switch (value) {</span>
+            case ERROR:
+<span class="fc" id="L76">                return &quot;error&quot;;</span>
+            case LITERAL_INT:
+<span class="fc" id="L78">                return &quot;int&quot;;</span>
+            case LITERAL_FLOAT:
+<span class="fc" id="L80">                return &quot;float&quot;;</span>
+            case LITERAL_STRING:
+<span class="fc" id="L82">                return &quot;string&quot;;</span>
+            case LITERAL_ISO8601_DATE:
+<span class="fc" id="L84">                return &quot;iso8601&quot;;</span>
+            case TRUE:
+<span class="fc" id="L86">                return &quot;true&quot;;</span>
+            case FALSE:
+<span class="fc" id="L88">                return &quot;false&quot;;</span>
+            case NULL:
+<span class="fc" id="L90">                return &quot;null&quot;;</span>
+            case NEW:
+<span class="fc" id="L92">                return &quot;new&quot;;</span>
+            case LPAREN:
+<span class="fc" id="L94">                return &quot;(&quot;;</span>
+            case RPAREN:
+<span class="fc" id="L96">                return &quot;)&quot;;</span>
+            case LBRACE:
+<span class="fc" id="L98">                return &quot;{&quot;;</span>
+            case RBRACE:
+<span class="fc" id="L100">                return &quot;}&quot;;</span>
+            case LBRACKET:
+<span class="fc" id="L102">                return &quot;[&quot;;</span>
+            case RBRACKET:
+<span class="fc" id="L104">                return &quot;]&quot;;</span>
+            case COMMA:
+<span class="fc" id="L106">                return &quot;,&quot;;</span>
+            case COLON:
+<span class="fc" id="L108">                return &quot;:&quot;;</span>
+            case SEMI:
+<span class="nc" id="L110">                return &quot;;&quot;;</span>
+            case DOT:
+<span class="nc" id="L112">                return &quot;.&quot;;</span>
+            case IDENTIFIER:
+<span class="fc" id="L114">                return &quot;ident&quot;;</span>
+            case FIELD_NAME:
+<span class="fc" id="L116">                return &quot;fieldName&quot;;</span>
+            case EOF:
+<span class="fc" id="L118">                return &quot;EOF&quot;;</span>
+            case SET:
+<span class="fc" id="L120">                return &quot;Set&quot;;</span>
+            case TREE_SET:
+<span class="fc" id="L122">                return &quot;TreeSet&quot;;</span>
+            case UNDEFINED:
+<span class="nc" id="L124">                return &quot;undefined&quot;;</span>
+            case HEX:
+<span class="nc" id="L126">                return &quot;hex&quot;;</span>
+            default:
+<span class="fc" id="L128">                return &quot;Unknown&quot;;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

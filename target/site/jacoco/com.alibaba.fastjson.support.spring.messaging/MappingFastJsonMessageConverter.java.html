@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MappingFastJsonMessageConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.spring.messaging</a> &gt; <span class="el_source">MappingFastJsonMessageConverter.java</span></div><h1>MappingFastJsonMessageConverter.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.spring.messaging;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.support.config.FastJsonConfig;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.util.MimeType;
+
+import java.nio.charset.Charset;
+
+/**
+ * Fastjson for Spring Messaging Json Converter.
+ * &lt;p&gt;
+ * Compatible Spring Messaging version 4+
+ *
+ * @author KimmKing
+ * @author Victor.Zxy
+ * @see AbstractMessageConverter
+ * @since 1.2.47
+ */
+public class MappingFastJsonMessageConverter extends AbstractMessageConverter {
+
+    /**
+     * with fastJson config
+     */
+<span class="fc" id="L27">    private FastJsonConfig fastJsonConfig = new FastJsonConfig();</span>
+
+    /**
+     * @return the fastJsonConfig.
+     * @since 1.2.47
+     */
+    public FastJsonConfig getFastJsonConfig() {
+<span class="fc" id="L34">        return fastJsonConfig;</span>
+    }
+
+    /**
+     * @param fastJsonConfig the fastJsonConfig to set.
+     * @since 1.2.47
+     */
+    public void setFastJsonConfig(FastJsonConfig fastJsonConfig) {
+<span class="fc" id="L42">        this.fastJsonConfig = fastJsonConfig;</span>
+<span class="fc" id="L43">    }</span>
+
+    public MappingFastJsonMessageConverter() {
+<span class="fc" id="L46">        super(new MimeType(&quot;application&quot;, &quot;json&quot;, Charset.forName(&quot;UTF-8&quot;)));</span>
+<span class="fc" id="L47">    }</span>
+
+    protected boolean supports(Class&lt;?&gt; clazz) {
+<span class="fc" id="L50">        return true;</span>
+    }
+
+    @Override
+    protected boolean canConvertFrom(Message&lt;?&gt; message, Class&lt;?&gt; targetClass) {
+<span class="fc" id="L55">        return supports(targetClass);</span>
+    }
+
+    @Override
+    protected boolean canConvertTo(Object payload, MessageHeaders headers) {
+<span class="fc" id="L60">        return supports(payload.getClass());</span>
+    }
+
+    @Override
+    protected Object convertFromInternal(Message&lt;?&gt; message, Class&lt;?&gt; targetClass, Object conversionHint) {
+        // parse byte[] or String payload to Java Object
+<span class="fc" id="L66">        Object payload = message.getPayload();</span>
+<span class="fc" id="L67">        Object obj = null;</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (payload instanceof byte[]) {</span>
+<span class="nc" id="L69">            obj = JSON.parseObject((byte[]) payload, fastJsonConfig.getCharset(), targetClass, fastJsonConfig.getParserConfig(),</span>
+<span class="nc" id="L70">                    fastJsonConfig.getParseProcess(), JSON.DEFAULT_PARSER_FEATURE, fastJsonConfig.getFeatures());</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        } else if (payload instanceof String) {</span>
+<span class="fc" id="L72">            obj = JSON.parseObject((String) payload, targetClass, fastJsonConfig.getParserConfig(),</span>
+<span class="fc" id="L73">                    fastJsonConfig.getParseProcess(), JSON.DEFAULT_PARSER_FEATURE, fastJsonConfig.getFeatures());</span>
+        }
+
+<span class="fc" id="L76">        return obj;</span>
+    }
+
+    @Override
+    protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+        // encode payload to json string or byte[]
+        Object obj;
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (byte[].class == getSerializedPayloadClass()) {</span>
+<span class="pc bpc" id="L84" title="1 of 4 branches missed.">            if (payload instanceof String &amp;&amp; JSON.isValid((String) payload)) {</span>
+<span class="fc" id="L85">                obj = ((String) payload).getBytes(fastJsonConfig.getCharset());</span>
+            } else {
+<span class="fc" id="L87">                obj = JSON.toJSONBytesWithFastJsonConfig(fastJsonConfig.getCharset(), payload, fastJsonConfig.getSerializeConfig(), fastJsonConfig.getSerializeFilters(),</span>
+<span class="fc" id="L88">                        fastJsonConfig.getDateFormat(), JSON.DEFAULT_GENERATE_FEATURE, fastJsonConfig.getSerializerFeatures());</span>
+            }
+        } else {
+<span class="pc bpc" id="L91" title="1 of 4 branches missed.">            if (payload instanceof String &amp;&amp; JSON.isValid((String) payload)) {</span>
+<span class="fc" id="L92">                obj = payload;</span>
+            } else {
+<span class="fc" id="L94">                obj = JSON.toJSONString(payload, fastJsonConfig.getSerializeConfig(), fastJsonConfig.getSerializeFilters(),</span>
+<span class="fc" id="L95">                        fastJsonConfig.getDateFormat(), JSON.DEFAULT_GENERATE_FEATURE, fastJsonConfig.getSerializerFeatures());</span>
+            }
+        }
+
+<span class="fc" id="L99">        return obj;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

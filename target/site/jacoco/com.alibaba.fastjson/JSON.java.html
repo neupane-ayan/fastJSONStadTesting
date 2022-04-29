@@ -1,0 +1,1426 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSON.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson</a> &gt; <span class="el_source">JSON.java</span></div><h1>JSON.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson;
+
+import java.io.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.GZIPInputStream;
+
+import com.alibaba.fastjson.annotation.JSONType;
+import com.alibaba.fastjson.parser.*;
+import com.alibaba.fastjson.parser.deserializer.ExtraProcessor;
+import com.alibaba.fastjson.parser.deserializer.ExtraTypeProvider;
+import com.alibaba.fastjson.parser.deserializer.FieldTypeResolver;
+import com.alibaba.fastjson.parser.deserializer.ParseProcess;
+import com.alibaba.fastjson.serializer.*;
+import com.alibaba.fastjson.util.IOUtils;
+import com.alibaba.fastjson.util.TypeUtils;
+
+/**
+ * This is the main class for using Fastjson. You usually call these two methods {@link #toJSONString(Object)} and {@link #parseObject(String, Class)}.
+ * 
+ * &lt;p&gt;Here is an example of how fastjson is used for a simple Class:
+ *
+ * &lt;pre&gt;
+ * Model model = new Model();
+ * String json = JSON.toJSONString(model); // serializes model to Json
+ * Model model2 = JSON.parseObject(json, Model.class); // deserializes json into model2
+ * &lt;/pre&gt;
+ * 
+* &lt;p&gt;If the object that your are serializing/deserializing is a {@code ParameterizedType}
+ * (i.e. contains at least one type parameter and may be an array) then you must use the
+ * {@link #toJSONString(Object)} or {@link #parseObject(String, Type, Feature[])} method.  Here is an
+ * example for serializing and deserialing a {@code ParameterizedType}:
+ * 
+ * &lt;pre&gt;
+ * String json = &quot;[{},...]&quot;;
+ * Type listType = new TypeReference&amp;lt;List&amp;lt;Model&amp;gt;&amp;gt;() {}.getType();
+ * List&amp;lt;Model&amp;gt; modelList = JSON.parseObject(json, listType);
+ * &lt;/pre&gt;
+ * 
+ * @see com.alibaba.fastjson.TypeReference
+ * 
+ * @author wenshao[szujobs@hotmail.com]
+ */
+<span class="fc" id="L65">public abstract class JSON implements JSONStreamAware, JSONAware {</span>
+<span class="fc" id="L66">    public static TimeZone         defaultTimeZone      = TimeZone.getDefault();</span>
+<span class="fc" id="L67">    public static Locale           defaultLocale        = Locale.getDefault();</span>
+<span class="fc" id="L68">    public static String           DEFAULT_TYPE_KEY     = &quot;@type&quot;;</span>
+<span class="fc" id="L69">    static final SerializeFilter[] emptyFilters         = new SerializeFilter[0];</span>
+<span class="fc" id="L70">    public static String           DEFFAULT_DATE_FORMAT = &quot;yyyy-MM-dd HH:mm:ss&quot;;</span>
+    public static int              DEFAULT_PARSER_FEATURE;
+    public static int              DEFAULT_GENERATE_FEATURE;
+
+<span class="fc" id="L74">    private static final ConcurrentHashMap&lt;Type, Type&gt; mixInsMapper = new ConcurrentHashMap&lt;Type, Type&gt;(16);</span>
+    
+    static {
+<span class="fc" id="L77">        int features = 0;</span>
+<span class="fc" id="L78">        features |= Feature.AutoCloseSource.getMask();</span>
+<span class="fc" id="L79">        features |= Feature.InternFieldNames.getMask();</span>
+<span class="fc" id="L80">        features |= Feature.UseBigDecimal.getMask();</span>
+<span class="fc" id="L81">        features |= Feature.AllowUnQuotedFieldNames.getMask();</span>
+<span class="fc" id="L82">        features |= Feature.AllowSingleQuotes.getMask();</span>
+<span class="fc" id="L83">        features |= Feature.AllowArbitraryCommas.getMask();</span>
+<span class="fc" id="L84">        features |= Feature.SortFeidFastMatch.getMask();</span>
+<span class="fc" id="L85">        features |= Feature.IgnoreNotMatch.getMask();</span>
+<span class="fc" id="L86">        DEFAULT_PARSER_FEATURE = features;</span>
+    }
+
+    static {
+<span class="fc" id="L90">        int features = 0;</span>
+<span class="fc" id="L91">        features |= SerializerFeature.QuoteFieldNames.getMask();</span>
+<span class="fc" id="L92">        features |= SerializerFeature.SkipTransientField.getMask();</span>
+<span class="fc" id="L93">        features |= SerializerFeature.WriteEnumUsingName.getMask();</span>
+<span class="fc" id="L94">        features |= SerializerFeature.SortField.getMask();</span>
+
+<span class="fc" id="L96">        DEFAULT_GENERATE_FEATURE = features;</span>
+
+<span class="fc" id="L98">        config(IOUtils.DEFAULT_PROPERTIES);</span>
+    }
+
+    private static void config(Properties properties) {
+        {
+<span class="fc" id="L103">            String featuresProperty = properties.getProperty(&quot;fastjson.serializerFeatures.MapSortField&quot;);</span>
+<span class="fc" id="L104">            int mask = SerializerFeature.MapSortField.getMask();</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            if (&quot;true&quot;.equals(featuresProperty)) {</span>
+<span class="nc" id="L106">                DEFAULT_GENERATE_FEATURE |= mask;</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">            } else if (&quot;false&quot;.equals(featuresProperty)) {</span>
+<span class="nc" id="L108">                DEFAULT_GENERATE_FEATURE &amp;= ~mask;</span>
+            }
+        }
+
+        {
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">            if (&quot;true&quot;.equals(properties.getProperty(&quot;parser.features.NonStringKeyAsString&quot;))) {</span>
+<span class="nc" id="L114">                DEFAULT_PARSER_FEATURE |= Feature.NonStringKeyAsString.getMask();</span>
+            }
+        }
+
+        {
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">            if (&quot;true&quot;.equals(properties.getProperty(&quot;parser.features.ErrorOnEnumNotMatch&quot;))</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">                    || &quot;true&quot;.equals(properties.getProperty(&quot;fastjson.parser.features.ErrorOnEnumNotMatch&quot;)))</span>
+            {
+<span class="nc" id="L122">                DEFAULT_PARSER_FEATURE |= Feature.ErrorOnEnumNotMatch.getMask();</span>
+            }
+        }
+
+        {
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">            if (&quot;false&quot;.equals(properties.getProperty(&quot;fastjson.asmEnable&quot;))) {</span>
+<span class="nc" id="L128">                ParserConfig.global.setAsmEnable(false);</span>
+<span class="nc" id="L129">                SerializeConfig.globalInstance.setAsmEnable(false);</span>
+            }
+        }
+<span class="fc" id="L132">    }</span>
+
+    /**
+     * config default type key
+     * @since 1.2.14
+     */
+    public static void setDefaultTypeKey(String typeKey) {
+<span class="fc" id="L139">        DEFAULT_TYPE_KEY = typeKey;</span>
+<span class="fc" id="L140">        ParserConfig.global.symbolTable.addSymbol(typeKey, </span>
+                                                  0, 
+<span class="fc" id="L142">                                                  typeKey.length(), </span>
+<span class="fc" id="L143">                                                  typeKey.hashCode(), true);</span>
+<span class="fc" id="L144">    }</span>
+    
+    public static Object parse(String text) {
+<span class="fc" id="L147">        return parse(text, DEFAULT_PARSER_FEATURE);</span>
+    }
+
+    /**
+     *
+     * @since 1.2.38
+     */
+    public static Object parse(String text, ParserConfig config) {
+<span class="fc" id="L155">        return parse(text, config, DEFAULT_PARSER_FEATURE);</span>
+    }
+
+    /**
+     *
+     * @since 1.2.68
+     */
+    public static Object parse(String text, ParserConfig config, Feature... features) {
+<span class="fc" id="L163">        int featureValues = DEFAULT_PARSER_FEATURE;</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        for (Feature feature : features) {</span>
+<span class="fc" id="L165">            featureValues = Feature.config(featureValues, feature, true);</span>
+        }
+
+<span class="nc" id="L168">        return parse(text, config, featureValues);</span>
+    }
+
+    /**
+     *
+     * @since 1.2.38
+     */
+    public static Object parse(String text, ParserConfig config, int features) {
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        if (text == null) {</span>
+<span class="fc" id="L177">            return null;</span>
+        }
+
+<span class="fc" id="L180">        DefaultJSONParser parser = new DefaultJSONParser(text, config, features);</span>
+<span class="fc" id="L181">        Object value = parser.parse();</span>
+
+<span class="fc" id="L183">        parser.handleResovleTask(value);</span>
+
+<span class="fc" id="L185">        parser.close();</span>
+
+<span class="fc" id="L187">        return value;</span>
+    }
+
+    public static Object parse(String text, int features) {
+<span class="fc" id="L191">        return parse(text, ParserConfig.getGlobalInstance(), features);</span>
+    }
+
+    public static Object parse(byte[] input, Feature... features) {
+<span class="fc" id="L195">        char[] chars = allocateChars(input.length);</span>
+<span class="fc" id="L196">        int len = IOUtils.decodeUTF8(input, 0, input.length, chars);</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">        if (len &lt; 0) {</span>
+<span class="nc" id="L198">            return null;</span>
+        }
+<span class="fc" id="L200">        return parse(new String(chars, 0, len), features);</span>
+    }
+
+    public static Object parse(byte[] input, int off, int len, CharsetDecoder charsetDecoder, Feature... features) {
+<span class="fc bfc" id="L204" title="All 4 branches covered.">        if (input == null || input.length == 0) {</span>
+<span class="fc" id="L205">            return null;</span>
+        }
+
+<span class="fc" id="L208">        int featureValues = DEFAULT_PARSER_FEATURE;</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">        for (Feature feature : features) {</span>
+<span class="fc" id="L210">            featureValues = Feature.config(featureValues, feature, true);</span>
+        }
+
+<span class="fc" id="L213">        return parse(input, off, len, charsetDecoder, featureValues);</span>
+    }
+
+    public static Object parse(byte[] input, int off, int len, CharsetDecoder charsetDecoder, int features) {
+<span class="fc" id="L217">        charsetDecoder.reset();</span>
+
+<span class="fc" id="L219">        int scaleLength = (int) (len * (double) charsetDecoder.maxCharsPerByte());</span>
+<span class="fc" id="L220">        char[] chars = allocateChars(scaleLength);</span>
+
+<span class="fc" id="L222">        ByteBuffer byteBuf = ByteBuffer.wrap(input, off, len);</span>
+<span class="fc" id="L223">        CharBuffer charBuf = CharBuffer.wrap(chars);</span>
+<span class="fc" id="L224">        IOUtils.decode(charsetDecoder, byteBuf, charBuf);</span>
+
+<span class="fc" id="L226">        int position = charBuf.position();</span>
+
+<span class="fc" id="L228">        DefaultJSONParser parser = new DefaultJSONParser(chars, position, ParserConfig.getGlobalInstance(), features);</span>
+<span class="fc" id="L229">        Object value = parser.parse();</span>
+
+<span class="fc" id="L231">        parser.handleResovleTask(value);</span>
+
+<span class="fc" id="L233">        parser.close();</span>
+
+<span class="fc" id="L235">        return value;</span>
+    }
+
+    public static Object parse(String text, Feature... features) {
+<span class="fc" id="L239">        int featureValues = DEFAULT_PARSER_FEATURE;</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        for (Feature feature : features) {</span>
+<span class="fc" id="L241">            featureValues = Feature.config(featureValues, feature, true);</span>
+        }
+
+<span class="fc" id="L244">        return parse(text, featureValues);</span>
+    }
+
+    public static JSONObject parseObject(String text, Feature... features) {
+<span class="fc" id="L248">        return (JSONObject) parse(text, features);</span>
+    }
+
+    public static JSONObject parseObject(String text) {
+<span class="fc" id="L252">        Object obj = parse(text);</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">        if (obj instanceof JSONObject) {</span>
+<span class="fc" id="L254">            return (JSONObject) obj;</span>
+        }
+
+        try {
+<span class="fc" id="L258">            return (JSONObject) JSON.toJSON(obj);</span>
+<span class="fc" id="L259">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L260">            throw new JSONException(&quot;can not cast to JSONObject.&quot;, e);</span>
+        }
+    }
+
+    /**
+     * &lt;pre&gt;
+     * String jsonStr = &quot;[{\&quot;id\&quot;:1001,\&quot;name\&quot;:\&quot;Jobs\&quot;}]&quot;;
+     * List&amp;lt;Model&amp;gt; models = JSON.parseObject(jsonStr, new TypeReference&amp;lt;List&amp;lt;Model&amp;gt;&amp;gt;() {});
+     * &lt;/pre&gt;
+     * @param text json string
+     * @param type type refernce
+     * @param features parser features
+     * @return an object of type T from the string
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(String text, TypeReference&lt;T&gt; type, Feature... features) {
+<span class="fc" id="L276">        return (T) parseObject(text, type.type, ParserConfig.global, DEFAULT_PARSER_FEATURE, features);</span>
+    }
+
+    /**
+     * 
+     * This method deserializes the specified Json into an object of the specified class. It is not
+     * suitable to use if the specified class is a generic type since it will not have the generic
+     * type information because of the Type Erasure feature of Java. Therefore, this method should not
+     * be used if the desired type is a generic type. Note that this method works fine if the any of
+     * the fields of the specified object are generics, just the object itself should not be a
+     * generic type. For the cases when the object is of generic type, invoke
+     * {@link #parseObject(String, Type, Feature[])}. If you have the Json in a {@link InputStream} instead of
+     * a String, use {@link #parseObject(InputStream, Type, Feature[])} instead.
+     *
+     * @param json the string from which the object is to be deserialized
+     * @param clazz the class of T
+     * @param features parser features
+     * @return an object of type T from the string
+     * classOfT
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(String json, Class&lt;T&gt; clazz, Feature... features) {
+<span class="fc" id="L298">        return (T) parseObject(json, (Type) clazz, ParserConfig.global, null, DEFAULT_PARSER_FEATURE, features);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(String text, Class&lt;T&gt; clazz, ParseProcess processor, Feature... features) {
+<span class="fc" id="L303">        return (T) parseObject(text, (Type) clazz, ParserConfig.global, processor, DEFAULT_PARSER_FEATURE,</span>
+                               features);
+    }
+
+    /**
+     * This method deserializes the specified Json into an object of the specified type. This method
+     * is useful if the specified object is a generic type. For non-generic objects, use
+     * {@link #parseObject(String, Class, Feature[])} instead. If you have the Json in a {@link InputStream} instead of
+     * a String, use {@link #parseObject(InputStream, Type, Feature[])} instead.
+     *
+     * @param &lt;T&gt; the type of the desired object
+     * @param json the string from which the object is to be deserialized
+     * @param type The specific genericized type of src. You can obtain this type by using the
+     * {@link com.alibaba.fastjson.TypeReference} class. For example, to get the type for
+     * {@code Collection&lt;Foo&gt;}, you should use:
+     * &lt;pre&gt;
+     * Type type = new TypeReference&amp;lt;Collection&amp;lt;Foo&amp;gt;&amp;gt;(){}.getType();
+     * &lt;/pre&gt;
+     * @return an object of type T from the string
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(String json, Type type, Feature... features) {
+<span class="fc" id="L325">        return (T) parseObject(json, type, ParserConfig.global, DEFAULT_PARSER_FEATURE, features);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(String input, Type clazz, ParseProcess processor, Feature... features) {
+<span class="fc" id="L330">        return (T) parseObject(input, clazz, ParserConfig.global, processor, DEFAULT_PARSER_FEATURE, features);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(String input, Type clazz, int featureValues, Feature... features) {
+<span class="fc bfc" id="L335" title="All 2 branches covered.">        if (input == null) {</span>
+<span class="fc" id="L336">            return null;</span>
+        }
+
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        for (Feature feature : features) {</span>
+<span class="fc" id="L340">            featureValues = Feature.config(featureValues, feature, true);</span>
+        }
+
+<span class="fc" id="L343">        DefaultJSONParser parser = new DefaultJSONParser(input, ParserConfig.getGlobalInstance(), featureValues);</span>
+<span class="fc" id="L344">        T value = (T) parser.parseObject(clazz);</span>
+
+<span class="fc" id="L346">        parser.handleResovleTask(value);</span>
+
+<span class="fc" id="L348">        parser.close();</span>
+
+<span class="fc" id="L350">        return (T) value;</span>
+    }
+    
+    /**
+     * @since 1.2.11
+     */
+    public static &lt;T&gt; T parseObject(String input, Type clazz, ParserConfig config, Feature... features) {
+<span class="fc" id="L357">        return parseObject(input, clazz, config, null, DEFAULT_PARSER_FEATURE, features);</span>
+    }
+
+    public static &lt;T&gt; T parseObject(String input, Type clazz, ParserConfig config, int featureValues,
+                                          Feature... features) {
+<span class="fc" id="L362">        return parseObject(input, clazz, config, null, featureValues, features);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(String input, Type clazz, ParserConfig config, ParseProcess processor,
+                                          int featureValues, Feature... features) {
+<span class="fc bfc" id="L368" title="All 4 branches covered.">        if (input == null || input.length() == 0) {</span>
+<span class="fc" id="L369">            return null;</span>
+        }
+
+<span class="pc bpc" id="L372" title="1 of 2 branches missed.">        if (features != null) {</span>
+<span class="fc bfc" id="L373" title="All 2 branches covered.">            for (Feature feature : features) {</span>
+<span class="fc" id="L374">                featureValues |= feature.mask;</span>
+            }
+        }
+
+<span class="fc" id="L378">        DefaultJSONParser parser = new DefaultJSONParser(input, config, featureValues);</span>
+
+<span class="fc bfc" id="L380" title="All 2 branches covered.">        if (processor != null) {</span>
+<span class="fc bfc" id="L381" title="All 2 branches covered.">            if (processor instanceof ExtraTypeProvider) {</span>
+<span class="fc" id="L382">                parser.getExtraTypeProviders().add((ExtraTypeProvider) processor);</span>
+            }
+
+<span class="fc bfc" id="L385" title="All 2 branches covered.">            if (processor instanceof ExtraProcessor) {</span>
+<span class="fc" id="L386">                parser.getExtraProcessors().add((ExtraProcessor) processor);</span>
+            }
+
+<span class="fc bfc" id="L389" title="All 2 branches covered.">            if (processor instanceof FieldTypeResolver) {</span>
+<span class="fc" id="L390">                parser.setFieldTypeResolver((FieldTypeResolver) processor);</span>
+            }
+        }
+
+<span class="fc" id="L394">        T value = (T) parser.parseObject(clazz, null);</span>
+
+<span class="fc" id="L396">        parser.handleResovleTask(value);</span>
+
+<span class="fc" id="L398">        parser.close();</span>
+
+<span class="fc" id="L400">        return (T) value;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(byte[] bytes, Type clazz, Feature... features) {
+<span class="fc" id="L405">        return (T) parseObject(bytes, 0, bytes.length, IOUtils.UTF8, clazz, features);</span>
+    }
+    
+    /**
+     * @since 1.2.11
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(byte[] bytes, int offset, int len, Charset charset, Type clazz, Feature... features) {
+<span class="fc" id="L413">        return (T) parseObject(bytes, offset, len, charset, clazz, ParserConfig.global, null, DEFAULT_PARSER_FEATURE, features);</span>
+    }
+
+    /**
+     * @since 1.2.55
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(byte[] bytes,
+                                    Charset charset,
+                                    Type clazz,
+                                    ParserConfig config,
+                                    ParseProcess processor,
+                                    int featureValues,
+                                    Feature... features) {
+<span class="fc" id="L427">        return (T) parseObject(bytes, 0, bytes.length, charset, clazz, config, processor, featureValues, features);</span>
+    }
+
+    /**
+     * @since 1.2.55
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(byte[] bytes, int offset, int len,
+                                    Charset charset,
+                                    Type clazz,
+                                    ParserConfig config,
+                                    ParseProcess processor,
+                                    int featureValues,
+                                    Feature... features) {
+<span class="pc bpc" id="L441" title="1 of 2 branches missed.">        if (charset == null) {</span>
+<span class="nc" id="L442">            charset = IOUtils.UTF8;</span>
+        }
+
+<span class="fc" id="L445">        String strVal = null;</span>
+<span class="pc bpc" id="L446" title="1 of 2 branches missed.">        if (charset == IOUtils.UTF8) {</span>
+<span class="fc" id="L447">            char[] chars = allocateChars(bytes.length);</span>
+<span class="fc" id="L448">            int chars_len = IOUtils.decodeUTF8(bytes, offset, len, chars);</span>
+
+<span class="fc bfc" id="L450" title="All 2 branches covered.">            if (chars_len &lt; 0) {</span>
+<span class="fc" id="L451">                InputStreamReader gzipReader = null;</span>
+                try {
+<span class="fc" id="L453">                    gzipReader = new InputStreamReader(</span>
+                            new GZIPInputStream(
+                                    new ByteArrayInputStream(bytes, offset, len)), &quot;UTF-8&quot;);
+<span class="fc" id="L456">                    strVal = IOUtils.readAll(gzipReader);</span>
+<span class="fc" id="L457">                } catch (Exception ex) {</span>
+<span class="fc" id="L458">                    return null;</span>
+                } finally {
+<span class="fc" id="L460">                    IOUtils.close(gzipReader);</span>
+                }
+            }
+<span class="pc bpc" id="L463" title="1 of 4 branches missed.">            if (strVal == null &amp;&amp; chars_len &lt; 0) {</span>
+<span class="nc" id="L464">                return null;</span>
+            }
+
+<span class="fc bfc" id="L467" title="All 2 branches covered.">            if (strVal == null) {</span>
+<span class="fc" id="L468">                strVal = new String(chars, 0, chars_len);</span>
+            }
+<span class="fc" id="L470">        } else {</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">            if (len &lt; 0) {</span>
+<span class="nc" id="L472">                return null;</span>
+            }
+<span class="nc" id="L474">            strVal = new String(bytes, offset, len, charset);</span>
+        }
+<span class="fc" id="L476">        return (T) parseObject(strVal, clazz, config, processor, featureValues, features);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(byte[] input, //
+                                    int off, //
+                                    int len, //
+                                    CharsetDecoder charsetDecoder, //
+                                    Type clazz, //
+                                    Feature... features) {
+<span class="fc" id="L486">        charsetDecoder.reset();</span>
+
+<span class="fc" id="L488">        int scaleLength = (int) (len * (double) charsetDecoder.maxCharsPerByte());</span>
+<span class="fc" id="L489">        char[] chars = allocateChars(scaleLength);</span>
+
+<span class="fc" id="L491">        ByteBuffer byteBuf = ByteBuffer.wrap(input, off, len);</span>
+<span class="fc" id="L492">        CharBuffer charByte = CharBuffer.wrap(chars);</span>
+<span class="fc" id="L493">        IOUtils.decode(charsetDecoder, byteBuf, charByte);</span>
+
+<span class="fc" id="L495">        int position = charByte.position();</span>
+
+<span class="fc" id="L497">        return (T) parseObject(chars, position, clazz, features);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(char[] input, int length, Type clazz, Feature... features) {
+<span class="fc bfc" id="L502" title="All 4 branches covered.">        if (input == null || input.length == 0) {</span>
+<span class="fc" id="L503">            return null;</span>
+        }
+
+<span class="fc" id="L506">        int featureValues = DEFAULT_PARSER_FEATURE;</span>
+<span class="fc bfc" id="L507" title="All 2 branches covered.">        for (Feature feature : features) {</span>
+<span class="fc" id="L508">            featureValues = Feature.config(featureValues, feature, true);</span>
+        }
+
+<span class="fc" id="L511">        DefaultJSONParser parser = new DefaultJSONParser(input, length, ParserConfig.getGlobalInstance(), featureValues);</span>
+<span class="fc" id="L512">        T value = (T) parser.parseObject(clazz);</span>
+
+<span class="fc" id="L514">        parser.handleResovleTask(value);</span>
+
+<span class="fc" id="L516">        parser.close();</span>
+
+<span class="fc" id="L518">        return (T) value;</span>
+    }
+
+    /**
+     * @since 1.2.11
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(InputStream is, //
+                                    Type type, //
+                                    Feature... features) throws IOException {
+<span class="nc" id="L528">        return (T) parseObject(is, IOUtils.UTF8, type, features);</span>
+    }
+
+    /**
+     * @since 1.2.11
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(InputStream is, //
+                                    Charset charset, //
+                                    Type type, //
+                                    Feature... features) throws IOException {
+<span class="nc" id="L539">        return (T) parseObject(is, charset, type, ParserConfig.global, features);</span>
+    }
+
+    /**
+     * @since 1.2.55
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(InputStream is, //
+                                    Charset charset, //
+                                    Type type, //
+                                    ParserConfig config, //
+                                    Feature... features) throws IOException {
+<span class="nc" id="L551">        return (T) parseObject(is, charset, type, config, null, DEFAULT_PARSER_FEATURE, features);</span>
+    }
+
+    /**
+     * @since 1.2.55
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T parseObject(InputStream is, //
+                                    Charset charset, //
+                                    Type type, //
+                                    ParserConfig config, //
+                                    ParseProcess processor, //
+                                    int featureValues, //
+                                    Feature... features) throws IOException {
+<span class="pc bpc" id="L565" title="1 of 2 branches missed.">        if (charset == null) {</span>
+<span class="nc" id="L566">            charset = IOUtils.UTF8;</span>
+        }
+
+<span class="fc" id="L569">        byte[] bytes = allocateBytes(1024 * 64);</span>
+<span class="fc" id="L570">        int offset = 0;</span>
+        for (;;) {
+<span class="fc" id="L572">            int readCount = is.read(bytes, offset, bytes.length - offset);</span>
+<span class="fc bfc" id="L573" title="All 2 branches covered.">            if (readCount == -1) {</span>
+<span class="fc" id="L574">                break;</span>
+            }
+<span class="fc" id="L576">            offset += readCount;</span>
+<span class="pc bpc" id="L577" title="1 of 2 branches missed.">            if (offset == bytes.length) {</span>
+<span class="nc" id="L578">                byte[] newBytes = new byte[bytes.length * 3 / 2];</span>
+<span class="nc" id="L579">                System.arraycopy(bytes, 0, newBytes, 0, bytes.length);</span>
+<span class="nc" id="L580">                bytes = newBytes;</span>
+            }
+<span class="fc" id="L582">        }</span>
+
+<span class="fc" id="L584">        return (T) parseObject(bytes, 0, offset, charset, type, config, processor, featureValues, features);</span>
+    }
+
+    public static &lt;T&gt; T parseObject(String text, Class&lt;T&gt; clazz) {
+<span class="fc" id="L588">        return parseObject(text, clazz, new Feature[0]);</span>
+    }
+
+    public static JSONArray parseArray(String text) {
+<span class="fc" id="L592">        return parseArray(text, ParserConfig.global);</span>
+    }
+
+    public static JSONArray parseArray(String text, ParserConfig parserConfig) {
+<span class="fc bfc" id="L596" title="All 2 branches covered.">        if (text == null) {</span>
+<span class="fc" id="L597">            return null;</span>
+        }
+
+<span class="fc" id="L600">        DefaultJSONParser parser = new DefaultJSONParser(text, parserConfig);</span>
+
+        JSONArray array;
+
+<span class="fc" id="L604">        JSONLexer lexer = parser.lexer;</span>
+<span class="fc bfc" id="L605" title="All 2 branches covered.">        if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L606">            lexer.nextToken();</span>
+<span class="fc" id="L607">            array = null;</span>
+<span class="fc bfc" id="L608" title="All 4 branches covered.">        } else if (lexer.token() == JSONToken.EOF &amp;&amp; lexer.isBlankInput()) {</span>
+<span class="fc" id="L609">            array = null;</span>
+        } else {
+<span class="fc" id="L611">            array = new JSONArray();</span>
+<span class="fc" id="L612">            parser.parseArray(array);</span>
+
+<span class="fc" id="L614">            parser.handleResovleTask(array);</span>
+        }
+
+<span class="fc" id="L617">        parser.close();</span>
+
+<span class="fc" id="L619">        return array;</span>
+    }
+
+    public static &lt;T&gt; List&lt;T&gt; parseArray(String text, Class&lt;T&gt; clazz) {
+<span class="fc" id="L623">        return parseArray(text, clazz, ParserConfig.global);</span>
+    }
+
+    public static &lt;T&gt; List&lt;T&gt; parseArray(String text, Class&lt;T&gt; clazz, ParserConfig config) {
+<span class="fc bfc" id="L627" title="All 2 branches covered.">        if (text == null) {</span>
+<span class="fc" id="L628">            return null;</span>
+        }
+
+        List&lt;T&gt; list;
+
+<span class="fc" id="L633">        DefaultJSONParser parser = new DefaultJSONParser(text, config);</span>
+<span class="fc" id="L634">        JSONLexer lexer = parser.lexer;</span>
+<span class="fc" id="L635">        int token = lexer.token();</span>
+<span class="fc bfc" id="L636" title="All 2 branches covered.">        if (token == JSONToken.NULL) {</span>
+<span class="fc" id="L637">            lexer.nextToken();</span>
+<span class="fc" id="L638">            list = null;</span>
+<span class="fc bfc" id="L639" title="All 4 branches covered.">        } else if (token == JSONToken.EOF &amp;&amp; lexer.isBlankInput()) {</span>
+<span class="fc" id="L640">            list = null;</span>
+        } else {
+<span class="fc" id="L642">            list = new ArrayList&lt;T&gt;();</span>
+<span class="fc" id="L643">            parser.parseArray(clazz, list);</span>
+
+<span class="fc" id="L645">            parser.handleResovleTask(list);</span>
+        }
+
+<span class="fc" id="L648">        parser.close();</span>
+
+<span class="fc" id="L650">        return list;</span>
+    }
+
+    public static List&lt;Object&gt; parseArray(String text, Type[] types) {
+<span class="fc" id="L654">        return parseArray(text, types, ParserConfig.global);</span>
+    }
+
+    public static List&lt;Object&gt; parseArray(String text, Type[] types, ParserConfig config) {
+<span class="fc bfc" id="L658" title="All 2 branches covered.">        if (text == null) {</span>
+<span class="fc" id="L659">            return null;</span>
+        }
+
+        List&lt;Object&gt; list;
+
+<span class="fc" id="L664">        DefaultJSONParser parser = new DefaultJSONParser(text, config);</span>
+<span class="fc" id="L665">        Object[] objectArray = parser.parseArray(types);</span>
+<span class="fc bfc" id="L666" title="All 2 branches covered.">        if (objectArray == null) {</span>
+<span class="fc" id="L667">            list = null;</span>
+        } else {
+<span class="fc" id="L669">            list = Arrays.asList(objectArray);</span>
+        }
+
+<span class="fc" id="L672">        parser.handleResovleTask(list);</span>
+
+<span class="fc" id="L674">        parser.close();</span>
+
+<span class="fc" id="L676">        return list;</span>
+    }
+
+    /**
+     * This method serializes the specified object into its equivalent Json representation. Note that this method works fine if the any of the object fields are of generic type,
+     * just the object itself should not be of a generic type. If you want to write out the object to a
+     * {@link Writer}, use {@link #writeJSONString(Writer, Object, SerializerFeature[])} instead.
+     *
+     * @param object the object for which json representation is to be created setting for fastjson
+     * @return Json representation of {@code object}.
+     */
+    public static String toJSONString(Object object) {
+<span class="fc" id="L688">        return toJSONString(object, emptyFilters);</span>
+    }
+
+    public static String toJSONString(Object object, SerializerFeature... features) {
+<span class="fc" id="L692">        return toJSONString(object, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+
+    /**
+     * @since 1.2.11
+     */
+    public static String toJSONString(Object object, int defaultFeatures, SerializerFeature... features) {
+<span class="fc" id="L699">        SerializeWriter out = new SerializeWriter((Writer) null, defaultFeatures, features);</span>
+
+        try {
+<span class="fc" id="L702">            JSONSerializer serializer = new JSONSerializer(out);</span>
+<span class="fc" id="L703">            serializer.write(object);</span>
+<span class="fc" id="L704">            String outString = out.toString();</span>
+<span class="fc" id="L705">            int len = outString.length();</span>
+<span class="pc bpc" id="L706" title="1 of 2 branches missed.">            if (len &gt; 0</span>
+<span class="pc bpc" id="L707" title="1 of 4 branches missed.">                    &amp;&amp; outString.charAt(len -1) == '.'</span>
+                    &amp;&amp; object instanceof Number
+<span class="pc bpc" id="L709" title="1 of 2 branches missed.">                    &amp;&amp; !out.isEnabled(SerializerFeature.WriteClassName)) {</span>
+<span class="nc" id="L710">                return outString.substring(0, len - 1);</span>
+            }
+<span class="fc" id="L712">            return outString;</span>
+        } finally {
+<span class="fc" id="L714">            out.close();</span>
+        }
+    }
+
+    /**
+     * @since 1.1.14
+     */
+    public static String toJSONStringWithDateFormat(Object object, String dateFormat,
+                                                          SerializerFeature... features) {
+<span class="fc" id="L723">        return toJSONString(object, SerializeConfig.globalInstance, null, dateFormat, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+
+    public static String toJSONString(Object object, SerializeFilter filter, SerializerFeature... features) {
+<span class="fc" id="L727">        return toJSONString(object, SerializeConfig.globalInstance, new SerializeFilter[] {filter}, null, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+
+    public static String toJSONString(Object object, SerializeFilter[] filters, SerializerFeature... features) {
+<span class="fc" id="L731">        return toJSONString(object, SerializeConfig.globalInstance, filters, null, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+
+    public static byte[] toJSONBytes(Object object, SerializerFeature... features) {
+<span class="fc" id="L735">        return toJSONBytes(object, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+
+    public static byte[] toJSONBytes(Object object, SerializeFilter filter, SerializerFeature... features) {
+<span class="fc" id="L739">        return toJSONBytes(object, SerializeConfig.globalInstance, new SerializeFilter[] {filter}, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+    
+    /**
+     * @since 1.2.11 
+     */
+    public static byte[] toJSONBytes(Object object, int defaultFeatures, SerializerFeature... features) {
+<span class="fc" id="L746">        return toJSONBytes(object, SerializeConfig.globalInstance, defaultFeatures, features);</span>
+    }
+
+    public static String toJSONString(Object object, SerializeConfig config, SerializerFeature... features) {
+<span class="fc" id="L750">        return toJSONString(object, config, (SerializeFilter) null, features);</span>
+    }
+
+    public static String toJSONString(Object object, //
+                                      SerializeConfig config, //
+                                      SerializeFilter filter, //
+                                      SerializerFeature... features) {
+<span class="fc" id="L757">        return toJSONString(object, config, new SerializeFilter[] {filter}, null, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+
+    public static String toJSONString(Object object, //
+                                      SerializeConfig config, //
+                                      SerializeFilter[] filters, //
+                                      SerializerFeature... features) {
+<span class="fc" id="L764">        return toJSONString(object, config, filters, null, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+
+    /**
+     * @since 1.2.9
+     * @return
+     */
+    public static String toJSONString(Object object, // 
+                                      SerializeConfig config, // 
+                                      SerializeFilter[] filters, // 
+                                      String dateFormat, //
+                                      int defaultFeatures, // 
+                                      SerializerFeature... features) {
+<span class="fc" id="L777">        SerializeWriter out = new SerializeWriter(null, defaultFeatures, features);</span>
+
+        try {
+<span class="fc" id="L780">            JSONSerializer serializer = new JSONSerializer(out, config);</span>
+            
+<span class="pc bpc" id="L782" title="1 of 4 branches missed.">            if (dateFormat != null &amp;&amp; dateFormat.length() != 0) {</span>
+<span class="fc" id="L783">                serializer.setDateFormat(dateFormat);</span>
+<span class="fc" id="L784">                serializer.config(SerializerFeature.WriteDateUseDateFormat, true);</span>
+            }
+
+<span class="fc bfc" id="L787" title="All 2 branches covered.">            if (filters != null) {</span>
+<span class="fc bfc" id="L788" title="All 2 branches covered.">                for (SerializeFilter filter : filters) {</span>
+<span class="fc" id="L789">                    serializer.addFilter(filter);</span>
+                }
+            }
+
+<span class="fc" id="L793">            serializer.write(object);</span>
+
+<span class="fc" id="L795">            return out.toString();</span>
+        } finally {
+<span class="fc" id="L797">            out.close();</span>
+        }
+    }
+
+    /**
+     * @deprecated
+     */
+    public static String toJSONStringZ(Object object, SerializeConfig mapping, SerializerFeature... features) {
+<span class="fc" id="L805">        return toJSONString(object, mapping, emptyFilters, null, 0, features);</span>
+    }
+
+    /**
+     * @since 1.2.42
+     */
+    public static byte[] toJSONBytes(Object object, SerializeConfig config, SerializerFeature... features) {
+<span class="fc" id="L812">        return toJSONBytes(object, config, emptyFilters, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+
+    /**
+     * @since 1.2.11
+     */
+    public static byte[] toJSONBytes(Object object, SerializeConfig config, int defaultFeatures, SerializerFeature... features) {
+<span class="fc" id="L819">        return toJSONBytes(object, config, emptyFilters, defaultFeatures, features);</span>
+    }
+
+    /**
+     * @since 1.2.42
+     */
+    public static byte[] toJSONBytes(Object object, SerializeFilter[] filters, SerializerFeature... features) {
+<span class="fc" id="L826">        return toJSONBytes(object, SerializeConfig.globalInstance, filters, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+
+    public static byte[] toJSONBytes(Object object, SerializeConfig config, SerializeFilter filter, SerializerFeature... features) {
+<span class="fc" id="L830">        return toJSONBytes(object, config, new SerializeFilter[] {filter}, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+    
+    /**
+     * @since 1.2.42
+     */
+    public static byte[] toJSONBytes(Object object, SerializeConfig config, SerializeFilter[] filters, int defaultFeatures, SerializerFeature... features) {
+<span class="fc" id="L837">        return toJSONBytes(object, config, filters, null, defaultFeatures, features);</span>
+    }
+
+    /**
+     * @since 1.2.55
+     */
+    public static byte[] toJSONBytes(Object object, SerializeConfig config, SerializeFilter[] filters, String dateFormat, int defaultFeatures, SerializerFeature... features) {
+<span class="fc" id="L844">        return toJSONBytes(IOUtils.UTF8, object, config, filters, dateFormat, defaultFeatures, features);</span>
+    }
+
+    /**
+     * @since 1.2.55
+     */
+    public static byte[] toJSONBytes(Charset charset, //
+                                     Object object, //
+                                     SerializeConfig config, //
+                                     SerializeFilter[] filters, //
+                                     String dateFormat, //
+                                     int defaultFeatures, //
+                                     SerializerFeature... features) {
+<span class="fc" id="L857">        SerializeWriter out = new SerializeWriter(null, defaultFeatures, features);</span>
+
+        try {
+<span class="fc" id="L860">            JSONSerializer serializer = new JSONSerializer(out, config);</span>
+
+<span class="pc bpc" id="L862" title="3 of 4 branches missed.">            if (dateFormat != null &amp;&amp; dateFormat.length() != 0) {</span>
+<span class="nc" id="L863">                serializer.setDateFormat(dateFormat);</span>
+<span class="nc" id="L864">                serializer.config(SerializerFeature.WriteDateUseDateFormat, true);</span>
+            }
+
+<span class="pc bpc" id="L867" title="1 of 2 branches missed.">            if (filters != null) {</span>
+<span class="fc bfc" id="L868" title="All 2 branches covered.">                for (SerializeFilter filter : filters) {</span>
+<span class="fc" id="L869">                    serializer.addFilter(filter);</span>
+                }
+            }
+
+<span class="fc" id="L873">            serializer.write(object);</span>
+<span class="fc" id="L874">            return out.toBytes(charset);</span>
+        } finally {
+<span class="fc" id="L876">            out.close();</span>
+        }
+    }
+
+    /**
+     * Use the date format in FastJsonConfig to serialize JSON
+     *
+     * @param  dateFormat the date format in FastJsonConfigs
+     * @since 1.2.55
+     */
+    public static byte[] toJSONBytesWithFastJsonConfig(Charset charset, //
+                                     Object object, //
+                                     SerializeConfig config, //
+                                     SerializeFilter[] filters, //
+                                     String dateFormat, //
+                                     int defaultFeatures, //
+                                     SerializerFeature... features) {
+<span class="fc" id="L893">        SerializeWriter out = new SerializeWriter(null, defaultFeatures, features);</span>
+
+        try {
+<span class="fc" id="L896">            JSONSerializer serializer = new JSONSerializer(out, config);</span>
+
+<span class="pc bpc" id="L898" title="3 of 4 branches missed.">            if (dateFormat != null &amp;&amp; dateFormat.length() != 0) {</span>
+<span class="nc" id="L899">                serializer.setFastJsonConfigDateFormatPattern(dateFormat);</span>
+<span class="nc" id="L900">                serializer.config(SerializerFeature.WriteDateUseDateFormat, true);</span>
+            }
+
+<span class="pc bpc" id="L903" title="1 of 2 branches missed.">            if (filters != null) {</span>
+<span class="pc bpc" id="L904" title="1 of 2 branches missed.">                for (SerializeFilter filter : filters) {</span>
+<span class="nc" id="L905">                    serializer.addFilter(filter);</span>
+                }
+            }
+
+<span class="fc" id="L909">            serializer.write(object);</span>
+<span class="fc" id="L910">            return out.toBytes(charset);</span>
+        } finally {
+<span class="fc" id="L912">            out.close();</span>
+        }
+    }
+
+    public static String toJSONString(Object object, boolean prettyFormat) {
+<span class="fc bfc" id="L917" title="All 2 branches covered.">        if (!prettyFormat) {</span>
+<span class="fc" id="L918">            return toJSONString(object);</span>
+        }
+
+<span class="fc" id="L921">        return toJSONString(object, SerializerFeature.PrettyFormat);</span>
+    }
+
+    /**
+     * @deprecated use writeJSONString
+     */
+    public static void writeJSONStringTo(Object object, Writer writer, SerializerFeature... features) {
+<span class="fc" id="L928">        writeJSONString(writer, object, features);</span>
+<span class="fc" id="L929">    }</span>
+
+    /**
+     * This method serializes the specified object into its equivalent json representation.
+     *
+     * @param writer Writer to which the json representation needs to be written
+     * @param object the object for which json representation is to be created setting for fastjson
+     * @param features serializer features
+     * @since 1.2.11
+     */
+    public static void writeJSONString(Writer writer, Object object, SerializerFeature... features) {
+<span class="fc" id="L940">        writeJSONString(writer, object, JSON.DEFAULT_GENERATE_FEATURE, features);</span>
+<span class="fc" id="L941">    }</span>
+    
+    /**
+     * @since 1.2.11 
+     */
+    public static void writeJSONString(Writer writer, Object object, int defaultFeatures, SerializerFeature... features) {
+<span class="fc" id="L947">        SerializeWriter out = new SerializeWriter(writer, defaultFeatures, features);</span>
+
+        try {
+<span class="fc" id="L950">            JSONSerializer serializer = new JSONSerializer(out);</span>
+<span class="fc" id="L951">            serializer.write(object);</span>
+        } finally {
+<span class="fc" id="L953">            out.close();</span>
+        }
+<span class="fc" id="L955">    }</span>
+
+    /**
+     * write object as json to OutputStream
+     * @param os output stream
+     * @param object
+     * @param features serializer features
+     * @since 1.2.11
+     * @throws IOException
+     */
+    public static final int writeJSONString(OutputStream os, // 
+                                             Object object, // 
+                                             SerializerFeature... features) throws IOException {
+<span class="fc" id="L968">        return writeJSONString(os, object, DEFAULT_GENERATE_FEATURE, features);</span>
+    }
+    
+    /**
+     * @since 1.2.11 
+     */
+    public static final int writeJSONString(OutputStream os, // 
+                                            Object object, // 
+                                            int defaultFeatures, //
+                                            SerializerFeature... features) throws IOException {
+<span class="fc" id="L978">       return writeJSONString(os,  //</span>
+                              IOUtils.UTF8, //
+                              object, //
+                              SerializeConfig.globalInstance, //
+                              null, //
+                              null, // 
+                              defaultFeatures, //
+                              features);
+    }
+    
+    public static final int writeJSONString(OutputStream os, // 
+                                             Charset charset, // 
+                                             Object object, // 
+                                             SerializerFeature... features) throws IOException {
+<span class="nc" id="L992">        return writeJSONString(os, //</span>
+                               charset, //
+                               object, //
+                               SerializeConfig.globalInstance, //
+                               null, //
+                               null, //
+                               DEFAULT_GENERATE_FEATURE, //
+                               features);
+    }
+    
+    public static final int writeJSONString(OutputStream os, // 
+                                             Charset charset, // 
+                                             Object object, // 
+                                             SerializeConfig config, //
+                                             SerializeFilter[] filters, //
+                                             String dateFormat, //
+                                             int defaultFeatures, //
+                                             SerializerFeature... features) throws IOException {
+<span class="fc" id="L1010">        SerializeWriter writer = new SerializeWriter(null, defaultFeatures, features);</span>
+
+        try {
+<span class="fc" id="L1013">            JSONSerializer serializer = new JSONSerializer(writer, config);</span>
+            
+<span class="pc bpc" id="L1015" title="3 of 4 branches missed.">            if (dateFormat != null &amp;&amp; dateFormat.length() != 0) {</span>
+<span class="nc" id="L1016">                serializer.setDateFormat(dateFormat);</span>
+<span class="nc" id="L1017">                serializer.config(SerializerFeature.WriteDateUseDateFormat, true);</span>
+            }
+
+<span class="pc bpc" id="L1020" title="1 of 2 branches missed.">            if (filters != null) {</span>
+<span class="nc bnc" id="L1021" title="All 2 branches missed.">                for (SerializeFilter filter : filters) {</span>
+<span class="nc" id="L1022">                    serializer.addFilter(filter);</span>
+                }
+            }
+            
+<span class="fc" id="L1026">            serializer.write(object);</span>
+            
+<span class="fc" id="L1028">            int len = writer.writeToEx(os, charset);</span>
+<span class="fc" id="L1029">            return len;</span>
+        } finally {
+<span class="fc" id="L1031">            writer.close();</span>
+        }
+    }
+
+    public static final int writeJSONStringWithFastJsonConfig(OutputStream os, //
+                                            Charset charset, //
+                                            Object object, //
+                                            SerializeConfig config, //
+                                            SerializeFilter[] filters, //
+                                            String dateFormat, //
+                                            int defaultFeatures, //
+                                            SerializerFeature... features) throws IOException {
+<span class="fc" id="L1043">        SerializeWriter writer = new SerializeWriter(null, defaultFeatures, features);</span>
+
+        try {
+<span class="fc" id="L1046">            JSONSerializer serializer = new JSONSerializer(writer, config);</span>
+
+<span class="pc bpc" id="L1048" title="1 of 4 branches missed.">            if (dateFormat != null &amp;&amp; dateFormat.length() != 0) {</span>
+<span class="fc" id="L1049">                serializer.setFastJsonConfigDateFormatPattern(dateFormat);</span>
+<span class="fc" id="L1050">                serializer.config(SerializerFeature.WriteDateUseDateFormat, true);</span>
+            }
+
+<span class="pc bpc" id="L1053" title="1 of 2 branches missed.">            if (filters != null) {</span>
+<span class="fc bfc" id="L1054" title="All 2 branches covered.">                for (SerializeFilter filter : filters) {</span>
+<span class="fc" id="L1055">                    serializer.addFilter(filter);</span>
+                }
+            }
+
+<span class="fc" id="L1059">            serializer.write(object);</span>
+
+<span class="fc" id="L1061">            int len = writer.writeToEx(os, charset);</span>
+<span class="fc" id="L1062">            return len;</span>
+        } finally {
+<span class="fc" id="L1064">            writer.close();</span>
+        }
+    }
+
+    // ======================================
+    @Override
+    public String toString() {
+<span class="fc" id="L1071">        return toJSONString();</span>
+    }
+
+    public String toJSONString() {
+<span class="fc" id="L1075">        SerializeWriter out = new SerializeWriter();</span>
+        try {
+<span class="fc" id="L1077">            new JSONSerializer(out).write(this);</span>
+<span class="fc" id="L1078">            return out.toString();</span>
+        } finally {
+<span class="fc" id="L1080">            out.close();</span>
+        }
+    }
+
+    /**
+     * @since 1.2.57
+     */
+    public String toString(SerializerFeature... features) {
+<span class="fc" id="L1088">        SerializeWriter out = new SerializeWriter(null, JSON.DEFAULT_GENERATE_FEATURE, features);</span>
+
+        try {
+<span class="fc" id="L1091">            new JSONSerializer(out).write(this);</span>
+<span class="fc" id="L1092">            return out.toString();</span>
+        } finally {
+<span class="fc" id="L1094">            out.close();</span>
+        }
+    }
+
+    public void writeJSONString(Appendable appendable) {
+<span class="fc" id="L1099">        SerializeWriter out = new SerializeWriter();</span>
+        try {
+<span class="fc" id="L1101">            new JSONSerializer(out).write(this);</span>
+<span class="fc" id="L1102">            appendable.append(out.toString());</span>
+<span class="fc" id="L1103">        } catch (IOException e) {</span>
+<span class="fc" id="L1104">            throw new JSONException(e.getMessage(), e);</span>
+        } finally {
+<span class="fc" id="L1106">            out.close();</span>
+        }
+<span class="fc" id="L1108">    }</span>
+
+    /**
+     * This method serializes the specified object into its equivalent representation as a tree of
+     * {@link JSONObject}s. 
+     *
+     */
+    public static Object toJSON(Object javaObject) {
+<span class="fc" id="L1116">        return toJSON(javaObject, SerializeConfig.globalInstance);</span>
+    }
+
+    /**
+     * @deprecated
+     */
+    public static Object toJSON(Object javaObject, ParserConfig parserConfig) {
+<span class="nc" id="L1123">        return toJSON(javaObject, SerializeConfig.globalInstance);</span>
+    }
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static Object toJSON(Object javaObject, SerializeConfig config) {
+<span class="fc bfc" id="L1128" title="All 2 branches covered.">        if (javaObject == null) {</span>
+<span class="fc" id="L1129">            return null;</span>
+        }
+
+<span class="fc bfc" id="L1132" title="All 2 branches covered.">        if (javaObject instanceof JSON) {</span>
+<span class="fc" id="L1133">            return javaObject;</span>
+        }
+
+<span class="fc bfc" id="L1136" title="All 2 branches covered.">        if (javaObject instanceof Map) {</span>
+<span class="fc" id="L1137">            Map&lt;Object, Object&gt; map = (Map&lt;Object, Object&gt;) javaObject;</span>
+
+<span class="fc" id="L1139">            int size = map.size();</span>
+
+            Map innerMap;
+<span class="fc bfc" id="L1142" title="All 2 branches covered.">            if (map instanceof LinkedHashMap) {</span>
+<span class="fc" id="L1143">                innerMap = new LinkedHashMap(size);</span>
+<span class="fc bfc" id="L1144" title="All 2 branches covered.">            } else if (map instanceof TreeMap) {</span>
+<span class="fc" id="L1145">                innerMap = new TreeMap();</span>
+            } else {
+<span class="fc" id="L1147">                innerMap = new HashMap(size);</span>
+            }
+
+<span class="fc" id="L1150">            JSONObject json = new JSONObject(innerMap);</span>
+
+<span class="fc bfc" id="L1152" title="All 2 branches covered.">            for (Map.Entry&lt;Object, Object&gt; entry : map.entrySet()) {</span>
+<span class="fc" id="L1153">                Object key = entry.getKey();</span>
+<span class="fc" id="L1154">                String jsonKey = TypeUtils.castToString(key);</span>
+<span class="fc" id="L1155">                Object jsonValue = toJSON(entry.getValue(), config);</span>
+<span class="fc" id="L1156">                json.put(jsonKey, jsonValue);</span>
+<span class="fc" id="L1157">            }</span>
+
+<span class="fc" id="L1159">            return json;</span>
+        }
+
+<span class="fc bfc" id="L1162" title="All 2 branches covered.">        if (javaObject instanceof Collection) {</span>
+<span class="fc" id="L1163">            Collection&lt;Object&gt; collection = (Collection&lt;Object&gt;) javaObject;</span>
+
+<span class="fc" id="L1165">            JSONArray array = new JSONArray(collection.size());</span>
+
+<span class="fc bfc" id="L1167" title="All 2 branches covered.">            for (Object item : collection) {</span>
+<span class="fc" id="L1168">                Object jsonValue = toJSON(item, config);</span>
+<span class="fc" id="L1169">                array.add(jsonValue);</span>
+<span class="fc" id="L1170">            }</span>
+
+<span class="fc" id="L1172">            return array;</span>
+        }
+
+<span class="fc bfc" id="L1175" title="All 2 branches covered.">        if (javaObject instanceof JSONSerializable) {</span>
+<span class="fc" id="L1176">            String json = JSON.toJSONString(javaObject);</span>
+<span class="fc" id="L1177">            return JSON.parse(json);</span>
+        }
+
+<span class="fc" id="L1180">        Class&lt;?&gt; clazz = javaObject.getClass();</span>
+
+<span class="fc bfc" id="L1182" title="All 2 branches covered.">        if (clazz.isEnum()) {</span>
+<span class="fc" id="L1183">            return ((Enum&lt;?&gt;) javaObject).name();</span>
+        }
+
+<span class="fc bfc" id="L1186" title="All 2 branches covered.">        if (clazz.isArray()) {</span>
+<span class="fc" id="L1187">            int len = Array.getLength(javaObject);</span>
+
+<span class="fc" id="L1189">            JSONArray array = new JSONArray(len);</span>
+
+<span class="fc bfc" id="L1191" title="All 2 branches covered.">            for (int i = 0; i &lt; len; ++i) {</span>
+<span class="fc" id="L1192">                Object item = Array.get(javaObject, i);</span>
+<span class="fc" id="L1193">                Object jsonValue = toJSON(item);</span>
+<span class="fc" id="L1194">                array.add(jsonValue);</span>
+            }
+
+<span class="fc" id="L1197">            return array;</span>
+        }
+
+<span class="fc bfc" id="L1200" title="All 2 branches covered.">        if (ParserConfig.isPrimitive2(clazz)) {</span>
+<span class="fc" id="L1201">            return javaObject;</span>
+        }
+
+<span class="fc" id="L1204">        ObjectSerializer serializer = config.getObjectWriter(clazz);</span>
+<span class="fc bfc" id="L1205" title="All 2 branches covered.">        if (serializer instanceof JavaBeanSerializer) {</span>
+<span class="fc" id="L1206">            JavaBeanSerializer javaBeanSerializer = (JavaBeanSerializer) serializer;</span>
+
+<span class="fc" id="L1208">            JSONType jsonType = javaBeanSerializer.getJSONType();</span>
+<span class="fc" id="L1209">            boolean ordered = false;</span>
+<span class="fc bfc" id="L1210" title="All 2 branches covered.">            if (jsonType != null) {</span>
+<span class="fc bfc" id="L1211" title="All 2 branches covered.">                for (SerializerFeature serializerFeature : jsonType.serialzeFeatures()) {</span>
+<span class="pc bpc" id="L1212" title="1 of 4 branches missed.">                    if (serializerFeature == SerializerFeature.SortField</span>
+                            || serializerFeature == SerializerFeature.MapSortField) {
+<span class="fc" id="L1214">                        ordered = true;</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L1219">            JSONObject json = new JSONObject(ordered);</span>
+            try {
+<span class="fc" id="L1221">                Map&lt;String, Object&gt; values = javaBeanSerializer.getFieldValuesMap(javaObject);</span>
+<span class="fc bfc" id="L1222" title="All 2 branches covered.">                for (Map.Entry&lt;String, Object&gt; entry : values.entrySet()) {</span>
+<span class="fc" id="L1223">                    json.put(entry.getKey(), toJSON(entry.getValue(), config));</span>
+<span class="fc" id="L1224">                }</span>
+<span class="fc" id="L1225">            } catch (Exception e) {</span>
+<span class="fc" id="L1226">                throw new JSONException(&quot;toJSON error&quot;, e);</span>
+<span class="fc" id="L1227">            }</span>
+<span class="fc" id="L1228">            return json;</span>
+        }
+        
+<span class="fc" id="L1231">        String text = JSON.toJSONString(javaObject, config);</span>
+<span class="fc" id="L1232">        return JSON.parse(text);</span>
+    }
+
+    public static &lt;T&gt; T toJavaObject(JSON json, Class&lt;T&gt; clazz) {
+<span class="fc" id="L1236">        return TypeUtils.cast(json, clazz, ParserConfig.getGlobalInstance());</span>
+    }
+    
+    /**
+     * @since 1.2.9
+     */
+    public &lt;T&gt; T toJavaObject(Class&lt;T&gt; clazz) {
+<span class="pc bpc" id="L1243" title="1 of 8 branches missed.">        if (clazz == JSONArray.class || clazz == JSON.class || clazz == Collection.class || clazz == List.class) {</span>
+<span class="fc" id="L1244">            return (T) this;</span>
+        }
+
+<span class="nc" id="L1247">        return TypeUtils.cast(this, clazz, ParserConfig.getGlobalInstance());</span>
+    }
+
+    /**
+     * @since 1.2.33
+     */
+    public &lt;T&gt; T toJavaObject(Type type) {
+<span class="fc" id="L1254">        return TypeUtils.cast(this, type, ParserConfig.getGlobalInstance());</span>
+    }
+
+    /**
+     * @since 1.2.33
+     */
+    public &lt;T&gt; T toJavaObject(TypeReference typeReference) {
+<span class="pc bpc" id="L1261" title="1 of 2 branches missed.">        Type type = typeReference != null ? typeReference.getType() : null;</span>
+<span class="fc" id="L1262">        return TypeUtils.cast(this, type, ParserConfig.getGlobalInstance());</span>
+    }
+    
+<span class="fc" id="L1265">    private final static ThreadLocal&lt;byte[]&gt; bytesLocal = new ThreadLocal&lt;byte[]&gt;();</span>
+    private static byte[] allocateBytes(int length) {
+<span class="fc" id="L1267">        byte[] chars = bytesLocal.get();</span>
+
+<span class="fc bfc" id="L1269" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="pc bpc" id="L1270" title="1 of 2 branches missed.">            if (length &lt;= 1024 * 64) {</span>
+<span class="fc" id="L1271">                chars = new byte[1024 * 64];</span>
+<span class="fc" id="L1272">                bytesLocal.set(chars);</span>
+            } else {
+<span class="nc" id="L1274">                chars = new byte[length];</span>
+            }
+<span class="pc bpc" id="L1276" title="1 of 2 branches missed.">        } else if (chars.length &lt; length) {</span>
+<span class="nc" id="L1277">            chars = new byte[length];</span>
+        }
+
+<span class="fc" id="L1280">        return chars;</span>
+    }
+
+<span class="fc" id="L1283">    private final static ThreadLocal&lt;char[]&gt; charsLocal = new ThreadLocal&lt;char[]&gt;();</span>
+    private static char[] allocateChars(int length) {
+<span class="fc" id="L1285">        char[] chars = charsLocal.get();</span>
+
+<span class="fc bfc" id="L1287" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc bfc" id="L1288" title="All 2 branches covered.">            if (length &lt;= 1024 * 64) {</span>
+<span class="fc" id="L1289">                chars = new char[1024 * 64];</span>
+<span class="fc" id="L1290">                charsLocal.set(chars);</span>
+            } else {
+<span class="fc" id="L1292">                chars = new char[length];</span>
+            }
+<span class="fc bfc" id="L1294" title="All 2 branches covered.">        } else if (chars.length &lt; length) {</span>
+<span class="fc" id="L1295">            chars = new char[length];</span>
+        }
+
+<span class="fc" id="L1298">        return chars;</span>
+    }
+
+    /**
+     * @deprecated Please use {@link com.alibaba.fastjson.JSONValidator} instead.
+     */
+    public static boolean isValid(String str) {
+<span class="fc bfc" id="L1305" title="All 4 branches covered.">        if (str == null || str.length() == 0) {</span>
+<span class="fc" id="L1306">            return false;</span>
+        }
+
+<span class="fc" id="L1309">        JSONScanner lexer = new JSONScanner(str);</span>
+        try {
+<span class="fc" id="L1311">            lexer.nextToken();</span>
+
+<span class="fc" id="L1313">            final int token = lexer.token();</span>
+<span class="pc bpc" id="L1314" title="1 of 4 branches missed.">            switch (token) {</span>
+                case JSONToken.LBRACE:
+<span class="fc bfc" id="L1316" title="All 2 branches covered.">                    if (lexer.getCurrent() == JSONLexer.EOI) {</span>
+<span class="fc" id="L1317">                        return false;</span>
+                    }
+<span class="fc" id="L1319">                    lexer.skipObject(true);</span>
+<span class="fc" id="L1320">                    break;</span>
+                case JSONToken.LBRACKET:
+<span class="fc" id="L1322">                    lexer.skipArray(true);</span>
+<span class="fc" id="L1323">                    break;</span>
+                case JSONToken.LITERAL_INT:
+                case JSONToken.LITERAL_STRING:
+                case JSONToken.LITERAL_FLOAT:
+                case JSONToken.LITERAL_ISO8601_DATE:
+                case JSONToken.NULL:
+                case JSONToken.TRUE:
+                case JSONToken.FALSE:
+<span class="fc" id="L1331">                    lexer.nextToken();</span>
+<span class="fc" id="L1332">                    break;</span>
+                default:
+<span class="nc" id="L1334">                    return false;</span>
+            }
+
+<span class="fc bfc" id="L1337" title="All 2 branches covered.">            return lexer.token() == JSONToken.EOF;</span>
+<span class="fc" id="L1338">        } catch (Exception ex) {</span>
+<span class="fc" id="L1339">            return false;</span>
+        } finally {
+<span class="fc" id="L1341">            lexer.close();</span>
+        }
+    }
+
+    /**
+     * @deprecated Please use {@link com.alibaba.fastjson.JSONValidator} instead.
+     */
+    public static boolean isValidObject(String str) {
+<span class="pc bpc" id="L1349" title="2 of 4 branches missed.">        if (str == null || str.length() == 0) {</span>
+<span class="nc" id="L1350">            return false;</span>
+        }
+
+<span class="fc" id="L1353">        JSONScanner lexer = new JSONScanner(str);</span>
+
+        try {
+<span class="fc" id="L1356">            lexer.nextToken();</span>
+<span class="fc" id="L1357">            final int token = lexer.token();</span>
+<span class="pc bpc" id="L1358" title="1 of 2 branches missed.">            if (token == JSONToken.LBRACE) {</span>
+<span class="fc bfc" id="L1359" title="All 2 branches covered.">                if (lexer.getCurrent() == JSONLexer.EOI) {</span>
+<span class="fc" id="L1360">                    return false;</span>
+                }
+<span class="fc" id="L1362">                lexer.skipObject(true);</span>
+<span class="fc bfc" id="L1363" title="All 2 branches covered.">                return lexer.token() == JSONToken.EOF;</span>
+            }
+<span class="nc" id="L1365">            return false;</span>
+<span class="fc" id="L1366">        } catch (Exception ex) {</span>
+<span class="fc" id="L1367">            return false;</span>
+        } finally {
+<span class="fc" id="L1369">            lexer.close();</span>
+        }
+    }
+
+    /**
+     * @deprecated Please use {@link com.alibaba.fastjson.JSONValidator} instead.
+     */
+    public static boolean isValidArray(String str) {
+<span class="pc bpc" id="L1377" title="2 of 4 branches missed.">        if (str == null || str.length() == 0) {</span>
+<span class="nc" id="L1378">            return false;</span>
+        }
+
+<span class="fc" id="L1381">        JSONScanner lexer = new JSONScanner(str);</span>
+        try {
+<span class="fc" id="L1383">            lexer.nextToken();</span>
+<span class="fc" id="L1384">            final int token = lexer.token();</span>
+<span class="pc bpc" id="L1385" title="1 of 2 branches missed.">            if (token == JSONToken.LBRACKET) {</span>
+<span class="fc" id="L1386">                lexer.skipArray(true);</span>
+<span class="pc bpc" id="L1387" title="1 of 2 branches missed.">                return lexer.token() == JSONToken.EOF;</span>
+            }
+<span class="nc" id="L1389">            return false;</span>
+<span class="fc" id="L1390">        } catch (Exception ex) {</span>
+<span class="fc" id="L1391">            return false;</span>
+        } finally {
+<span class="fc" id="L1393">            lexer.close();</span>
+        }
+    }
+
+    public static &lt;T&gt; void handleResovleTask(DefaultJSONParser parser, T value) {
+<span class="nc" id="L1398">        parser.handleResovleTask(value);</span>
+<span class="nc" id="L1399">    }</span>
+    
+    public static void addMixInAnnotations(Type target, Type mixinSource) {
+<span class="pc bpc" id="L1402" title="2 of 4 branches missed.">        if (target != null &amp;&amp; mixinSource != null) {</span>
+<span class="fc" id="L1403">            mixInsMapper.put(target, mixinSource);</span>
+        }
+<span class="fc" id="L1405">    }</span>
+
+    public static void removeMixInAnnotations(Type target) {
+<span class="pc bpc" id="L1408" title="1 of 2 branches missed.">        if (target != null) {</span>
+<span class="fc" id="L1409">            mixInsMapper.remove(target);</span>
+        }
+<span class="fc" id="L1411">    }</span>
+
+    public static void clearMixInAnnotations() {
+<span class="fc" id="L1414">        mixInsMapper.clear();</span>
+<span class="fc" id="L1415">    }</span>
+
+    public static Type getMixInAnnotations(Type target) {
+<span class="fc bfc" id="L1418" title="All 2 branches covered.">        if (target != null) {</span>
+<span class="fc" id="L1419">            return mixInsMapper.get(target);</span>
+        }
+<span class="fc" id="L1421">        return null;</span>
+    }
+
+    public final static String VERSION = &quot;1.2.76&quot;;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

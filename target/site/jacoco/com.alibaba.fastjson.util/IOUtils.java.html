@@ -1,0 +1,780 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IOUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.util</a> &gt; <span class="el_source">IOUtils.java</span></div><h1>IOUtils.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.util;
+
+import java.io.Closeable;
+import java.io.InputStream;
+import java.io.Reader;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.MalformedInputException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Arrays;
+import java.util.Properties;
+
+import com.alibaba.fastjson.JSONException;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+<span class="fc" id="L38">public class IOUtils {</span>
+    
+    public final static String     FASTJSON_PROPERTIES              = &quot;fastjson.properties&quot;;
+    public final static String     FASTJSON_COMPATIBLEWITHJAVABEAN  = &quot;fastjson.compatibleWithJavaBean&quot;;
+    public final static String     FASTJSON_COMPATIBLEWITHFIELDNAME = &quot;fastjson.compatibleWithFieldName&quot;;
+<span class="fc" id="L43">    public final static Properties DEFAULT_PROPERTIES               = new Properties();</span>
+<span class="fc" id="L44">    public final static Charset    UTF8                             = Charset.forName(&quot;UTF-8&quot;);</span>
+<span class="fc" id="L45">    public final static char[]     DIGITS                           = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};</span>
+<span class="fc" id="L46">    public final static boolean[]  firstIdentifierFlags             = new boolean[256];</span>
+<span class="fc" id="L47">    public final static boolean[]  identifierFlags                  = new boolean[256];</span>
+    static {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (char c = 0; c &lt; firstIdentifierFlags.length; ++c) {</span>
+<span class="fc bfc" id="L50" title="All 4 branches covered.">            if (c &gt;= 'A' &amp;&amp; c &lt;= 'Z') {</span>
+<span class="fc" id="L51">                firstIdentifierFlags[c] = true;</span>
+<span class="fc bfc" id="L52" title="All 4 branches covered.">            } else if (c &gt;= 'a' &amp;&amp; c &lt;= 'z') {</span>
+<span class="fc" id="L53">                firstIdentifierFlags[c] = true;</span>
+<span class="fc bfc" id="L54" title="All 4 branches covered.">            } else if (c == '_' || c == '$') {</span>
+<span class="fc" id="L55">                firstIdentifierFlags[c] = true;</span>
+            }
+        }
+
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        for (char c = 0; c &lt; identifierFlags.length; ++c) {</span>
+<span class="fc bfc" id="L60" title="All 4 branches covered.">            if (c &gt;= 'A' &amp;&amp; c &lt;= 'Z') {</span>
+<span class="fc" id="L61">                identifierFlags[c] = true;</span>
+<span class="fc bfc" id="L62" title="All 4 branches covered.">            } else if (c &gt;= 'a' &amp;&amp; c &lt;= 'z') {</span>
+<span class="fc" id="L63">                identifierFlags[c] = true;</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            } else if (c == '_') {</span>
+<span class="fc" id="L65">                identifierFlags[c] = true;</span>
+<span class="fc bfc" id="L66" title="All 4 branches covered.">            } else if (c &gt;= '0' &amp;&amp; c &lt;= '9') {</span>
+<span class="fc" id="L67">                identifierFlags[c] = true;</span>
+            }
+        }
+
+        try {
+<span class="fc" id="L72">            loadPropertiesFromFile();</span>
+<span class="nc" id="L73">        } catch (Throwable e) {</span>
+            //skip
+<span class="fc" id="L75">        }</span>
+    }
+    
+    public static String getStringProperty(String name) {
+<span class="fc" id="L79">        String prop = null;</span>
+        try {
+<span class="fc" id="L81">            prop = System.getProperty(name);</span>
+<span class="nc" id="L82">        } catch (SecurityException e) {</span>
+            //skip
+<span class="fc" id="L84">        }</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        return (prop == null) ? DEFAULT_PROPERTIES.getProperty(name) : prop;</span>
+    }
+    
+    public static void loadPropertiesFromFile(){
+<span class="fc" id="L89">        InputStream imputStream = AccessController.doPrivileged(new PrivilegedAction&lt;InputStream&gt;() {</span>
+            public InputStream run() {
+<span class="fc" id="L91">                ClassLoader cl = Thread.currentThread().getContextClassLoader();</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                if (cl != null) {</span>
+<span class="fc" id="L93">                    return cl.getResourceAsStream(FASTJSON_PROPERTIES);</span>
+                } else {
+<span class="nc" id="L95">                    return ClassLoader.getSystemResourceAsStream(FASTJSON_PROPERTIES);</span>
+                }
+            }
+        });
+        
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (null != imputStream) {</span>
+            try {
+<span class="fc" id="L102">                DEFAULT_PROPERTIES.load(imputStream);</span>
+<span class="fc" id="L103">                imputStream.close();</span>
+<span class="nc" id="L104">            } catch (java.io.IOException e) {</span>
+                // skip
+<span class="fc" id="L106">            }</span>
+        }
+<span class="fc" id="L108">    }</span>
+
+<span class="fc" id="L110">    public final static byte[]    specicalFlags_doubleQuotes = new byte[161];</span>
+<span class="fc" id="L111">    public final static byte[]    specicalFlags_singleQuotes = new byte[161];</span>
+<span class="fc" id="L112">    public final static boolean[] specicalFlags_doubleQuotesFlags = new boolean[161];</span>
+<span class="fc" id="L113">    public final static boolean[] specicalFlags_singleQuotesFlags = new boolean[161];</span>
+
+<span class="fc" id="L115">    public final static char[]    replaceChars               = new char[93];</span>
+    static {
+<span class="fc" id="L117">        specicalFlags_doubleQuotes['\0'] = 4;</span>
+<span class="fc" id="L118">        specicalFlags_doubleQuotes['\1'] = 4;</span>
+<span class="fc" id="L119">        specicalFlags_doubleQuotes['\2'] = 4;</span>
+<span class="fc" id="L120">        specicalFlags_doubleQuotes['\3'] = 4;</span>
+<span class="fc" id="L121">        specicalFlags_doubleQuotes['\4'] = 4;</span>
+<span class="fc" id="L122">        specicalFlags_doubleQuotes['\5'] = 4;</span>
+<span class="fc" id="L123">        specicalFlags_doubleQuotes['\6'] = 4;</span>
+<span class="fc" id="L124">        specicalFlags_doubleQuotes['\7'] = 4;</span>
+<span class="fc" id="L125">        specicalFlags_doubleQuotes['\b'] = 1; // 8</span>
+<span class="fc" id="L126">        specicalFlags_doubleQuotes['\t'] = 1; // 9</span>
+<span class="fc" id="L127">        specicalFlags_doubleQuotes['\n'] = 1; // 10</span>
+<span class="fc" id="L128">        specicalFlags_doubleQuotes['\u000B'] = 4; // 11</span>
+<span class="fc" id="L129">        specicalFlags_doubleQuotes['\f'] = 1; // 12</span>
+<span class="fc" id="L130">        specicalFlags_doubleQuotes['\r'] = 1; // 13</span>
+<span class="fc" id="L131">        specicalFlags_doubleQuotes['\&quot;'] = 1; // 34</span>
+<span class="fc" id="L132">        specicalFlags_doubleQuotes['\\'] = 1; // 92</span>
+
+<span class="fc" id="L134">        specicalFlags_singleQuotes['\0'] = 4;</span>
+<span class="fc" id="L135">        specicalFlags_singleQuotes['\1'] = 4;</span>
+<span class="fc" id="L136">        specicalFlags_singleQuotes['\2'] = 4;</span>
+<span class="fc" id="L137">        specicalFlags_singleQuotes['\3'] = 4;</span>
+<span class="fc" id="L138">        specicalFlags_singleQuotes['\4'] = 4;</span>
+<span class="fc" id="L139">        specicalFlags_singleQuotes['\5'] = 4;</span>
+<span class="fc" id="L140">        specicalFlags_singleQuotes['\6'] = 4;</span>
+<span class="fc" id="L141">        specicalFlags_singleQuotes['\7'] = 4;</span>
+<span class="fc" id="L142">        specicalFlags_singleQuotes['\b'] = 1; // 8</span>
+<span class="fc" id="L143">        specicalFlags_singleQuotes['\t'] = 1; // 9</span>
+<span class="fc" id="L144">        specicalFlags_singleQuotes['\n'] = 1; // 10</span>
+<span class="fc" id="L145">        specicalFlags_singleQuotes['\u000B'] = 4; // 11</span>
+<span class="fc" id="L146">        specicalFlags_singleQuotes['\f'] = 1; // 12</span>
+<span class="fc" id="L147">        specicalFlags_singleQuotes['\r'] = 1; // 13</span>
+<span class="fc" id="L148">        specicalFlags_singleQuotes['\\'] = 1; // 92</span>
+<span class="fc" id="L149">        specicalFlags_singleQuotes['\''] = 1; // 39</span>
+
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        for (int i = 14; i &lt;= 31; ++i) {</span>
+<span class="fc" id="L152">            specicalFlags_doubleQuotes[i] = 4;</span>
+<span class="fc" id="L153">            specicalFlags_singleQuotes[i] = 4;</span>
+        }
+
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        for (int i = 127; i &lt; 160; ++i) {</span>
+<span class="fc" id="L157">            specicalFlags_doubleQuotes[i] = 4;</span>
+<span class="fc" id="L158">            specicalFlags_singleQuotes[i] = 4;</span>
+        }
+        
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        for (int i = 0; i &lt; 161; ++i) {</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            specicalFlags_doubleQuotesFlags[i] = specicalFlags_doubleQuotes[i] != 0;</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            specicalFlags_singleQuotesFlags[i] = specicalFlags_singleQuotes[i] != 0;</span>
+        }
+
+<span class="fc" id="L166">        replaceChars['\0'] = '0';</span>
+<span class="fc" id="L167">        replaceChars['\1'] = '1';</span>
+<span class="fc" id="L168">        replaceChars['\2'] = '2';</span>
+<span class="fc" id="L169">        replaceChars['\3'] = '3';</span>
+<span class="fc" id="L170">        replaceChars['\4'] = '4';</span>
+<span class="fc" id="L171">        replaceChars['\5'] = '5';</span>
+<span class="fc" id="L172">        replaceChars['\6'] = '6';</span>
+<span class="fc" id="L173">        replaceChars['\7'] = '7';</span>
+<span class="fc" id="L174">        replaceChars['\b'] = 'b'; // 8</span>
+<span class="fc" id="L175">        replaceChars['\t'] = 't'; // 9</span>
+<span class="fc" id="L176">        replaceChars['\n'] = 'n'; // 10</span>
+<span class="fc" id="L177">        replaceChars['\u000B'] = 'v'; // 11</span>
+<span class="fc" id="L178">        replaceChars['\f'] = 'f'; // 12</span>
+<span class="fc" id="L179">        replaceChars['\r'] = 'r'; // 13</span>
+<span class="fc" id="L180">        replaceChars['\&quot;'] = '&quot;'; // 34</span>
+<span class="fc" id="L181">        replaceChars['\''] = '\''; // 39</span>
+<span class="fc" id="L182">        replaceChars['/'] = '/'; // 47</span>
+<span class="fc" id="L183">        replaceChars['\\'] = '\\'; // 92</span>
+    }
+
+<span class="fc" id="L186">    public final static char[]    ASCII_CHARS                = { '0', '0', '0', '1', '0', '2', '0', '3', '0', '4', '0',</span>
+            '5', '0', '6', '0', '7', '0', '8', '0', '9', '0', 'A', '0', 'B', '0', 'C', '0', 'D', '0', 'E', '0', 'F',
+            '1', '0', '1', '1', '1', '2', '1', '3', '1', '4', '1', '5', '1', '6', '1', '7', '1', '8', '1', '9', '1',
+            'A', '1', 'B', '1', 'C', '1', 'D', '1', 'E', '1', 'F', '2', '0', '2', '1', '2', '2', '2', '3', '2', '4',
+            '2', '5', '2', '6', '2', '7', '2', '8', '2', '9', '2', 'A', '2', 'B', '2', 'C', '2', 'D', '2', 'E', '2',
+            'F',                                            };
+
+    public static void close(Closeable x) {
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        if (x != null) {</span>
+            try {
+<span class="fc" id="L196">                x.close();</span>
+<span class="nc" id="L197">            } catch (Exception e) {</span>
+                // skip
+<span class="fc" id="L199">            }</span>
+        }
+<span class="fc" id="L201">    }</span>
+
+    // Requires positive x
+    public static int stringSize(long x) {
+<span class="fc" id="L205">        long p = 10;</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        for (int i = 1; i &lt; 19; i++) {</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            if (x &lt; p) return i;</span>
+<span class="fc" id="L208">            p = 10 * p;</span>
+        }
+<span class="fc" id="L210">        return 19;</span>
+    }
+
+    public static void getChars(long i, int index, char[] buf) {
+        long q;
+        int r;
+<span class="fc" id="L216">        int charPos = index;</span>
+<span class="fc" id="L217">        char sign = 0;</span>
+
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        if (i &lt; 0) {</span>
+<span class="fc" id="L220">            sign = '-';</span>
+<span class="fc" id="L221">            i = -i;</span>
+        }
+
+        // Get 2 digits/iteration using longs until quotient fits into an int
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        while (i &gt; Integer.MAX_VALUE) {</span>
+<span class="fc" id="L226">            q = i / 100;</span>
+            // really: r = i - (q * 100);
+<span class="fc" id="L228">            r = (int) (i - ((q &lt;&lt; 6) + (q &lt;&lt; 5) + (q &lt;&lt; 2)));</span>
+<span class="fc" id="L229">            i = q;</span>
+<span class="fc" id="L230">            buf[--charPos] = DigitOnes[r];</span>
+<span class="fc" id="L231">            buf[--charPos] = DigitTens[r];</span>
+        }
+
+        // Get 2 digits/iteration using ints
+        int q2;
+<span class="fc" id="L236">        int i2 = (int) i;</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        while (i2 &gt;= 65536) {</span>
+<span class="fc" id="L238">            q2 = i2 / 100;</span>
+            // really: r = i2 - (q * 100);
+<span class="fc" id="L240">            r = i2 - ((q2 &lt;&lt; 6) + (q2 &lt;&lt; 5) + (q2 &lt;&lt; 2));</span>
+<span class="fc" id="L241">            i2 = q2;</span>
+<span class="fc" id="L242">            buf[--charPos] = DigitOnes[r];</span>
+<span class="fc" id="L243">            buf[--charPos] = DigitTens[r];</span>
+        }
+
+        // Fall thru to fast mode for smaller numbers
+        // assert(i2 &lt;= 65536, i2);
+        for (;;) {
+<span class="fc" id="L249">            q2 = (i2 * 52429) &gt;&gt;&gt; (16 + 3);</span>
+<span class="fc" id="L250">            r = i2 - ((q2 &lt;&lt; 3) + (q2 &lt;&lt; 1)); // r = i2-(q2*10) ...</span>
+<span class="fc" id="L251">            buf[--charPos] = digits[r];</span>
+<span class="fc" id="L252">            i2 = q2;</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">            if (i2 == 0) break;</span>
+        }
+<span class="fc bfc" id="L255" title="All 2 branches covered.">        if (sign != 0) {</span>
+<span class="fc" id="L256">            buf[--charPos] = sign;</span>
+        }
+<span class="fc" id="L258">    }</span>
+
+    /**
+     * Places characters representing the integer i into the character array buf. The characters are placed into the
+     * buffer backwards starting with the least significant digit at the specified index (exclusive), and working
+     * backwards from there. Will fail if i == Integer.MIN_VALUE
+     */
+    public static void getChars(int i, int index, char[] buf) {
+<span class="fc" id="L266">        int q, r, p = index;</span>
+<span class="fc" id="L267">        char sign = 0;</span>
+
+<span class="fc bfc" id="L269" title="All 2 branches covered.">        if (i &lt; 0) {</span>
+<span class="fc" id="L270">            sign = '-';</span>
+<span class="fc" id="L271">            i = -i;</span>
+        }
+
+<span class="fc bfc" id="L274" title="All 2 branches covered.">        while (i &gt;= 65536) {</span>
+<span class="fc" id="L275">            q = i / 100;</span>
+            // really: r = i - (q * 100);
+<span class="fc" id="L277">            r = i - ((q &lt;&lt; 6) + (q &lt;&lt; 5) + (q &lt;&lt; 2));</span>
+<span class="fc" id="L278">            i = q;</span>
+<span class="fc" id="L279">            buf[--p] = DigitOnes[r];</span>
+<span class="fc" id="L280">            buf[--p] = DigitTens[r];</span>
+        }
+
+        // Fall thru to fast mode for smaller numbers
+        // assert(i &lt;= 65536, i);
+        for (;;) {
+<span class="fc" id="L286">            q = (i * 52429) &gt;&gt;&gt; (16 + 3);</span>
+<span class="fc" id="L287">            r = i - ((q &lt;&lt; 3) + (q &lt;&lt; 1)); // r = i-(q*10) ...</span>
+<span class="fc" id="L288">            buf[--p] = digits[r];</span>
+<span class="fc" id="L289">            i = q;</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">            if (i == 0) break;</span>
+        }
+<span class="fc bfc" id="L292" title="All 2 branches covered.">        if (sign != 0) {</span>
+<span class="fc" id="L293">            buf[--p] = sign;</span>
+        }
+<span class="fc" id="L295">    }</span>
+
+    public static void getChars(byte b, int index, char[] buf) {
+<span class="fc" id="L298">        int i = b;</span>
+        int q, r;
+<span class="fc" id="L300">        int charPos = index;</span>
+<span class="fc" id="L301">        char sign = 0;</span>
+
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">        if (i &lt; 0) {</span>
+<span class="fc" id="L304">            sign = '-';</span>
+<span class="fc" id="L305">            i = -i;</span>
+        }
+
+        // Fall thru to fast mode for smaller numbers
+        // assert(i &lt;= 65536, i);
+        for (;;) {
+<span class="fc" id="L311">            q = (i * 52429) &gt;&gt;&gt; (16 + 3);</span>
+<span class="fc" id="L312">            r = i - ((q &lt;&lt; 3) + (q &lt;&lt; 1)); // r = i-(q*10) ...</span>
+<span class="fc" id="L313">            buf[--charPos] = digits[r];</span>
+<span class="fc" id="L314">            i = q;</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">            if (i == 0) break;</span>
+        }
+<span class="pc bpc" id="L317" title="1 of 2 branches missed.">        if (sign != 0) {</span>
+<span class="fc" id="L318">            buf[--charPos] = sign;</span>
+        }
+<span class="fc" id="L320">    }</span>
+
+    /**
+     * All possible chars for representing a number as a String
+     */
+<span class="fc" id="L325">    final static char[] digits    = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',</span>
+            'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
+
+<span class="fc" id="L328">    final static char[] DigitTens = { '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '1', '1',</span>
+            '1', '1', '1', '1', '2', '2', '2', '2', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3',
+            '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '5', '5', '5', '5', '5', '5', '5', '5',
+            '5', '5', '6', '6', '6', '6', '6', '6', '6', '6', '6', '6', '7', '7', '7', '7', '7', '7', '7', '7', '7',
+            '7', '8', '8', '8', '8', '8', '8', '8', '8', '8', '8', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9', };
+
+<span class="fc" id="L334">    final static char[] DigitOnes = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5',</span>
+            '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6',
+            '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7',
+            '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8',
+            '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', };
+
+<span class="fc" id="L340">    final static int[]  sizeTable = { 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999, Integer.MAX_VALUE };</span>
+
+    // Requires positive x
+    public static int stringSize(int x) {
+<span class="fc" id="L344">        for (int i = 0;; i++) {</span>
+<span class="fc bfc" id="L345" title="All 2 branches covered.">            if (x &lt;= sizeTable[i]) {</span>
+<span class="fc" id="L346">                return i + 1;</span>
+            }
+        }
+    }
+
+    public static void decode(CharsetDecoder charsetDecoder, ByteBuffer byteBuf, CharBuffer charByte) {
+        try {
+<span class="fc" id="L353">            CoderResult cr = charsetDecoder.decode(byteBuf, charByte, true);</span>
+
+<span class="pc bpc" id="L355" title="1 of 2 branches missed.">            if (!cr.isUnderflow()) {</span>
+<span class="nc" id="L356">                cr.throwException();</span>
+            }
+
+<span class="fc" id="L359">            cr = charsetDecoder.flush(charByte);</span>
+
+<span class="pc bpc" id="L361" title="1 of 2 branches missed.">            if (!cr.isUnderflow()) {</span>
+<span class="nc" id="L362">                cr.throwException();</span>
+            }
+<span class="nc" id="L364">        } catch (CharacterCodingException x) {</span>
+            // Substitution is always enabled,
+            // so this shouldn't happen
+<span class="nc" id="L367">            throw new JSONException(&quot;utf8 decode error, &quot; + x.getMessage(), x);</span>
+<span class="fc" id="L368">        }</span>
+<span class="fc" id="L369">    }</span>
+
+    public static boolean firstIdentifier(char ch) {
+<span class="fc bfc" id="L372" title="All 4 branches covered.">        return ch &lt; IOUtils.firstIdentifierFlags.length &amp;&amp; IOUtils.firstIdentifierFlags[ch];</span>
+    }
+    
+    public static boolean isIdent(char ch) {
+<span class="pc bpc" id="L376" title="1 of 4 branches missed.">        return ch &lt; identifierFlags.length &amp;&amp; identifierFlags[ch];</span>
+    }
+    
+<span class="fc" id="L379">    public static final char[] CA = &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;.toCharArray();</span>
+<span class="fc" id="L380">    public static final int[]  IA = new int[256];</span>
+    static {
+<span class="fc" id="L382">        Arrays.fill(IA, -1);</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">        for (int i = 0, iS = CA.length; i &lt; iS; i++)</span>
+<span class="fc" id="L384">            IA[CA[i]] = i;</span>
+<span class="fc" id="L385">        IA['='] = 0;</span>
+<span class="fc" id="L386">    }</span>
+
+    /**
+     * Decodes a BASE64 encoded char array that is known to be resonably well formatted. The method is about twice as
+     * fast as #decode(char[]). The preconditions are:&lt;br&gt;
+     * + The array must have a line length of 76 chars OR no line separators at all (one line).&lt;br&gt;
+     * + Line separator must be &quot;\r\n&quot;, as specified in RFC 2045 + The array must not contain illegal characters within
+     * the encoded string&lt;br&gt;
+     * + The array CAN have illegal characters at the beginning and end, those will be dealt with appropriately.&lt;br&gt;
+     *
+     * @author Mikael Grev Date: 2004-aug-02 Time: 11:31:11
+     * @param chars The source array. Length 0 will return an empty array. &lt;code&gt;null&lt;/code&gt; will throw an exception.
+     * @return The decoded array of bytes. May be of length 0.
+     */
+    public static byte[] decodeBase64(char[] chars, int offset, int charsLen) {
+        // Check special case
+<span class="fc bfc" id="L402" title="All 2 branches covered.">        if (charsLen == 0) {</span>
+<span class="fc" id="L403">            return new byte[0];</span>
+        }
+
+<span class="fc" id="L406">        int sIx = offset, eIx = offset + charsLen - 1; // Start and end index after trimming.</span>
+
+        // Trim illegal chars from start
+<span class="pc bpc" id="L409" title="1 of 4 branches missed.">        while (sIx &lt; eIx &amp;&amp; IA[chars[sIx]] &lt; 0)</span>
+<span class="fc" id="L410">            sIx++;</span>
+
+        // Trim illegal chars from end
+<span class="pc bpc" id="L413" title="1 of 4 branches missed.">        while (eIx &gt; 0 &amp;&amp; IA[chars[eIx]] &lt; 0)</span>
+<span class="fc" id="L414">            eIx--;</span>
+
+        // get the padding count (=) (0, 1 or 2)
+<span class="fc bfc" id="L417" title="All 4 branches covered.">        int pad = chars[eIx] == '=' ? (chars[eIx - 1] == '=' ? 2 : 1) : 0; // Count '=' at end.</span>
+<span class="fc" id="L418">        int cCnt = eIx - sIx + 1; // Content count including possible separators</span>
+<span class="fc bfc" id="L419" title="All 4 branches covered.">        int sepCnt = charsLen &gt; 76 ? (chars[76] == '\r' ? cCnt / 78 : 0) &lt;&lt; 1 : 0;</span>
+
+<span class="fc" id="L421">        int len = ((cCnt - sepCnt) * 6 &gt;&gt; 3) - pad; // The number of decoded bytes</span>
+<span class="fc" id="L422">        byte[] bytes = new byte[len]; // Preallocate byte[] of exact length</span>
+
+        // Decode all but the last 0 - 2 bytes.
+<span class="fc" id="L425">        int d = 0;</span>
+<span class="fc bfc" id="L426" title="All 2 branches covered.">        for (int cc = 0, eLen = (len / 3) * 3; d &lt; eLen;) {</span>
+            // Assemble three bytes into an int from four &quot;valid&quot; characters.
+<span class="fc" id="L428">            int i = IA[chars[sIx++]] &lt;&lt; 18 | IA[chars[sIx++]] &lt;&lt; 12 | IA[chars[sIx++]] &lt;&lt; 6 | IA[chars[sIx++]];</span>
+
+            // Add the bytes
+<span class="fc" id="L431">            bytes[d++] = (byte) (i &gt;&gt; 16);</span>
+<span class="fc" id="L432">            bytes[d++] = (byte) (i &gt;&gt; 8);</span>
+<span class="fc" id="L433">            bytes[d++] = (byte) i;</span>
+
+            // If line separator, jump over it.
+<span class="fc bfc" id="L436" title="All 4 branches covered.">            if (sepCnt &gt; 0 &amp;&amp; ++cc == 19) {</span>
+<span class="fc" id="L437">                sIx += 2;</span>
+<span class="fc" id="L438">                cc = 0;</span>
+            }
+<span class="fc" id="L440">        }</span>
+
+<span class="fc bfc" id="L442" title="All 2 branches covered.">        if (d &lt; len) {</span>
+            // Decode last 1-3 bytes (incl '=') into 1-3 bytes
+<span class="fc" id="L444">            int i = 0;</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">            for (int j = 0; sIx &lt;= eIx - pad; j++)</span>
+<span class="fc" id="L446">                i |= IA[chars[sIx++]] &lt;&lt; (18 - j * 6);</span>
+
+<span class="fc bfc" id="L448" title="All 2 branches covered.">            for (int r = 16; d &lt; len; r -= 8)</span>
+<span class="fc" id="L449">                bytes[d++] = (byte) (i &gt;&gt; r);</span>
+        }
+
+<span class="fc" id="L452">        return bytes;</span>
+    }
+
+    /**
+     * @author Mikael Grev Date: 2004-aug-02 Time: 11:31:11
+     */
+    public static byte[] decodeBase64(String chars, int offset, int charsLen) {
+        // Check special case
+<span class="fc bfc" id="L460" title="All 2 branches covered.">        if (charsLen == 0) {</span>
+<span class="fc" id="L461">            return new byte[0];</span>
+        }
+
+<span class="fc" id="L464">        int sIx = offset, eIx = offset + charsLen - 1; // Start and end index after trimming.</span>
+
+        // Trim illegal chars from start
+<span class="pc bpc" id="L467" title="1 of 4 branches missed.">        while (sIx &lt; eIx &amp;&amp; IA[chars.charAt(sIx)] &lt; 0)</span>
+<span class="fc" id="L468">            sIx++;</span>
+
+        // Trim illegal chars from end
+<span class="pc bpc" id="L471" title="1 of 4 branches missed.">        while (eIx &gt; 0 &amp;&amp; IA[chars.charAt(eIx)] &lt; 0)</span>
+<span class="fc" id="L472">            eIx--;</span>
+
+        // get the padding count (=) (0, 1 or 2)
+<span class="fc bfc" id="L475" title="All 4 branches covered.">        int pad = chars.charAt(eIx) == '=' ? (chars.charAt(eIx - 1) == '=' ? 2 : 1) : 0; // Count '=' at end.</span>
+<span class="fc" id="L476">        int cCnt = eIx - sIx + 1; // Content count including possible separators</span>
+<span class="fc bfc" id="L477" title="All 4 branches covered.">        int sepCnt = charsLen &gt; 76 ? (chars.charAt(76) == '\r' ? cCnt / 78 : 0) &lt;&lt; 1 : 0;</span>
+
+<span class="fc" id="L479">        int len = ((cCnt - sepCnt) * 6 &gt;&gt; 3) - pad; // The number of decoded bytes</span>
+<span class="fc" id="L480">        byte[] bytes = new byte[len]; // Preallocate byte[] of exact length</span>
+
+        // Decode all but the last 0 - 2 bytes.
+<span class="fc" id="L483">        int d = 0;</span>
+<span class="fc bfc" id="L484" title="All 2 branches covered.">        for (int cc = 0, eLen = (len / 3) * 3; d &lt; eLen;) {</span>
+            // Assemble three bytes into an int from four &quot;valid&quot; characters.
+<span class="fc" id="L486">            int i = IA[chars.charAt(sIx++)] &lt;&lt; 18</span>
+<span class="fc" id="L487">                    | IA[chars.charAt(sIx++)] &lt;&lt; 12</span>
+<span class="fc" id="L488">                    | IA[chars.charAt(sIx++)] &lt;&lt; 6</span>
+<span class="fc" id="L489">                    | IA[chars.charAt(sIx++)];</span>
+
+            // Add the bytes
+<span class="fc" id="L492">            bytes[d++] = (byte) (i &gt;&gt; 16);</span>
+<span class="fc" id="L493">            bytes[d++] = (byte) (i &gt;&gt; 8);</span>
+<span class="fc" id="L494">            bytes[d++] = (byte) i;</span>
+
+            // If line separator, jump over it.
+<span class="fc bfc" id="L497" title="All 4 branches covered.">            if (sepCnt &gt; 0 &amp;&amp; ++cc == 19) {</span>
+<span class="fc" id="L498">                sIx += 2;</span>
+<span class="fc" id="L499">                cc = 0;</span>
+            }
+<span class="fc" id="L501">        }</span>
+
+<span class="fc bfc" id="L503" title="All 2 branches covered.">        if (d &lt; len) {</span>
+            // Decode last 1-3 bytes (incl '=') into 1-3 bytes
+<span class="fc" id="L505">            int i = 0;</span>
+<span class="fc bfc" id="L506" title="All 2 branches covered.">            for (int j = 0; sIx &lt;= eIx - pad; j++)</span>
+<span class="fc" id="L507">                i |= IA[chars.charAt(sIx++)] &lt;&lt; (18 - j * 6);</span>
+
+<span class="fc bfc" id="L509" title="All 2 branches covered.">            for (int r = 16; d &lt; len; r -= 8)</span>
+<span class="fc" id="L510">                bytes[d++] = (byte) (i &gt;&gt; r);</span>
+        }
+
+<span class="fc" id="L513">        return bytes;</span>
+    }
+
+    /**
+     * Decodes a BASE64 encoded string that is known to be resonably well formatted. The method is about twice as fast
+     * as decode(String). The preconditions are:&lt;br&gt;
+     * + The array must have a line length of 76 chars OR no line separators at all (one line).&lt;br&gt;
+     * + Line separator must be &quot;\r\n&quot;, as specified in RFC 2045 + The array must not contain illegal characters within
+     * the encoded string&lt;br&gt;
+     * + The array CAN have illegal characters at the beginning and end, those will be dealt with appropriately.&lt;br&gt;
+     *
+     * @author Mikael Grev Date: 2004-aug-02 Time: 11:31:11
+     * @param s The source string. Length 0 will return an empty array. &lt;code&gt;null&lt;/code&gt; will throw an exception.
+     * @return The decoded array of bytes. May be of length 0.
+     */
+    public static byte[] decodeBase64(String s) {
+        // Check special case
+<span class="fc" id="L530">        int sLen = s.length();</span>
+<span class="fc bfc" id="L531" title="All 2 branches covered.">        if (sLen == 0) {</span>
+<span class="fc" id="L532">            return new byte[0];</span>
+        }
+
+<span class="fc" id="L535">        int sIx = 0, eIx = sLen - 1; // Start and end index after trimming.</span>
+
+        // Trim illegal chars from start
+<span class="pc bpc" id="L538" title="1 of 4 branches missed.">        while (sIx &lt; eIx &amp;&amp; IA[s.charAt(sIx) &amp; 0xff] &lt; 0)</span>
+<span class="fc" id="L539">            sIx++;</span>
+
+        // Trim illegal chars from end
+<span class="pc bpc" id="L542" title="1 of 4 branches missed.">        while (eIx &gt; 0 &amp;&amp; IA[s.charAt(eIx) &amp; 0xff] &lt; 0)</span>
+<span class="fc" id="L543">            eIx--;</span>
+
+        // get the padding count (=) (0, 1 or 2)
+<span class="fc bfc" id="L546" title="All 4 branches covered.">        int pad = s.charAt(eIx) == '=' ? (s.charAt(eIx - 1) == '=' ? 2 : 1) : 0; // Count '=' at end.</span>
+<span class="fc" id="L547">        int cCnt = eIx - sIx + 1; // Content count including possible separators</span>
+<span class="fc bfc" id="L548" title="All 4 branches covered.">        int sepCnt = sLen &gt; 76 ? (s.charAt(76) == '\r' ? cCnt / 78 : 0) &lt;&lt; 1 : 0;</span>
+
+<span class="fc" id="L550">        int len = ((cCnt - sepCnt) * 6 &gt;&gt; 3) - pad; // The number of decoded bytes</span>
+<span class="fc" id="L551">        byte[] dArr = new byte[len]; // Preallocate byte[] of exact length</span>
+
+        // Decode all but the last 0 - 2 bytes.
+<span class="fc" id="L554">        int d = 0;</span>
+<span class="fc bfc" id="L555" title="All 2 branches covered.">        for (int cc = 0, eLen = (len / 3) * 3; d &lt; eLen;) {</span>
+            // Assemble three bytes into an int from four &quot;valid&quot; characters.
+<span class="fc" id="L557">            int i = IA[s.charAt(sIx++)] &lt;&lt; 18 | IA[s.charAt(sIx++)] &lt;&lt; 12 | IA[s.charAt(sIx++)] &lt;&lt; 6</span>
+<span class="fc" id="L558">                    | IA[s.charAt(sIx++)];</span>
+
+            // Add the bytes
+<span class="fc" id="L561">            dArr[d++] = (byte) (i &gt;&gt; 16);</span>
+<span class="fc" id="L562">            dArr[d++] = (byte) (i &gt;&gt; 8);</span>
+<span class="fc" id="L563">            dArr[d++] = (byte) i;</span>
+
+            // If line separator, jump over it.
+<span class="fc bfc" id="L566" title="All 4 branches covered.">            if (sepCnt &gt; 0 &amp;&amp; ++cc == 19) {</span>
+<span class="fc" id="L567">                sIx += 2;</span>
+<span class="fc" id="L568">                cc = 0;</span>
+            }
+<span class="fc" id="L570">        }</span>
+
+<span class="fc bfc" id="L572" title="All 2 branches covered.">        if (d &lt; len) {</span>
+            // Decode last 1-3 bytes (incl '=') into 1-3 bytes
+<span class="fc" id="L574">            int i = 0;</span>
+<span class="fc bfc" id="L575" title="All 2 branches covered.">            for (int j = 0; sIx &lt;= eIx - pad; j++)</span>
+<span class="fc" id="L576">                i |= IA[s.charAt(sIx++)] &lt;&lt; (18 - j * 6);</span>
+
+<span class="fc bfc" id="L578" title="All 2 branches covered.">            for (int r = 16; d &lt; len; r -= 8)</span>
+<span class="fc" id="L579">                dArr[d++] = (byte) (i &gt;&gt; r);</span>
+        }
+
+<span class="fc" id="L582">        return dArr;</span>
+    }
+    
+    public static int encodeUTF8(char[] chars, int offset, int len, byte[] bytes) {
+<span class="fc" id="L586">        int sl = offset + len;</span>
+<span class="fc" id="L587">        int dp = 0;</span>
+<span class="fc" id="L588">        int dlASCII = dp + Math.min(len, bytes.length);</span>
+
+        // ASCII only optimized loop
+<span class="fc bfc" id="L591" title="All 4 branches covered.">        while (dp &lt; dlASCII &amp;&amp; chars[offset] &lt; '\u0080') {</span>
+<span class="fc" id="L592">            bytes[dp++] = (byte) chars[offset++];</span>
+        }
+
+<span class="fc bfc" id="L595" title="All 2 branches covered.">        while (offset &lt; sl) {</span>
+<span class="fc" id="L596">            char c = chars[offset++];</span>
+<span class="fc bfc" id="L597" title="All 2 branches covered.">            if (c &lt; 0x80) {</span>
+                // Have at most seven bits
+<span class="fc" id="L599">                bytes[dp++] = (byte) c;</span>
+<span class="fc bfc" id="L600" title="All 2 branches covered.">            } else if (c &lt; 0x800) {</span>
+                // 2 bytes, 11 bits
+<span class="fc" id="L602">                bytes[dp++] = (byte) (0xc0 | (c &gt;&gt; 6));</span>
+<span class="fc" id="L603">                bytes[dp++] = (byte) (0x80 | (c &amp; 0x3f));</span>
+<span class="fc bfc" id="L604" title="All 4 branches covered.">            } else if (c &gt;= '\uD800' &amp;&amp; c &lt; ('\uDFFF' + 1)) { //Character.isSurrogate(c) but 1.7</span>
+                final int uc;
+<span class="fc" id="L606">                int ip = offset - 1;</span>
+<span class="pc bpc" id="L607" title="1 of 4 branches missed.">                if (c &gt;= '\uD800' &amp;&amp; c &lt; ('\uDBFF' + 1)) { // Character.isHighSurrogate(c)</span>
+<span class="pc bpc" id="L608" title="1 of 2 branches missed.">                    if (sl - ip &lt; 2) {</span>
+<span class="nc" id="L609">                        uc = -1;</span>
+                    } else {
+<span class="fc" id="L611">                        char d = chars[ip + 1];</span>
+                        // d &gt;= '\uDC00' &amp;&amp; d &lt; ('\uDFFF' + 1)
+<span class="pc bpc" id="L613" title="2 of 4 branches missed.">                        if (d &gt;= '\uDC00' &amp;&amp; d &lt; ('\uDFFF' + 1)) { // Character.isLowSurrogate(d)</span>
+<span class="fc" id="L614">                            uc = ((c &lt;&lt; 10) + d) + (0x010000 - ('\uD800' &lt;&lt; 10) - '\uDC00'); // Character.toCodePoint(c, d)</span>
+                        } else {
+//                            throw new JSONException(&quot;encodeUTF8 error&quot;, new MalformedInputException(1));
+<span class="nc" id="L617">                            bytes[dp++] = (byte) '?';</span>
+<span class="nc" id="L618">                            continue;</span>
+                        }
+<span class="fc" id="L620">                    }</span>
+                } else {
+                    //
+<span class="pc bpc" id="L623" title="2 of 4 branches missed.">                    if (c &gt;= '\uDC00' &amp;&amp; c &lt; ('\uDFFF' + 1)) { // Character.isLowSurrogate(c)</span>
+<span class="fc" id="L624">                        bytes[dp++] = (byte) '?';</span>
+<span class="fc" id="L625">                        continue;</span>
+//                        throw new JSONException(&quot;encodeUTF8 error&quot;, new MalformedInputException(1));
+                    } else {
+<span class="nc" id="L628">                        uc = c;</span>
+                    }
+                }
+                
+<span class="pc bpc" id="L632" title="1 of 2 branches missed.">                if (uc &lt; 0) {</span>
+<span class="nc" id="L633">                    bytes[dp++] = (byte) '?';</span>
+                } else {
+<span class="fc" id="L635">                    bytes[dp++] = (byte) (0xf0 | ((uc &gt;&gt; 18)));</span>
+<span class="fc" id="L636">                    bytes[dp++] = (byte) (0x80 | ((uc &gt;&gt; 12) &amp; 0x3f));</span>
+<span class="fc" id="L637">                    bytes[dp++] = (byte) (0x80 | ((uc &gt;&gt; 6) &amp; 0x3f));</span>
+<span class="fc" id="L638">                    bytes[dp++] = (byte) (0x80 | (uc &amp; 0x3f));</span>
+<span class="fc" id="L639">                    offset++; // 2 chars</span>
+                }
+<span class="fc" id="L641">            } else {</span>
+                // 3 bytes, 16 bits
+<span class="fc" id="L643">                bytes[dp++] = (byte) (0xe0 | ((c &gt;&gt; 12)));</span>
+<span class="fc" id="L644">                bytes[dp++] = (byte) (0x80 | ((c &gt;&gt; 6) &amp; 0x3f));</span>
+<span class="fc" id="L645">                bytes[dp++] = (byte) (0x80 | (c &amp; 0x3f));</span>
+            }
+<span class="fc" id="L647">        }</span>
+<span class="fc" id="L648">        return dp;</span>
+    }
+
+    /**
+     * @deprecated
+     */
+    public static int decodeUTF8(byte[] sa, int sp, int len, char[] da) {
+<span class="fc" id="L655">        final int sl = sp + len;</span>
+<span class="fc" id="L656">        int dp = 0;</span>
+<span class="fc" id="L657">        int dlASCII = Math.min(len, da.length);</span>
+
+        // ASCII only optimized loop
+<span class="fc bfc" id="L660" title="All 4 branches covered.">        while (dp &lt; dlASCII &amp;&amp; sa[sp] &gt;= 0)</span>
+<span class="fc" id="L661">            da[dp++] = (char) sa[sp++];</span>
+
+<span class="fc bfc" id="L663" title="All 2 branches covered.">        while (sp &lt; sl) {</span>
+<span class="fc" id="L664">            int b1 = sa[sp++];</span>
+<span class="fc bfc" id="L665" title="All 2 branches covered.">            if (b1 &gt;= 0) {</span>
+                // 1 byte, 7 bits: 0xxxxxxx
+<span class="fc" id="L667">                da[dp++] = (char) b1;</span>
+<span class="pc bpc" id="L668" title="1 of 4 branches missed.">            } else if ((b1 &gt;&gt; 5) == -2 &amp;&amp; (b1 &amp; 0x1e) != 0) {</span>
+                // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
+<span class="pc bpc" id="L670" title="1 of 2 branches missed.">                if (sp &lt; sl) {</span>
+<span class="fc" id="L671">                    int b2 = sa[sp++];</span>
+<span class="pc bpc" id="L672" title="1 of 2 branches missed.">                    if ((b2 &amp; 0xc0) != 0x80) { // isNotContinuation(b2)</span>
+<span class="nc" id="L673">                        return -1;</span>
+                    } else {
+<span class="fc" id="L675">                        da[dp++] = (char) (((b1 &lt;&lt; 6) ^ b2)^</span>
+                                       (((byte) 0xC0 &lt;&lt; 6) ^
+                                        ((byte) 0x80 &lt;&lt; 0)));
+                    }
+<span class="fc" id="L679">                    continue;</span>
+                }
+<span class="nc" id="L681">                return -1;</span>
+<span class="fc bfc" id="L682" title="All 2 branches covered.">            } else if ((b1 &gt;&gt; 4) == -2) {</span>
+                // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
+<span class="pc bpc" id="L684" title="1 of 2 branches missed.">                if (sp + 1 &lt; sl) {</span>
+<span class="fc" id="L685">                    int b2 = sa[sp++];</span>
+<span class="fc" id="L686">                    int b3 = sa[sp++];</span>
+<span class="pc bpc" id="L687" title="3 of 8 branches missed.">                    if ((b1 == (byte) 0xe0 &amp;&amp; (b2 &amp; 0xe0) == 0x80) //</span>
+                        || (b2 &amp; 0xc0) != 0x80 //
+                        || (b3 &amp; 0xc0) != 0x80) { // isMalformed3(b1, b2, b3)
+<span class="nc" id="L690">                        return -1;</span>
+                    } else {
+<span class="fc" id="L692">                        char c = (char)((b1 &lt;&lt; 12) ^</span>
+                                          (b2 &lt;&lt;  6) ^
+                                          (b3 ^
+                                          (((byte) 0xE0 &lt;&lt; 12) ^
+                                          ((byte) 0x80 &lt;&lt;  6) ^
+                                          ((byte) 0x80 &lt;&lt;  0))));
+<span class="pc bpc" id="L698" title="1 of 4 branches missed.">                        boolean isSurrogate = c &gt;= '\uD800' &amp;&amp; c &lt; ('\uDFFF' + 1);</span>
+<span class="pc bpc" id="L699" title="1 of 2 branches missed.">                        if (isSurrogate) {</span>
+<span class="nc" id="L700">                            return -1;</span>
+                        } else {
+<span class="fc" id="L702">                            da[dp++] = c;</span>
+                        }
+                    }
+<span class="fc" id="L705">                    continue;</span>
+                }
+<span class="nc" id="L707">                return -1;</span>
+<span class="fc bfc" id="L708" title="All 2 branches covered.">            } else if ((b1 &gt;&gt; 3) == -2) {</span>
+                // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+<span class="pc bpc" id="L710" title="1 of 2 branches missed.">                if (sp + 2 &lt; sl) {</span>
+<span class="fc" id="L711">                    int b2 = sa[sp++];</span>
+<span class="fc" id="L712">                    int b3 = sa[sp++];</span>
+<span class="fc" id="L713">                    int b4 = sa[sp++];</span>
+<span class="fc" id="L714">                    int uc = ((b1 &lt;&lt; 18) ^</span>
+                              (b2 &lt;&lt; 12) ^
+                              (b3 &lt;&lt;  6) ^
+                              (b4 ^
+                               (((byte) 0xF0 &lt;&lt; 18) ^
+                               ((byte) 0x80 &lt;&lt; 12) ^
+                               ((byte) 0x80 &lt;&lt;  6) ^
+                               ((byte) 0x80 &lt;&lt;  0))));
+<span class="pc bpc" id="L722" title="5 of 10 branches missed.">                    if (((b2 &amp; 0xc0) != 0x80 || (b3 &amp; 0xc0) != 0x80 || (b4 &amp; 0xc0) != 0x80) // isMalformed4</span>
+                        ||
+                        // shortest form check
+                        !(uc &gt;= 0x010000 &amp;&amp; uc &lt;  0X10FFFF + 1) // !Character.isSupplementaryCodePoint(uc)
+                    ) {
+<span class="nc" id="L727">                        return -1;</span>
+                    } else {
+<span class="fc" id="L729">                        da[dp++] =  (char) ((uc &gt;&gt;&gt; 10) + ('\uD800' - (0x010000 &gt;&gt;&gt; 10))); // Character.highSurrogate(uc);</span>
+<span class="fc" id="L730">                        da[dp++] = (char) ((uc &amp; 0x3ff) + '\uDC00'); // Character.lowSurrogate(uc);</span>
+                    }
+<span class="fc" id="L732">                    continue;</span>
+                }
+<span class="nc" id="L734">                return -1;</span>
+            } else {
+<span class="fc" id="L736">                return -1;</span>
+            }
+<span class="fc" id="L738">        }</span>
+<span class="fc" id="L739">        return dp;</span>
+    }
+
+    /**
+     * @deprecated
+     */
+    public static String readAll(Reader reader) {
+<span class="fc" id="L746">        StringBuilder buf = new StringBuilder();</span>
+
+        try {
+<span class="fc" id="L749">            char[] chars = new char[2048];</span>
+            for (;;) {
+<span class="fc" id="L751">                int len = reader.read(chars, 0, chars.length);</span>
+<span class="fc bfc" id="L752" title="All 2 branches covered.">                if (len &lt; 0) {</span>
+<span class="fc" id="L753">                    break;</span>
+                }
+<span class="fc" id="L755">                buf.append(chars, 0, len);</span>
+<span class="fc" id="L756">            }</span>
+<span class="nc" id="L757">        } catch(Exception ex) {</span>
+<span class="nc" id="L758">            throw new JSONException(&quot;read string from reader error&quot;, ex);</span>
+<span class="fc" id="L759">        }</span>
+
+<span class="fc" id="L761">        return buf.toString();</span>
+    }
+
+    public static boolean isValidJsonpQueryParam(String value){
+<span class="pc bpc" id="L765" title="1 of 4 branches missed.">        if (value == null || value.length() == 0) {</span>
+<span class="fc" id="L766">            return false;</span>
+        }
+
+<span class="fc bfc" id="L769" title="All 2 branches covered.">        for (int i = 0, len = value.length(); i &lt; len; ++i) {</span>
+<span class="fc" id="L770">            char ch = value.charAt(i);</span>
+<span class="pc bpc" id="L771" title="1 of 4 branches missed.">            if(ch != '.' &amp;&amp; !IOUtils.isIdent(ch)){</span>
+<span class="fc" id="L772">                return false;</span>
+            }
+        }
+
+<span class="fc" id="L776">        return true;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

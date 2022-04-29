@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReferenceCodec.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">ReferenceCodec.java</span></div><h1>ReferenceCodec.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2018 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.serializer;
+
+import java.io.IOException;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+<span class="fc" id="L33">public class ReferenceCodec implements ObjectSerializer, ObjectDeserializer {</span>
+
+<span class="fc" id="L35">    public final static ReferenceCodec instance = new ReferenceCodec();</span>
+
+    @SuppressWarnings(&quot;rawtypes&quot;)
+    public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType, int features) throws IOException {
+        Object item;
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (object instanceof AtomicReference) {</span>
+<span class="fc" id="L41">            AtomicReference val = (AtomicReference) object;</span>
+<span class="fc" id="L42">            item = val.get();</span>
+<span class="fc" id="L43">        } else {</span>
+<span class="fc" id="L44">            item = ((Reference) object).get();</span>
+        }
+<span class="fc" id="L46">        serializer.write(item);</span>
+<span class="fc" id="L47">    }</span>
+
+    @SuppressWarnings({ &quot;unchecked&quot;, &quot;rawtypes&quot; })
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+<span class="fc" id="L51">        ParameterizedType paramType = (ParameterizedType) type;</span>
+<span class="fc" id="L52">        Type itemType = paramType.getActualTypeArguments()[0];</span>
+
+<span class="fc" id="L54">        Object itemObject = parser.parseObject(itemType);</span>
+
+<span class="fc" id="L56">        Type rawType = paramType.getRawType();</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (rawType == AtomicReference.class) {</span>
+<span class="fc" id="L58">            return (T) new AtomicReference(itemObject);</span>
+        }
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (rawType == WeakReference.class) {</span>
+<span class="fc" id="L62">            return (T) new WeakReference(itemObject);</span>
+        }
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (rawType == SoftReference.class) {</span>
+<span class="fc" id="L66">            return (T) new SoftReference(itemObject);</span>
+        }
+
+<span class="fc" id="L69">        throw new UnsupportedOperationException(rawType.toString());</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L73">        return JSONToken.LBRACE;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

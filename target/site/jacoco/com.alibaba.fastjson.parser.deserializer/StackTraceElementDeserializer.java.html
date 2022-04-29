@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StackTraceElementDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">StackTraceElementDeserializer.java</span></div><h1>StackTraceElementDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.lang.reflect.Type;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONToken;
+
+<span class="fc" id="L12">public class StackTraceElementDeserializer implements ObjectDeserializer {</span>
+
+<span class="fc" id="L14">    public final static StackTraceElementDeserializer instance = new StackTraceElementDeserializer();</span>
+
+    @SuppressWarnings({ &quot;unchecked&quot;, &quot;unused&quot; })
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+<span class="fc" id="L18">        JSONLexer lexer = parser.lexer;</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L20">            lexer.nextToken();</span>
+<span class="fc" id="L21">            return null;</span>
+        }
+
+<span class="fc bfc" id="L24" title="All 4 branches covered.">        if (lexer.token() != JSONToken.LBRACE &amp;&amp; lexer.token() != JSONToken.COMMA) {</span>
+<span class="fc" id="L25">            throw new JSONException(&quot;syntax error: &quot; + JSONToken.name(lexer.token()));</span>
+        }
+
+<span class="fc" id="L28">        String declaringClass = null;</span>
+<span class="fc" id="L29">        String methodName = null;</span>
+<span class="fc" id="L30">        String fileName = null;</span>
+<span class="fc" id="L31">        int lineNumber = 0;</span>
+<span class="fc" id="L32">        String moduleName = null;</span>
+<span class="fc" id="L33">        String moduleVersion = null;</span>
+<span class="fc" id="L34">        String classLoaderName = null;</span>
+
+        for (;;) {
+            // lexer.scanSymbol
+<span class="fc" id="L38">            String key = lexer.scanSymbol(parser.getSymbolTable());</span>
+
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            if (key == null) {</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">                if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L42">                    lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L43">                    break;</span>
+                }
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">                if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">                    if (lexer.isEnabled(Feature.AllowArbitraryCommas)) {</span>
+<span class="fc" id="L47">                        continue;</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L52">            lexer.nextTokenWithColon(JSONToken.LITERAL_STRING);</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">            if (&quot;className&quot;.equals(key)) {</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">                if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L55">                    declaringClass = null;</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                } else if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L57">                    declaringClass = lexer.stringVal();</span>
+                } else {
+<span class="fc" id="L59">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            } else if (&quot;methodName&quot;.equals(key)) {</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L63">                    methodName = null;</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">                } else if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L65">                    methodName = lexer.stringVal();</span>
+                } else {
+<span class="fc" id="L67">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc bfc" id="L69" title="All 2 branches covered.">            } else if (&quot;fileName&quot;.equals(key)) {</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L71">                    fileName = null;</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                } else if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L73">                    fileName = lexer.stringVal();</span>
+                } else {
+<span class="fc" id="L75">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            } else if (&quot;lineNumber&quot;.equals(key)) {</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L79">                    lineNumber = 0;</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">                } else if (lexer.token() == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L81">                    lineNumber = lexer.intValue();</span>
+                } else {
+<span class="fc" id="L83">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            } else if (&quot;nativeMethod&quot;.equals(key)) {</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L87">                    lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">                } else if (lexer.token() == JSONToken.TRUE) {</span>
+<span class="fc" id="L89">                    lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">                } else if (lexer.token() == JSONToken.FALSE) {</span>
+<span class="fc" id="L91">                    lexer.nextToken(JSONToken.COMMA);</span>
+                } else {
+<span class="fc" id="L93">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc bfc" id="L95" title="All 2 branches covered.">            } else if (key == JSON.DEFAULT_TYPE_KEY) {</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">               if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L97">                    String elementType = lexer.stringVal();</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                    if (!elementType.equals(&quot;java.lang.StackTraceElement&quot;)) {</span>
+<span class="fc" id="L99">                        throw new JSONException(&quot;syntax error : &quot; + elementType);    </span>
+                    }
+<span class="fc" id="L101">                } else {</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">                    if (lexer.token() != JSONToken.NULL) {</span>
+<span class="fc" id="L103">                        throw new JSONException(&quot;syntax error&quot;);</span>
+                    }
+                }
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">            } else if (&quot;moduleName&quot;.equals(key)) {</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                if (lexer.token() == JSONToken.NULL) {</span>
+<span class="nc" id="L108">                    moduleName = null;</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                } else if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="nc" id="L110">                    moduleName = lexer.stringVal();</span>
+                } else {
+<span class="nc" id="L112">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">            } else if (&quot;moduleVersion&quot;.equals(key)) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                if (lexer.token() == JSONToken.NULL) {</span>
+<span class="nc" id="L116">                    moduleVersion = null;</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                } else if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="nc" id="L118">                    moduleVersion = lexer.stringVal();</span>
+                } else {
+<span class="nc" id="L120">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            } else if (&quot;classLoaderName&quot;.equals(key)) {</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                if (lexer.token() == JSONToken.NULL) {</span>
+<span class="nc" id="L124">                    classLoaderName = null;</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                } else if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="nc" id="L126">                    classLoaderName = lexer.stringVal();</span>
+                } else {
+<span class="nc" id="L128">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+            } else {
+<span class="fc" id="L131">                throw new JSONException(&quot;syntax error : &quot; + key);</span>
+            }
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L135">                lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L136">                break;</span>
+            }
+<span class="fc" id="L138">        }</span>
+<span class="fc" id="L139">        return (T) new StackTraceElement(declaringClass, methodName, fileName, lineNumber);</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L143">        return JSONToken.LBRACE;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

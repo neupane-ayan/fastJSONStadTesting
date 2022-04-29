@@ -1,0 +1,1156 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaBeanInfo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.util</a> &gt; <span class="el_source">JavaBeanInfo.java</span></div><h1>JavaBeanInfo.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.util;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.PropertyNamingStrategy;
+import com.alibaba.fastjson.annotation.JSONCreator;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONPOJOBuilder;
+import com.alibaba.fastjson.annotation.JSONType;
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+
+public class JavaBeanInfo {
+
+    public final Class&lt;?&gt; clazz;
+    public final Class&lt;?&gt; builderClass;
+    public final Constructor&lt;?&gt; defaultConstructor;
+    public final Constructor&lt;?&gt; creatorConstructor;
+    public final Method factoryMethod;
+    public final Method buildMethod;
+
+    public final int defaultConstructorParameterSize;
+
+    public final FieldInfo[] fields;
+    public final FieldInfo[] sortedFields;
+
+    public final int parserFeatures;
+
+    public final JSONType jsonType;
+
+    public final String typeName;
+    public final String typeKey;
+
+    public String[] orders;
+
+    public Type[] creatorConstructorParameterTypes;
+    public String[] creatorConstructorParameters;
+
+    public boolean kotlin;
+    public Constructor&lt;?&gt; kotlinDefaultConstructor;
+
+    public JavaBeanInfo(Class&lt;?&gt; clazz, //
+                        Class&lt;?&gt; builderClass, //
+                        Constructor&lt;?&gt; defaultConstructor, //
+                        Constructor&lt;?&gt; creatorConstructor, //
+                        Method factoryMethod, //
+                        Method buildMethod, //
+                        JSONType jsonType, //
+<span class="fc" id="L56">                        List&lt;FieldInfo&gt; fieldList) {</span>
+<span class="fc" id="L57">        this.clazz = clazz;</span>
+<span class="fc" id="L58">        this.builderClass = builderClass;</span>
+<span class="fc" id="L59">        this.defaultConstructor = defaultConstructor;</span>
+<span class="fc" id="L60">        this.creatorConstructor = creatorConstructor;</span>
+<span class="fc" id="L61">        this.factoryMethod = factoryMethod;</span>
+<span class="fc" id="L62">        this.parserFeatures = TypeUtils.getParserFeatures(clazz);</span>
+<span class="fc" id="L63">        this.buildMethod = buildMethod;</span>
+
+<span class="fc" id="L65">        this.jsonType = jsonType;</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (jsonType != null) {</span>
+<span class="fc" id="L67">            String typeName = jsonType.typeName();</span>
+<span class="fc" id="L68">            String typeKey = jsonType.typeKey();</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">            this.typeKey = typeKey.length() &gt; 0 ? typeKey : null;</span>
+
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (typeName.length() != 0) {</span>
+<span class="fc" id="L72">                this.typeName = typeName;</span>
+            } else {
+<span class="fc" id="L74">                this.typeName = clazz.getName();</span>
+            }
+<span class="fc" id="L76">            String[] orders = jsonType.orders();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            this.orders = orders.length == 0 ? null : orders;</span>
+<span class="fc" id="L78">        } else {</span>
+<span class="fc" id="L79">            this.typeName = clazz.getName();</span>
+<span class="fc" id="L80">            this.typeKey = null;</span>
+<span class="fc" id="L81">            this.orders = null;</span>
+        }
+
+<span class="fc" id="L84">        fields = new FieldInfo[fieldList.size()];</span>
+<span class="fc" id="L85">        fieldList.toArray(fields);</span>
+
+<span class="fc" id="L87">        FieldInfo[] sortedFields = new FieldInfo[fields.length];</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (orders != null) {</span>
+<span class="fc" id="L89">            LinkedHashMap&lt;String, FieldInfo&gt; map = new LinkedHashMap&lt;String, FieldInfo&gt;(fieldList.size());</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            for (FieldInfo field : fields) {</span>
+<span class="fc" id="L91">                map.put(field.name, field);</span>
+            }
+<span class="fc" id="L93">            int i = 0;</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            for (String item : orders) {</span>
+<span class="fc" id="L95">                FieldInfo field = map.get(item);</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">                if (field != null) {</span>
+<span class="fc" id="L97">                    sortedFields[i++] = field;</span>
+<span class="fc" id="L98">                    map.remove(item);</span>
+                }
+            }
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            for (FieldInfo field : map.values()) {</span>
+<span class="fc" id="L102">                sortedFields[i++] = field;</span>
+<span class="fc" id="L103">            }</span>
+<span class="fc" id="L104">        } else {</span>
+<span class="fc" id="L105">            System.arraycopy(fields, 0, sortedFields, 0, fields.length);</span>
+<span class="fc" id="L106">            Arrays.sort(sortedFields);</span>
+        }
+
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (Arrays.equals(fields, sortedFields)) {</span>
+<span class="fc" id="L110">            sortedFields = fields;</span>
+        }
+<span class="fc" id="L112">        this.sortedFields = sortedFields;</span>
+
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (defaultConstructor != null) {</span>
+<span class="fc" id="L115">            defaultConstructorParameterSize = defaultConstructor.getParameterTypes().length;</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        } else if (factoryMethod != null) {</span>
+<span class="fc" id="L117">            defaultConstructorParameterSize = factoryMethod.getParameterTypes().length;</span>
+        } else {
+<span class="fc" id="L119">            defaultConstructorParameterSize = 0;</span>
+        }
+
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (creatorConstructor != null) {</span>
+<span class="fc" id="L123">            this.creatorConstructorParameterTypes = creatorConstructor.getParameterTypes();</span>
+
+
+<span class="fc" id="L126">            kotlin = TypeUtils.isKotlin(clazz);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            if (kotlin) {</span>
+<span class="fc" id="L128">                this.creatorConstructorParameters = TypeUtils.getKoltinConstructorParameters(clazz);</span>
+                try {
+<span class="fc" id="L130">                    this.kotlinDefaultConstructor = clazz.getConstructor();</span>
+<span class="fc" id="L131">                } catch (Throwable ex) {</span>
+                    // skip
+<span class="fc" id="L133">                }</span>
+
+<span class="fc" id="L135">                Annotation[][] paramAnnotationArrays = TypeUtils.getParameterAnnotations(creatorConstructor);</span>
+<span class="pc bpc" id="L136" title="1 of 4 branches missed.">                for (int i = 0; i &lt; creatorConstructorParameters.length &amp;&amp; i &lt; paramAnnotationArrays.length; ++i) {</span>
+<span class="fc" id="L137">                    Annotation[] paramAnnotations = paramAnnotationArrays[i];</span>
+<span class="fc" id="L138">                    JSONField fieldAnnotation = null;</span>
+<span class="pc bfc" id="L139" title="All 2 branches covered.">                    for (Annotation paramAnnotation : paramAnnotations) {</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">                        if (paramAnnotation instanceof JSONField) {</span>
+<span class="fc" id="L141">                            fieldAnnotation = (JSONField) paramAnnotation;</span>
+<span class="fc" id="L142">                            break;</span>
+                        }
+                    }
+<span class="fc bfc" id="L145" title="All 2 branches covered.">                    if (fieldAnnotation != null) {</span>
+<span class="fc" id="L146">                        String fieldAnnotationName = fieldAnnotation.name();</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">                        if (fieldAnnotationName.length() &gt; 0) {</span>
+<span class="fc" id="L148">                            creatorConstructorParameters[i] = fieldAnnotationName;</span>
+                        }
+                    }
+                }
+<span class="fc" id="L152">            } else {</span>
+                boolean match;
+<span class="fc bfc" id="L154" title="All 2 branches covered.">                if (creatorConstructorParameterTypes.length != fields.length) {</span>
+<span class="fc" id="L155">                    match = false;</span>
+                } else {
+<span class="fc" id="L157">                    match = true;</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">                    for (int i = 0; i &lt; creatorConstructorParameterTypes.length; i++) {</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">                        if (creatorConstructorParameterTypes[i] != fields[i].fieldClass) {</span>
+<span class="fc" id="L160">                            match = false;</span>
+<span class="fc" id="L161">                            break;</span>
+                        }
+                    }
+                }
+
+<span class="fc bfc" id="L166" title="All 2 branches covered.">                if (!match) {</span>
+<span class="fc" id="L167">                    this.creatorConstructorParameters = ASMUtils.lookupParameterNames(creatorConstructor);</span>
+                }
+            }
+        }
+<span class="fc" id="L171">    }</span>
+
+    private static FieldInfo getField(List&lt;FieldInfo&gt; fieldList, String propertyName) {
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        for (FieldInfo item : fieldList) {</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">            if (item.name.equals(propertyName)) {</span>
+<span class="fc" id="L176">                return item;</span>
+            }
+
+<span class="fc" id="L179">            Field field = item.field;</span>
+<span class="fc bfc" id="L180" title="All 6 branches covered.">            if (field != null &amp;&amp; item.getAnnotation() != null &amp;&amp; field.getName().equals(propertyName)) {</span>
+<span class="fc" id="L181">                return item;</span>
+            }
+<span class="fc" id="L183">        }</span>
+<span class="fc" id="L184">        return null;</span>
+    }
+
+
+    static boolean add(List&lt;FieldInfo&gt; fieldList, FieldInfo field) {
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        for (int i = fieldList.size() - 1; i &gt;= 0; --i) {</span>
+<span class="fc" id="L190">            FieldInfo item = fieldList.get(i);</span>
+
+<span class="fc bfc" id="L192" title="All 2 branches covered.">            if (item.name.equals(field.name)) {</span>
+<span class="pc bpc" id="L193" title="3 of 4 branches missed.">                if (item.getOnly &amp;&amp; !field.getOnly) {</span>
+<span class="nc" id="L194">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L197" title="All 2 branches covered.">                if (item.fieldClass.isAssignableFrom(field.fieldClass)) {</span>
+<span class="fc" id="L198">                    fieldList.set(i, field);</span>
+<span class="fc" id="L199">                    return true;</span>
+                }
+
+<span class="fc" id="L202">                int result = item.compareTo(field);</span>
+
+<span class="fc bfc" id="L204" title="All 2 branches covered.">                if (result &lt; 0) {</span>
+<span class="fc" id="L205">                    fieldList.set(i, field);</span>
+<span class="fc" id="L206">                    return true;</span>
+                } else {
+<span class="fc" id="L208">                    return false;</span>
+                }
+            }
+        }
+<span class="fc" id="L212">        fieldList.add(field);</span>
+
+<span class="fc" id="L214">        return true;</span>
+    }
+
+    public static JavaBeanInfo build(Class&lt;?&gt; clazz, Type type, PropertyNamingStrategy propertyNamingStrategy) {
+<span class="fc" id="L218">        return build(clazz, type, propertyNamingStrategy, false, TypeUtils.compatibleWithJavaBean, false);</span>
+    }
+
+    private static Map&lt;TypeVariable, Type&gt; buildGenericInfo(Class&lt;?&gt; clazz) {
+<span class="fc" id="L222">        Class&lt;?&gt; childClass = clazz;</span>
+<span class="fc" id="L223">        Class&lt;?&gt; currentClass = clazz.getSuperclass();</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">        if (currentClass == null) {</span>
+<span class="fc" id="L225">            return null;</span>
+        }
+
+<span class="fc" id="L228">        Map&lt;TypeVariable, Type&gt; typeVarMap = null;</span>
+
+        //analyse the whole generic info from the class inheritance
+<span class="pc bpc" id="L231" title="1 of 4 branches missed.">        for (; currentClass != null &amp;&amp; currentClass != Object.class; childClass = currentClass, currentClass = currentClass.getSuperclass()) {</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">            if (childClass.getGenericSuperclass() instanceof ParameterizedType) {</span>
+<span class="fc" id="L233">                Type[] childGenericParentActualTypeArgs = ((ParameterizedType) childClass.getGenericSuperclass()).getActualTypeArguments();</span>
+<span class="fc" id="L234">                TypeVariable[] currentTypeParameters = currentClass.getTypeParameters();</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">                for (int i = 0; i &lt; childGenericParentActualTypeArgs.length; i++) {</span>
+                    //if the child class's generic super class actual args is defined in the child class type parameters
+<span class="fc bfc" id="L237" title="All 2 branches covered.">                    if (typeVarMap == null) {</span>
+<span class="fc" id="L238">                        typeVarMap = new HashMap&lt;TypeVariable, Type&gt;();</span>
+                    }
+
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                    if (typeVarMap.containsKey(childGenericParentActualTypeArgs[i])) {</span>
+<span class="fc" id="L242">                        Type actualArg = typeVarMap.get(childGenericParentActualTypeArgs[i]);</span>
+<span class="fc" id="L243">                        typeVarMap.put(currentTypeParameters[i], actualArg);</span>
+<span class="fc" id="L244">                    } else {</span>
+<span class="fc" id="L245">                        typeVarMap.put(currentTypeParameters[i], childGenericParentActualTypeArgs[i]);</span>
+                    }
+                }
+            }
+        }
+
+<span class="fc" id="L251">        return typeVarMap;</span>
+    }
+
+
+    public static JavaBeanInfo build(Class&lt;?&gt; clazz //
+            , Type type //
+            , PropertyNamingStrategy propertyNamingStrategy //
+            , boolean fieldBased //
+            , boolean compatibleWithJavaBean
+    ) {
+<span class="nc" id="L261">        return build(clazz, type, propertyNamingStrategy, fieldBased, compatibleWithJavaBean, false);</span>
+    }
+
+    public static JavaBeanInfo build(Class&lt;?&gt; clazz //
+            , Type type //
+            , PropertyNamingStrategy propertyNamingStrategy //
+            , boolean fieldBased //
+            , boolean compatibleWithJavaBean
+            , boolean jacksonCompatible
+    ) {
+<span class="fc" id="L271">        JSONType jsonType = TypeUtils.getAnnotation(clazz,JSONType.class);</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        if (jsonType != null) {</span>
+<span class="fc" id="L273">            PropertyNamingStrategy jsonTypeNaming = jsonType.naming();</span>
+<span class="pc bpc" id="L274" title="2 of 4 branches missed.">            if (jsonTypeNaming != null &amp;&amp; jsonTypeNaming != PropertyNamingStrategy.CamelCase) {</span>
+<span class="fc" id="L275">                propertyNamingStrategy = jsonTypeNaming;</span>
+            }
+        }
+
+<span class="fc" id="L279">        Class&lt;?&gt; builderClass = getBuilderClass(clazz, jsonType);</span>
+
+<span class="fc" id="L281">        Field[] declaredFields = clazz.getDeclaredFields();</span>
+<span class="fc" id="L282">        Method[] methods = clazz.getMethods();</span>
+<span class="fc" id="L283">        Map&lt;TypeVariable, Type&gt; genericInfo = buildGenericInfo(clazz);</span>
+
+<span class="fc" id="L285">        boolean kotlin = TypeUtils.isKotlin(clazz);</span>
+<span class="fc" id="L286">        Constructor[] constructors = clazz.getDeclaredConstructors();</span>
+
+<span class="fc" id="L288">        Constructor&lt;?&gt; defaultConstructor = null;</span>
+<span class="fc bfc" id="L289" title="All 4 branches covered.">        if ((!kotlin) || constructors.length == 1) {</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">            if (builderClass == null) {</span>
+<span class="fc" id="L291">                defaultConstructor = getDefaultConstructor(clazz, constructors);</span>
+            } else {
+<span class="fc" id="L293">                defaultConstructor = getDefaultConstructor(builderClass, builderClass.getDeclaredConstructors());</span>
+            }
+        }
+
+<span class="fc" id="L297">        Constructor&lt;?&gt; creatorConstructor = null;</span>
+<span class="fc" id="L298">        Method buildMethod = null;</span>
+<span class="fc" id="L299">        Method factoryMethod = null;</span>
+
+<span class="fc" id="L301">        List&lt;FieldInfo&gt; fieldList = new ArrayList&lt;FieldInfo&gt;();</span>
+
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (fieldBased) {</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">            for (Class&lt;?&gt; currentClass = clazz; currentClass != null; currentClass = currentClass.getSuperclass()) {</span>
+<span class="fc" id="L305">                Field[] fields = currentClass.getDeclaredFields();</span>
+
+<span class="fc" id="L307">                computeFields(clazz, type, propertyNamingStrategy, fieldList, fields);</span>
+            }
+
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">            if (defaultConstructor != null) {</span>
+<span class="fc" id="L311">                TypeUtils.setAccessible(defaultConstructor);</span>
+            }
+
+<span class="fc" id="L314">            return new JavaBeanInfo(clazz, builderClass, defaultConstructor, null, factoryMethod, buildMethod, jsonType, fieldList);</span>
+        }
+
+<span class="fc bfc" id="L317" title="All 4 branches covered.">        boolean isInterfaceOrAbstract = clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers());</span>
+<span class="pc bpc" id="L318" title="2 of 6 branches missed.">        if ((defaultConstructor == null &amp;&amp; builderClass == null) || isInterfaceOrAbstract) {</span>
+
+<span class="fc" id="L320">            Type mixInType = JSON.getMixInAnnotations(clazz);</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">            if (mixInType instanceof Class) {</span>
+<span class="fc" id="L322">                Constructor&lt;?&gt;[] mixInConstructors = ((Class&lt;?&gt;) mixInType).getConstructors();</span>
+<span class="fc" id="L323">                Constructor&lt;?&gt; mixInCreator = getCreatorConstructor(mixInConstructors);</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">                if (mixInCreator != null) {</span>
+                    try {
+<span class="fc" id="L326">                        creatorConstructor = clazz.getConstructor(mixInCreator.getParameterTypes());</span>
+<span class="nc" id="L327">                    } catch (NoSuchMethodException e) {</span>
+                        // skip
+<span class="fc" id="L329">                    }</span>
+                }
+            }
+
+<span class="fc bfc" id="L333" title="All 2 branches covered.">            if (creatorConstructor == null) {</span>
+<span class="fc" id="L334">                creatorConstructor = getCreatorConstructor(constructors);</span>
+            }
+
+<span class="pc bpc" id="L337" title="1 of 4 branches missed.">            if (creatorConstructor != null &amp;&amp; !isInterfaceOrAbstract) { // 基于标记 JSONCreator 注解的构造方法</span>
+<span class="fc" id="L338">                TypeUtils.setAccessible(creatorConstructor);</span>
+
+<span class="fc" id="L340">                Class&lt;?&gt;[] types = creatorConstructor.getParameterTypes();</span>
+
+<span class="fc" id="L342">                String[] lookupParameterNames = null;</span>
+<span class="pc bpc" id="L343" title="1 of 2 branches missed.">                if (types.length &gt; 0) {</span>
+<span class="fc" id="L344">                    Annotation[][] paramAnnotationArrays = TypeUtils.getParameterAnnotations(creatorConstructor);</span>
+<span class="pc bpc" id="L345" title="1 of 4 branches missed.">                    for (int i = 0; i &lt; types.length &amp;&amp; i &lt; paramAnnotationArrays.length; ++i) {</span>
+<span class="fc" id="L346">                        Annotation[] paramAnnotations = paramAnnotationArrays[i];</span>
+<span class="fc" id="L347">                        JSONField fieldAnnotation = null;</span>
+<span class="pc bfc" id="L348" title="All 2 branches covered.">                        for (Annotation paramAnnotation : paramAnnotations) {</span>
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">                            if (paramAnnotation instanceof JSONField) {</span>
+<span class="fc" id="L350">                                fieldAnnotation = (JSONField) paramAnnotation;</span>
+<span class="fc" id="L351">                                break;</span>
+                            }
+                        }
+
+<span class="fc" id="L355">                        Class&lt;?&gt; fieldClass = types[i];</span>
+<span class="fc" id="L356">                        Type fieldType = creatorConstructor.getGenericParameterTypes()[i];</span>
+
+<span class="fc" id="L358">                        String fieldName = null;</span>
+<span class="fc" id="L359">                        Field field = null;</span>
+<span class="fc" id="L360">                        int ordinal = 0, serialzeFeatures = 0, parserFeatures = 0;</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">                        if (fieldAnnotation != null) {</span>
+<span class="fc" id="L362">                            field = TypeUtils.getField(clazz, fieldAnnotation.name(), declaredFields);</span>
+<span class="fc" id="L363">                            ordinal = fieldAnnotation.ordinal();</span>
+<span class="fc" id="L364">                            serialzeFeatures = SerializerFeature.of(fieldAnnotation.serialzeFeatures());</span>
+<span class="fc" id="L365">                            parserFeatures = Feature.of(fieldAnnotation.parseFeatures());</span>
+<span class="fc" id="L366">                            fieldName = fieldAnnotation.name();</span>
+                        }
+
+<span class="fc bfc" id="L369" title="All 4 branches covered.">                        if (fieldName == null || fieldName.length() == 0) {</span>
+<span class="fc bfc" id="L370" title="All 2 branches covered.">                            if (lookupParameterNames == null) {</span>
+<span class="fc" id="L371">                                lookupParameterNames = ASMUtils.lookupParameterNames(creatorConstructor);</span>
+                            }
+<span class="fc" id="L373">                            fieldName = lookupParameterNames[i];</span>
+                        }
+
+<span class="fc bfc" id="L376" title="All 2 branches covered.">                        if (field == null) {</span>
+<span class="fc bfc" id="L377" title="All 2 branches covered.">                            if (lookupParameterNames == null) {</span>
+<span class="fc bfc" id="L378" title="All 2 branches covered.">                                if (kotlin) {</span>
+<span class="fc" id="L379">                                    lookupParameterNames = TypeUtils.getKoltinConstructorParameters(clazz);</span>
+                                } else {
+<span class="fc" id="L381">                                    lookupParameterNames = ASMUtils.lookupParameterNames(creatorConstructor);</span>
+                                }
+                            }
+
+<span class="pc bpc" id="L385" title="1 of 2 branches missed.">                            if (lookupParameterNames.length &gt; i) {</span>
+<span class="fc" id="L386">                                String parameterName = lookupParameterNames[i];</span>
+<span class="fc" id="L387">                                field = TypeUtils.getField(clazz, parameterName, declaredFields);</span>
+                            }
+                        }
+
+<span class="fc" id="L391">                        FieldInfo fieldInfo = new FieldInfo(fieldName, clazz, fieldClass, fieldType, field,</span>
+                                ordinal, serialzeFeatures, parserFeatures);
+<span class="fc" id="L393">                        add(fieldList, fieldInfo);</span>
+                    }
+                }
+
+                //return new JavaBeanInfo(clazz, builderClass, null, creatorConstructor, null, null, jsonType, fieldList);
+<span class="fc bfc" id="L398" title="All 2 branches covered.">            } else if ((factoryMethod = getFactoryMethod(clazz, methods, jacksonCompatible)) != null) {</span>
+<span class="fc" id="L399">                TypeUtils.setAccessible(factoryMethod);</span>
+
+<span class="fc" id="L401">                String[] lookupParameterNames = null;</span>
+<span class="fc" id="L402">                Class&lt;?&gt;[] types = factoryMethod.getParameterTypes();</span>
+<span class="fc bfc" id="L403" title="All 2 branches covered.">                if (types.length &gt; 0) {</span>
+<span class="fc" id="L404">                    Annotation[][] paramAnnotationArrays = TypeUtils.getParameterAnnotations(factoryMethod);</span>
+<span class="fc bfc" id="L405" title="All 2 branches covered.">                    for (int i = 0; i &lt; types.length; ++i) {</span>
+<span class="fc" id="L406">                        Annotation[] paramAnnotations = paramAnnotationArrays[i];</span>
+<span class="fc" id="L407">                        JSONField fieldAnnotation = null;</span>
+<span class="pc bfc" id="L408" title="All 2 branches covered.">                        for (Annotation paramAnnotation : paramAnnotations) {</span>
+<span class="pc bpc" id="L409" title="1 of 2 branches missed.">                            if (paramAnnotation instanceof JSONField) {</span>
+<span class="fc" id="L410">                                fieldAnnotation = (JSONField) paramAnnotation;</span>
+<span class="fc" id="L411">                                break;</span>
+                            }
+                        }
+<span class="pc bpc" id="L414" title="1 of 6 branches missed.">                        if (fieldAnnotation == null &amp;&amp; !(jacksonCompatible &amp;&amp; TypeUtils.isJacksonCreator(factoryMethod))) {</span>
+<span class="fc" id="L415">                            throw new JSONException(&quot;illegal json creator&quot;);</span>
+                        }
+
+<span class="fc" id="L418">                        String fieldName = null;</span>
+<span class="fc" id="L419">                        int ordinal = 0, serialzeFeatures = 0, parserFeatures = 0;</span>
+
+<span class="fc bfc" id="L421" title="All 2 branches covered.">                        if (fieldAnnotation != null) {</span>
+<span class="fc" id="L422">                            fieldName = fieldAnnotation.name();</span>
+<span class="fc" id="L423">                            ordinal = fieldAnnotation.ordinal();</span>
+<span class="fc" id="L424">                            serialzeFeatures = SerializerFeature.of(fieldAnnotation.serialzeFeatures());</span>
+<span class="fc" id="L425">                            parserFeatures = Feature.of(fieldAnnotation.parseFeatures());</span>
+                        }
+
+<span class="pc bpc" id="L428" title="1 of 4 branches missed.">                        if (fieldName == null || fieldName.length() == 0) {</span>
+<span class="pc bpc" id="L429" title="1 of 2 branches missed.">                            if (lookupParameterNames == null) {</span>
+<span class="fc" id="L430">                                lookupParameterNames = ASMUtils.lookupParameterNames(factoryMethod);</span>
+                            }
+<span class="fc" id="L432">                            fieldName = lookupParameterNames[i];</span>
+                        }
+
+<span class="fc" id="L435">                        Class&lt;?&gt; fieldClass = types[i];</span>
+<span class="fc" id="L436">                        Type fieldType = factoryMethod.getGenericParameterTypes()[i];</span>
+
+<span class="fc" id="L438">                        Field field = TypeUtils.getField(clazz, fieldName, declaredFields);</span>
+<span class="fc" id="L439">                        FieldInfo fieldInfo = new FieldInfo(fieldName, clazz, fieldClass, fieldType, field,</span>
+                                ordinal, serialzeFeatures, parserFeatures);
+<span class="fc" id="L441">                        add(fieldList, fieldInfo);</span>
+                    }
+
+<span class="fc" id="L444">                    return new JavaBeanInfo(clazz, builderClass, null, null, factoryMethod, null, jsonType, fieldList);</span>
+                }
+<span class="fc bfc" id="L446" title="All 2 branches covered.">            } else if (!isInterfaceOrAbstract) {</span>
+<span class="fc" id="L447">                String className = clazz.getName();</span>
+
+<span class="fc" id="L449">                String[] paramNames = null;</span>
+<span class="pc bpc" id="L450" title="1 of 4 branches missed.">                if (kotlin &amp;&amp; constructors.length &gt; 0) {</span>
+<span class="fc" id="L451">                    paramNames = TypeUtils.getKoltinConstructorParameters(clazz);</span>
+<span class="fc" id="L452">                    creatorConstructor = TypeUtils.getKotlinConstructor(constructors, paramNames);</span>
+<span class="fc" id="L453">                    TypeUtils.setAccessible(creatorConstructor);</span>
+                } else {
+
+<span class="fc bfc" id="L456" title="All 2 branches covered.">                    for (Constructor constructor : constructors) {</span>
+<span class="fc" id="L457">                        Class&lt;?&gt;[] parameterTypes = constructor.getParameterTypes();</span>
+
+<span class="fc bfc" id="L459" title="All 2 branches covered.">                        if (className.equals(&quot;org.springframework.security.web.authentication.WebAuthenticationDetails&quot;)) {</span>
+<span class="pc bpc" id="L460" title="2 of 6 branches missed.">                            if (parameterTypes.length == 2 &amp;&amp; parameterTypes[0] == String.class &amp;&amp; parameterTypes[1] == String.class) {</span>
+<span class="fc" id="L461">                                creatorConstructor = constructor;</span>
+<span class="fc" id="L462">                                creatorConstructor.setAccessible(true);</span>
+<span class="fc" id="L463">                                paramNames = ASMUtils.lookupParameterNames(constructor);</span>
+<span class="fc" id="L464">                                break;</span>
+                            } else {
+                                continue;
+                            }
+                        }
+
+<span class="fc bfc" id="L470" title="All 2 branches covered.">                        if (className.equals(&quot;org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken&quot;)) {</span>
+<span class="pc bpc" id="L471" title="3 of 8 branches missed.">                            if (parameterTypes.length == 3</span>
+                                    &amp;&amp; parameterTypes[0] == Object.class
+                                    &amp;&amp; parameterTypes[1] == Object.class
+                                    &amp;&amp; parameterTypes[2] == Collection.class) {
+<span class="fc" id="L475">                                creatorConstructor = constructor;</span>
+<span class="fc" id="L476">                                creatorConstructor.setAccessible(true);</span>
+<span class="fc" id="L477">                                paramNames = new String[] {&quot;principal&quot;, &quot;credentials&quot;, &quot;authorities&quot;};</span>
+<span class="fc" id="L478">                                break;</span>
+                            } else {
+                                continue;
+                            }
+                        }
+
+<span class="fc bfc" id="L484" title="All 2 branches covered.">                        if (className.equals(&quot;org.springframework.security.core.authority.SimpleGrantedAuthority&quot;)) {</span>
+<span class="pc bpc" id="L485" title="2 of 4 branches missed.">                            if (parameterTypes.length == 1</span>
+                                    &amp;&amp; parameterTypes[0] == String.class) {
+<span class="fc" id="L487">                                creatorConstructor = constructor;</span>
+<span class="fc" id="L488">                                paramNames = new String[] {&quot;authority&quot;};</span>
+<span class="fc" id="L489">                                break;</span>
+                            } else {
+                                continue;
+                            }
+                        }
+
+                        //
+
+
+<span class="pc bpc" id="L498" title="1 of 2 branches missed.">                        boolean is_public = (constructor.getModifiers() &amp; Modifier.PUBLIC) != 0;</span>
+<span class="pc bpc" id="L499" title="1 of 2 branches missed.">                        if (!is_public) {</span>
+<span class="nc" id="L500">                            continue;</span>
+                        }
+<span class="fc" id="L502">                        String[] lookupParameterNames = ASMUtils.lookupParameterNames(constructor);</span>
+<span class="pc bpc" id="L503" title="2 of 4 branches missed.">                        if (lookupParameterNames == null || lookupParameterNames.length == 0) {</span>
+<span class="nc" id="L504">                            continue;</span>
+                        }
+
+<span class="pc bpc" id="L507" title="1 of 6 branches missed.">                        if (creatorConstructor != null</span>
+                                &amp;&amp; paramNames != null &amp;&amp; lookupParameterNames.length &lt;= paramNames.length) {
+<span class="fc" id="L509">                            continue;</span>
+                        }
+
+<span class="fc" id="L512">                        paramNames = lookupParameterNames;</span>
+<span class="fc" id="L513">                        creatorConstructor = constructor;</span>
+                    }
+                }
+
+<span class="fc" id="L517">                Class&lt;?&gt;[] types = null;</span>
+<span class="pc bpc" id="L518" title="1 of 2 branches missed.">                if (paramNames != null) {</span>
+<span class="fc" id="L519">                    types = creatorConstructor.getParameterTypes();</span>
+                }
+
+<span class="pc bpc" id="L522" title="1 of 4 branches missed.">                if (paramNames != null</span>
+                        &amp;&amp; types.length == paramNames.length) {
+<span class="fc" id="L524">                    Annotation[][] paramAnnotationArrays = TypeUtils.getParameterAnnotations(creatorConstructor);</span>
+<span class="fc bfc" id="L525" title="All 2 branches covered.">                    for (int i = 0; i &lt; types.length; ++i) {</span>
+<span class="fc" id="L526">                        Annotation[] paramAnnotations = paramAnnotationArrays[i];</span>
+<span class="fc" id="L527">                        String paramName = paramNames[i];</span>
+
+<span class="fc" id="L529">                        JSONField fieldAnnotation = null;</span>
+<span class="pc bpc" id="L530" title="1 of 2 branches missed.">                        for (Annotation paramAnnotation : paramAnnotations) {</span>
+<span class="nc bnc" id="L531" title="All 2 branches missed.">                            if (paramAnnotation instanceof JSONField) {</span>
+<span class="nc" id="L532">                                fieldAnnotation = (JSONField) paramAnnotation;</span>
+<span class="nc" id="L533">                                break;</span>
+                            }
+                        }
+
+<span class="fc" id="L537">                        Class&lt;?&gt; fieldClass = types[i];</span>
+<span class="fc" id="L538">                        Type fieldType = creatorConstructor.getGenericParameterTypes()[i];</span>
+<span class="fc" id="L539">                        Field field = TypeUtils.getField(clazz, paramName, declaredFields);</span>
+<span class="fc bfc" id="L540" title="All 2 branches covered.">                        if (field != null) {</span>
+<span class="pc bpc" id="L541" title="1 of 2 branches missed.">                            if (fieldAnnotation == null) {</span>
+<span class="fc" id="L542">                                fieldAnnotation = TypeUtils.getAnnotation(field, JSONField.class);</span>
+                            }
+                        }
+                        final int ordinal, serialzeFeatures, parserFeatures;
+<span class="fc bfc" id="L546" title="All 2 branches covered.">                        if (fieldAnnotation == null) {</span>
+<span class="fc" id="L547">                            ordinal = 0;</span>
+<span class="fc" id="L548">                            serialzeFeatures = 0;</span>
+
+<span class="fc bfc" id="L550" title="All 2 branches covered.">                            if (&quot;org.springframework.security.core.userdetails.User&quot;.equals(className)</span>
+<span class="fc bfc" id="L551" title="All 2 branches covered.">                                    &amp;&amp; &quot;password&quot;.equals(paramName)) {</span>
+<span class="fc" id="L552">                                parserFeatures = Feature.InitStringFieldAsEmpty.mask;</span>
+                            } else {
+<span class="fc" id="L554">                                parserFeatures = 0;</span>
+                            }
+                        } else {
+<span class="fc" id="L557">                            String nameAnnotated = fieldAnnotation.name();</span>
+<span class="pc bpc" id="L558" title="1 of 2 branches missed.">                            if (nameAnnotated.length() != 0) {</span>
+<span class="fc" id="L559">                                paramName = nameAnnotated;</span>
+                            }
+<span class="fc" id="L561">                            ordinal = fieldAnnotation.ordinal();</span>
+<span class="fc" id="L562">                            serialzeFeatures = SerializerFeature.of(fieldAnnotation.serialzeFeatures());</span>
+<span class="fc" id="L563">                            parserFeatures = Feature.of(fieldAnnotation.parseFeatures());</span>
+                        }
+<span class="fc" id="L565">                        FieldInfo fieldInfo = new FieldInfo(paramName, clazz, fieldClass, fieldType, field,</span>
+                                ordinal, serialzeFeatures, parserFeatures);
+<span class="fc" id="L567">                        add(fieldList, fieldInfo);</span>
+                    }
+
+<span class="fc bfc" id="L570" title="All 4 branches covered.">                    if ((!kotlin) &amp;&amp; !clazz.getName().equals(&quot;javax.servlet.http.Cookie&quot;)) {</span>
+<span class="fc" id="L571">                        return new JavaBeanInfo(clazz, builderClass, null, creatorConstructor, null, null, jsonType, fieldList);</span>
+                    }
+<span class="fc" id="L573">                } else {</span>
+<span class="fc" id="L574">                    throw new JSONException(&quot;default constructor not found. &quot; + clazz);</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L579" title="All 2 branches covered.">        if (defaultConstructor != null) {</span>
+<span class="fc" id="L580">            TypeUtils.setAccessible(defaultConstructor);</span>
+        }
+
+<span class="fc bfc" id="L583" title="All 2 branches covered.">        if (builderClass != null) {</span>
+<span class="fc" id="L584">            String withPrefix = null;</span>
+
+<span class="fc" id="L586">            JSONPOJOBuilder builderAnno = TypeUtils.getAnnotation(builderClass, JSONPOJOBuilder.class);</span>
+<span class="fc bfc" id="L587" title="All 2 branches covered.">            if (builderAnno != null) {</span>
+<span class="fc" id="L588">                withPrefix = builderAnno.withPrefix();</span>
+            }
+
+<span class="fc bfc" id="L591" title="All 2 branches covered.">            if (withPrefix == null) {</span>
+<span class="fc" id="L592">                withPrefix = &quot;with&quot;;</span>
+            }
+
+<span class="fc bfc" id="L595" title="All 2 branches covered.">            for (Method method : builderClass.getMethods()) {</span>
+<span class="pc bpc" id="L596" title="1 of 2 branches missed.">                if (Modifier.isStatic(method.getModifiers())) {</span>
+<span class="nc" id="L597">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L600" title="All 2 branches covered.">                if (!(method.getReturnType().equals(builderClass))) {</span>
+<span class="fc" id="L601">                    continue;</span>
+                }
+
+<span class="fc" id="L604">                int ordinal = 0, serialzeFeatures = 0, parserFeatures = 0;</span>
+
+<span class="fc" id="L606">                JSONField annotation = TypeUtils.getAnnotation(method, JSONField.class);</span>
+
+<span class="fc bfc" id="L608" title="All 2 branches covered.">                if (annotation == null) {</span>
+<span class="fc" id="L609">                    annotation = TypeUtils.getSuperMethodAnnotation(clazz, method);</span>
+                }
+
+<span class="fc bfc" id="L612" title="All 2 branches covered.">                if (annotation != null) {</span>
+<span class="pc bpc" id="L613" title="1 of 2 branches missed.">                    if (!annotation.deserialize()) {</span>
+<span class="nc" id="L614">                        continue;</span>
+                    }
+
+<span class="fc" id="L617">                    ordinal = annotation.ordinal();</span>
+<span class="fc" id="L618">                    serialzeFeatures = SerializerFeature.of(annotation.serialzeFeatures());</span>
+<span class="fc" id="L619">                    parserFeatures = Feature.of(annotation.parseFeatures());</span>
+
+<span class="pc bpc" id="L621" title="1 of 2 branches missed.">                    if (annotation.name().length() != 0) {</span>
+<span class="fc" id="L622">                        String propertyName = annotation.name();</span>
+<span class="fc" id="L623">                        add(fieldList, new FieldInfo(propertyName, method, null, clazz, type, ordinal, serialzeFeatures, parserFeatures,</span>
+                                annotation, null, null, genericInfo));
+<span class="fc" id="L625">                        continue;</span>
+                    }
+                }
+
+<span class="fc" id="L629">                String methodName = method.getName();</span>
+                StringBuilder properNameBuilder;
+<span class="pc bpc" id="L631" title="1 of 4 branches missed.">                if (methodName.startsWith(&quot;set&quot;) &amp;&amp; methodName.length() &gt; 3) {</span>
+<span class="fc" id="L632">                    properNameBuilder = new StringBuilder(methodName.substring(3));</span>
+                } else {
+<span class="fc bfc" id="L634" title="All 2 branches covered.">                    if (withPrefix.length() == 0){</span>
+<span class="fc" id="L635">                        properNameBuilder = new StringBuilder(methodName);</span>
+                    } else {
+<span class="pc bpc" id="L637" title="1 of 2 branches missed.">                        if (!methodName.startsWith(withPrefix)) {</span>
+<span class="nc" id="L638">                            continue;</span>
+                        }
+
+<span class="pc bpc" id="L641" title="1 of 2 branches missed.">                        if (methodName.length() &lt;= withPrefix.length()) {</span>
+<span class="nc" id="L642">                            continue;</span>
+                        }
+                        
+<span class="fc" id="L645">                        properNameBuilder = new StringBuilder(methodName.substring(withPrefix.length()));</span>
+                    }
+                }
+
+<span class="fc" id="L649">                char c0 = properNameBuilder.charAt(0);</span>
+<span class="pc bpc" id="L650" title="1 of 4 branches missed.">                if (withPrefix.length() != 0 &amp;&amp; !Character.isUpperCase(c0)) {</span>
+<span class="nc" id="L651">                    continue;</span>
+                }
+
+<span class="fc" id="L654">                properNameBuilder.setCharAt(0, Character.toLowerCase(c0));</span>
+
+<span class="fc" id="L656">                String propertyName = properNameBuilder.toString();</span>
+
+<span class="fc" id="L658">                add(fieldList, new FieldInfo(propertyName, method, null, clazz, type, ordinal, serialzeFeatures, parserFeatures,</span>
+                        annotation, null, null, genericInfo));
+            }
+
+<span class="pc bpc" id="L662" title="1 of 2 branches missed.">            if (builderClass != null) {</span>
+<span class="fc" id="L663">                JSONPOJOBuilder builderAnnotation = TypeUtils.getAnnotation(builderClass, JSONPOJOBuilder.class);</span>
+
+<span class="fc" id="L665">                String buildMethodName = null;</span>
+<span class="fc bfc" id="L666" title="All 2 branches covered.">                if (builderAnnotation != null) {</span>
+<span class="fc" id="L667">                    buildMethodName = builderAnnotation.buildMethod();</span>
+                }
+
+<span class="pc bpc" id="L670" title="1 of 4 branches missed.">                if (buildMethodName == null || buildMethodName.length() == 0) {</span>
+<span class="fc" id="L671">                    buildMethodName = &quot;build&quot;;</span>
+                }
+
+                try {
+<span class="fc" id="L675">                    buildMethod = builderClass.getMethod(buildMethodName);</span>
+<span class="fc" id="L676">                } catch (NoSuchMethodException e) {</span>
+                    // skip
+<span class="nc" id="L678">                } catch (SecurityException e) {</span>
+                    // skip
+<span class="fc" id="L680">                }</span>
+
+<span class="fc bfc" id="L682" title="All 2 branches covered.">                if (buildMethod == null) {</span>
+                    try {
+<span class="fc" id="L684">                        buildMethod = builderClass.getMethod(&quot;create&quot;);</span>
+<span class="nc" id="L685">                    } catch (NoSuchMethodException e) {</span>
+                        // skip
+<span class="nc" id="L687">                    } catch (SecurityException e) {</span>
+                        // skip
+<span class="pc" id="L689">                    }</span>
+                }
+
+<span class="pc bpc" id="L692" title="1 of 2 branches missed.">                if (buildMethod == null) {</span>
+<span class="nc" id="L693">                    throw new JSONException(&quot;buildMethod not found.&quot;);</span>
+                }
+
+<span class="fc" id="L696">                TypeUtils.setAccessible(buildMethod);</span>
+            }
+        }
+
+<span class="fc bfc" id="L700" title="All 2 branches covered.">        for (Method method : methods) { //</span>
+<span class="fc" id="L701">            int ordinal = 0, serialzeFeatures = 0, parserFeatures = 0;</span>
+<span class="fc" id="L702">            String methodName = method.getName();</span>
+
+<span class="fc bfc" id="L704" title="All 2 branches covered.">            if (Modifier.isStatic(method.getModifiers())) {</span>
+<span class="fc" id="L705">                continue;</span>
+            }
+
+            // support builder set
+<span class="fc" id="L709">            Class&lt;?&gt; returnType = method.getReturnType();</span>
+<span class="fc bfc" id="L710" title="All 4 branches covered.">            if (!(returnType.equals(Void.TYPE) || returnType.equals(method.getDeclaringClass()))) {</span>
+<span class="fc" id="L711">                continue;</span>
+            }
+
+<span class="fc bfc" id="L714" title="All 2 branches covered.">            if (method.getDeclaringClass() == Object.class) {</span>
+<span class="fc" id="L715">                continue;</span>
+            }
+
+<span class="fc" id="L718">            Class&lt;?&gt;[] types = method.getParameterTypes();</span>
+
+<span class="fc bfc" id="L720" title="All 4 branches covered.">            if (types.length == 0 || types.length &gt; 2) {</span>
+<span class="fc" id="L721">                continue;</span>
+            }
+
+<span class="fc" id="L724">            JSONField annotation = TypeUtils.getAnnotation(method, JSONField.class);</span>
+<span class="pc bpc" id="L725" title="2 of 8 branches missed.">            if (annotation != null</span>
+                    &amp;&amp; types.length == 2
+                    &amp;&amp; types[0] == String.class
+                    &amp;&amp; types[1] == Object.class) {
+<span class="fc" id="L729">                add(fieldList, new FieldInfo(&quot;&quot;, method, null, clazz, type, ordinal,</span>
+                        serialzeFeatures, parserFeatures, annotation, null, null, genericInfo));
+<span class="fc" id="L731">                continue;</span>
+            }
+
+<span class="fc bfc" id="L734" title="All 2 branches covered.">            if (types.length != 1) {</span>
+<span class="fc" id="L735">                continue;</span>
+            }
+
+<span class="fc bfc" id="L738" title="All 2 branches covered.">            if (annotation == null) {</span>
+<span class="fc" id="L739">                annotation = TypeUtils.getSuperMethodAnnotation(clazz, method);</span>
+            }
+
+<span class="fc bfc" id="L742" title="All 4 branches covered.">            if (annotation == null &amp;&amp; methodName.length() &lt; 4) {</span>
+<span class="fc" id="L743">                continue;</span>
+            }
+
+<span class="fc bfc" id="L746" title="All 2 branches covered.">            if (annotation != null) {</span>
+<span class="fc bfc" id="L747" title="All 2 branches covered.">                if (!annotation.deserialize()) {</span>
+<span class="fc" id="L748">                    continue;</span>
+                }
+
+<span class="fc" id="L751">                ordinal = annotation.ordinal();</span>
+<span class="fc" id="L752">                serialzeFeatures = SerializerFeature.of(annotation.serialzeFeatures());</span>
+<span class="fc" id="L753">                parserFeatures = Feature.of(annotation.parseFeatures());</span>
+
+<span class="fc bfc" id="L755" title="All 2 branches covered.">                if (annotation.name().length() != 0) {</span>
+<span class="fc" id="L756">                    String propertyName = annotation.name();</span>
+<span class="fc" id="L757">                    add(fieldList, new FieldInfo(propertyName, method, null, clazz, type, ordinal, serialzeFeatures, parserFeatures,</span>
+                            annotation, null, null, genericInfo));
+<span class="fc" id="L759">                    continue;</span>
+                }
+            }
+
+<span class="fc bfc" id="L763" title="All 6 branches covered.">            if (annotation == null &amp;&amp; !methodName.startsWith(&quot;set&quot;) || builderClass != null) { // TODO &quot;set&quot;的判断放在 JSONField 注解后面，意思是允许非 setter 方法标记 JSONField 注解？</span>
+<span class="fc" id="L764">                continue;</span>
+            }
+
+<span class="fc" id="L767">            char c3 = methodName.charAt(3);</span>
+
+            String propertyName;
+<span class="fc" id="L770">            Field field = null;</span>
+            // 用于存储KotlinBean中所有的get方法, 方便后续判断
+<span class="fc" id="L772">            List&lt;String&gt; getMethodNameList = null;</span>
+
+<span class="fc bfc" id="L774" title="All 2 branches covered.">            if (kotlin) {</span>
+<span class="fc" id="L775">                getMethodNameList = new ArrayList();</span>
+<span class="fc bfc" id="L776" title="All 2 branches covered.">                for (int i = 0; i &lt; methods.length; i++) {</span>
+<span class="fc bfc" id="L777" title="All 2 branches covered.">                    if (methods[i].getName().startsWith(&quot;get&quot;)) {</span>
+<span class="fc" id="L778">                        getMethodNameList.add(methods[i].getName());</span>
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L783" title="All 4 branches covered.">            if (Character.isUpperCase(c3) //</span>
+                    || c3 &gt; 512 // for unicode method name
+                    ) {
+                // 这里本身的逻辑是通过setAbc这类方法名解析出成员变量名为abc或者Abc, 但是在kotlin中, isAbc, abc成员变量的set方法都是setAbc
+                // 因此如果是kotlin的话还需要进行不一样的判断, 判断的方式是通过get方法进行判断, isAbc的get方法名为isAbc(), abc的get方法名为getAbc()
+<span class="fc bfc" id="L788" title="All 2 branches covered.">                if (kotlin) {</span>
+<span class="fc" id="L789">                    String getMethodName = &quot;g&quot; + methodName.substring(1);</span>
+<span class="fc" id="L790">                    propertyName = TypeUtils.getPropertyNameByMethodName(getMethodName);</span>
+<span class="fc" id="L791">                } else {</span>
+<span class="fc bfc" id="L792" title="All 2 branches covered.">                    if (TypeUtils.compatibleWithJavaBean) {</span>
+<span class="fc" id="L793">                        propertyName = TypeUtils.decapitalize(methodName.substring(3));</span>
+                    } else {
+<span class="fc" id="L795">                        propertyName = TypeUtils.getPropertyNameByMethodName(methodName);</span>
+                    }
+                }
+
+<span class="fc bfc" id="L799" title="All 2 branches covered.">            } else if (c3 == '_') {</span>
+                // 这里本身的逻辑是通过set_abc这类方法名解析出成员变量名为abc, 但是在kotlin中, is_abc和_abc成员变量的set方法都是set_abc
+                // 因此如果是kotlin的话还需要进行不一样的判断, 判断的方式是通过get方法进行判断, is_abc的get方法名为is_abc(), _abc的get方法名为get_abc()
+<span class="pc bpc" id="L802" title="1 of 2 branches missed.">                if (kotlin) {</span>
+<span class="nc" id="L803">                    String getMethodName = &quot;g&quot; + methodName.substring(1);</span>
+<span class="nc bnc" id="L804" title="All 2 branches missed.">                    if (getMethodNameList.contains(getMethodName)) {</span>
+<span class="nc" id="L805">                        propertyName = methodName.substring(3);</span>
+                    } else {
+<span class="nc" id="L807">                        propertyName = &quot;is&quot; + methodName.substring(3);</span>
+                    }
+<span class="nc" id="L809">                    field = TypeUtils.getField(clazz, propertyName, declaredFields);</span>
+<span class="nc" id="L810">                } else {</span>
+<span class="fc" id="L811">                    propertyName = methodName.substring(4);</span>
+<span class="fc" id="L812">                    field = TypeUtils.getField(clazz, propertyName, declaredFields);</span>
+<span class="fc bfc" id="L813" title="All 2 branches covered.">                    if (field == null) {</span>
+<span class="fc" id="L814">                        String temp = propertyName;</span>
+<span class="fc" id="L815">                        propertyName = methodName.substring(3);</span>
+<span class="fc" id="L816">                        field = TypeUtils.getField(clazz, propertyName, declaredFields);</span>
+<span class="pc bpc" id="L817" title="1 of 2 branches missed.">                        if (field == null) {</span>
+<span class="nc" id="L818">                            propertyName = temp; //减少修改代码带来的影响</span>
+                        }
+<span class="fc" id="L820">                    }</span>
+                }
+
+<span class="fc bfc" id="L823" title="All 2 branches covered.">            } else if (c3 == 'f') {</span>
+<span class="fc" id="L824">                propertyName = methodName.substring(3);</span>
+<span class="pc bpc" id="L825" title="1 of 4 branches missed.">            } else if (methodName.length() &gt;= 5 &amp;&amp; Character.isUpperCase(methodName.charAt(4))) {</span>
+<span class="fc" id="L826">                propertyName = TypeUtils.decapitalize(methodName.substring(3));</span>
+            } else {
+<span class="fc" id="L828">                propertyName = methodName.substring(3);</span>
+<span class="fc" id="L829">                field = TypeUtils.getField(clazz, propertyName, declaredFields);</span>
+<span class="pc bpc" id="L830" title="1 of 2 branches missed.">                if (field == null) {</span>
+<span class="nc" id="L831">                    continue;</span>
+                }
+            }
+
+<span class="fc bfc" id="L835" title="All 2 branches covered.">            if (field == null) {</span>
+<span class="fc" id="L836">                field = TypeUtils.getField(clazz, propertyName, declaredFields);</span>
+            }
+
+<span class="fc bfc" id="L839" title="All 4 branches covered.">            if (field == null &amp;&amp; types[0] == boolean.class) {</span>
+<span class="fc" id="L840">                String isFieldName = &quot;is&quot; + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);</span>
+<span class="fc" id="L841">                field = TypeUtils.getField(clazz, isFieldName, declaredFields);</span>
+            }
+
+<span class="fc" id="L844">            JSONField fieldAnnotation = null;</span>
+<span class="fc bfc" id="L845" title="All 2 branches covered.">            if (field != null) {</span>
+<span class="fc" id="L846">                fieldAnnotation = TypeUtils.getAnnotation(field, JSONField.class);</span>
+
+<span class="fc bfc" id="L848" title="All 2 branches covered.">                if (fieldAnnotation != null) {</span>
+<span class="fc bfc" id="L849" title="All 2 branches covered.">                    if (!fieldAnnotation.deserialize()) {</span>
+<span class="fc" id="L850">                        continue;</span>
+                    }
+
+<span class="fc" id="L853">                    ordinal = fieldAnnotation.ordinal();</span>
+<span class="fc" id="L854">                    serialzeFeatures = SerializerFeature.of(fieldAnnotation.serialzeFeatures());</span>
+<span class="fc" id="L855">                    parserFeatures = Feature.of(fieldAnnotation.parseFeatures());</span>
+
+<span class="fc bfc" id="L857" title="All 2 branches covered.">                    if (fieldAnnotation.name().length() != 0) {</span>
+<span class="fc" id="L858">                        propertyName = fieldAnnotation.name();</span>
+<span class="fc" id="L859">                        add(fieldList, new FieldInfo(propertyName, method, field, clazz, type, ordinal,</span>
+                                serialzeFeatures, parserFeatures, annotation, fieldAnnotation, null, genericInfo));
+<span class="fc" id="L861">                        continue;</span>
+                    }
+                }
+
+            }
+
+<span class="fc bfc" id="L867" title="All 2 branches covered.">            if (propertyNamingStrategy != null) {</span>
+<span class="fc" id="L868">                propertyName = propertyNamingStrategy.translate(propertyName);</span>
+            }
+
+<span class="fc" id="L871">            add(fieldList, new FieldInfo(propertyName, method, field, clazz, type, ordinal, serialzeFeatures, parserFeatures,</span>
+                    annotation, fieldAnnotation, null, genericInfo));
+        }
+
+<span class="fc" id="L875">        Field[] fields = clazz.getFields();</span>
+<span class="fc" id="L876">        computeFields(clazz, type, propertyNamingStrategy, fieldList, fields);</span>
+
+<span class="fc bfc" id="L878" title="All 2 branches covered.">        for (Method method : clazz.getMethods()) { // getter methods</span>
+<span class="fc" id="L879">            String methodName = method.getName();</span>
+<span class="fc bfc" id="L880" title="All 2 branches covered.">            if (methodName.length() &lt; 4) {</span>
+<span class="fc" id="L881">                continue;</span>
+            }
+
+<span class="fc bfc" id="L884" title="All 2 branches covered.">            if (Modifier.isStatic(method.getModifiers())) {</span>
+<span class="fc" id="L885">                continue;</span>
+            }
+
+<span class="fc bfc" id="L888" title="All 6 branches covered.">            if (builderClass == null &amp;&amp; methodName.startsWith(&quot;get&quot;) &amp;&amp; Character.isUpperCase(methodName.charAt(3))) {</span>
+<span class="fc bfc" id="L889" title="All 2 branches covered.">                if (method.getParameterTypes().length != 0) {</span>
+<span class="fc" id="L890">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L893" title="All 2 branches covered.">                if (Collection.class.isAssignableFrom(method.getReturnType()) //</span>
+<span class="fc bfc" id="L894" title="All 2 branches covered.">                        || Map.class.isAssignableFrom(method.getReturnType()) //</span>
+<span class="fc bfc" id="L895" title="All 2 branches covered.">                        || AtomicBoolean.class == method.getReturnType() //</span>
+<span class="fc bfc" id="L896" title="All 2 branches covered.">                        || AtomicInteger.class == method.getReturnType() //</span>
+<span class="fc bfc" id="L897" title="All 2 branches covered.">                        || AtomicLong.class == method.getReturnType() //</span>
+                        ) {
+                    String propertyName;
+<span class="fc" id="L900">                    Field collectionField = null;</span>
+
+<span class="fc" id="L902">                    JSONField annotation = TypeUtils.getAnnotation(method, JSONField.class);</span>
+<span class="pc bpc" id="L903" title="1 of 4 branches missed.">                    if (annotation != null &amp;&amp; annotation.deserialize()) {</span>
+<span class="fc" id="L904">                        continue;</span>
+                    }
+
+<span class="pc bpc" id="L907" title="3 of 4 branches missed.">                    if (annotation != null &amp;&amp; annotation.name().length() &gt; 0) {</span>
+<span class="nc" id="L908">                        propertyName = annotation.name();</span>
+                    } else {
+<span class="fc" id="L910">                        propertyName = TypeUtils.getPropertyNameByMethodName(methodName);</span>
+
+<span class="fc" id="L912">                        Field field = TypeUtils.getField(clazz, propertyName, declaredFields);</span>
+<span class="fc bfc" id="L913" title="All 2 branches covered.">                        if (field != null) {</span>
+<span class="fc" id="L914">                            JSONField fieldAnnotation = TypeUtils.getAnnotation(field, JSONField.class);</span>
+<span class="fc bfc" id="L915" title="All 4 branches covered.">                            if (fieldAnnotation != null &amp;&amp; !fieldAnnotation.deserialize()) {</span>
+<span class="fc" id="L916">                                continue;</span>
+                            }
+
+<span class="fc bfc" id="L919" title="All 2 branches covered.">                            if (Collection.class.isAssignableFrom(method.getReturnType())</span>
+<span class="fc bfc" id="L920" title="All 2 branches covered.">                                || Map.class.isAssignableFrom(method.getReturnType())) {</span>
+<span class="fc" id="L921">                                collectionField = field;</span>
+                            }
+                        }
+                    }
+
+<span class="fc bfc" id="L926" title="All 2 branches covered.">                    if (propertyNamingStrategy != null) {</span>
+<span class="fc" id="L927">                        propertyName = propertyNamingStrategy.translate(propertyName);</span>
+                    }
+
+<span class="fc" id="L930">                    FieldInfo fieldInfo = getField(fieldList, propertyName);</span>
+<span class="fc bfc" id="L931" title="All 2 branches covered.">                    if (fieldInfo != null) {</span>
+<span class="fc" id="L932">                        continue;</span>
+                    }
+
+<span class="fc" id="L935">                    add(fieldList, new FieldInfo(propertyName, method, collectionField, clazz, type, 0, 0, 0, annotation, null, null, genericInfo));</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L940" title="All 2 branches covered.">        if (fieldList.size() == 0) {</span>
+<span class="fc bfc" id="L941" title="All 2 branches covered.">            if (TypeUtils.isXmlField(clazz)) {</span>
+<span class="fc" id="L942">                fieldBased = true;</span>
+            }
+
+<span class="fc bfc" id="L945" title="All 2 branches covered.">            if (fieldBased) {</span>
+<span class="fc bfc" id="L946" title="All 2 branches covered.">                for (Class&lt;?&gt; currentClass = clazz; currentClass != null; currentClass = currentClass.getSuperclass()) {</span>
+<span class="fc" id="L947">                    computeFields(clazz, type, propertyNamingStrategy, fieldList, declaredFields);</span>
+                }
+            }
+        }
+
+<span class="fc" id="L952">        return new JavaBeanInfo(clazz, builderClass, defaultConstructor, creatorConstructor, factoryMethod, buildMethod, jsonType, fieldList);</span>
+    }
+
+    private static void computeFields(Class&lt;?&gt; clazz, Type type, PropertyNamingStrategy propertyNamingStrategy, List&lt;FieldInfo&gt; fieldList, Field[] fields) {
+<span class="fc" id="L956">        Map&lt;TypeVariable, Type&gt; genericInfo = buildGenericInfo(clazz);</span>
+
+<span class="fc bfc" id="L958" title="All 2 branches covered.">        for (Field field : fields) { // public static fields</span>
+<span class="fc" id="L959">            int modifiers = field.getModifiers();</span>
+<span class="fc bfc" id="L960" title="All 2 branches covered.">            if ((modifiers &amp; Modifier.STATIC) != 0) {</span>
+<span class="fc" id="L961">                continue;</span>
+            }
+
+<span class="fc bfc" id="L964" title="All 2 branches covered.">            if ((modifiers &amp; Modifier.FINAL) != 0) {</span>
+<span class="fc" id="L965">                Class&lt;?&gt; fieldType = field.getType();</span>
+<span class="fc bfc" id="L966" title="All 2 branches covered.">                boolean supportReadOnly = Map.class.isAssignableFrom(fieldType)</span>
+<span class="fc bfc" id="L967" title="All 2 branches covered.">                        || Collection.class.isAssignableFrom(fieldType)</span>
+<span class="fc bfc" id="L968" title="All 2 branches covered.">                        || AtomicLong.class.equals(fieldType) //</span>
+<span class="fc bfc" id="L969" title="All 2 branches covered.">                        || AtomicInteger.class.equals(fieldType) //</span>
+<span class="fc bfc" id="L970" title="All 2 branches covered.">                        || AtomicBoolean.class.equals(fieldType);</span>
+<span class="fc bfc" id="L971" title="All 2 branches covered.">                if (!supportReadOnly) {</span>
+<span class="fc" id="L972">                    continue;</span>
+                }
+            }
+
+<span class="fc" id="L976">            boolean contains = false;</span>
+<span class="fc bfc" id="L977" title="All 2 branches covered.">            for (FieldInfo item : fieldList) {</span>
+<span class="fc bfc" id="L978" title="All 2 branches covered.">                if (item.name.equals(field.getName())) {</span>
+<span class="fc" id="L979">                    contains = true;</span>
+<span class="fc" id="L980">                    break; // 已经是 contains = true，无需继续遍历</span>
+                }
+<span class="fc" id="L982">            }</span>
+
+<span class="fc bfc" id="L984" title="All 2 branches covered.">            if (contains) {</span>
+<span class="fc" id="L985">                continue;</span>
+            }
+
+<span class="fc" id="L988">            int ordinal = 0, serialzeFeatures = 0, parserFeatures = 0;</span>
+<span class="fc" id="L989">            String propertyName = field.getName();</span>
+
+<span class="fc" id="L991">            JSONField fieldAnnotation = TypeUtils.getAnnotation(field, JSONField.class);</span>
+
+<span class="fc bfc" id="L993" title="All 2 branches covered.">            if (fieldAnnotation != null) {</span>
+<span class="fc bfc" id="L994" title="All 2 branches covered.">                if (!fieldAnnotation.deserialize()) {</span>
+<span class="fc" id="L995">                    continue;</span>
+                }
+
+<span class="fc" id="L998">                ordinal = fieldAnnotation.ordinal();</span>
+<span class="fc" id="L999">                serialzeFeatures = SerializerFeature.of(fieldAnnotation.serialzeFeatures());</span>
+<span class="fc" id="L1000">                parserFeatures = Feature.of(fieldAnnotation.parseFeatures());</span>
+
+<span class="fc bfc" id="L1002" title="All 2 branches covered.">                if (fieldAnnotation.name().length() != 0) {</span>
+<span class="fc" id="L1003">                    propertyName = fieldAnnotation.name();</span>
+                }
+            }
+
+<span class="fc bfc" id="L1007" title="All 2 branches covered.">            if (propertyNamingStrategy != null) {</span>
+<span class="fc" id="L1008">                propertyName = propertyNamingStrategy.translate(propertyName);</span>
+            }
+
+<span class="fc" id="L1011">            add(fieldList, new FieldInfo(propertyName, null, field, clazz, type, ordinal, serialzeFeatures, parserFeatures, null,</span>
+                    fieldAnnotation, null, genericInfo));
+        }
+<span class="fc" id="L1014">    }</span>
+
+    static Constructor&lt;?&gt; getDefaultConstructor(Class&lt;?&gt; clazz, final Constructor&lt;?&gt;[] constructors) {
+<span class="fc bfc" id="L1017" title="All 2 branches covered.">        if (Modifier.isAbstract(clazz.getModifiers())) {</span>
+<span class="fc" id="L1018">            return null;</span>
+        }
+
+<span class="fc" id="L1021">        Constructor&lt;?&gt; defaultConstructor = null;</span>
+
+<span class="fc bfc" id="L1023" title="All 2 branches covered.">        for (Constructor&lt;?&gt; constructor : constructors) {</span>
+<span class="fc bfc" id="L1024" title="All 2 branches covered.">            if (constructor.getParameterTypes().length == 0) {</span>
+<span class="fc" id="L1025">                defaultConstructor = constructor;</span>
+<span class="fc" id="L1026">                break;</span>
+            }
+        }
+
+<span class="fc bfc" id="L1030" title="All 2 branches covered.">        if (defaultConstructor == null) {</span>
+<span class="fc bfc" id="L1031" title="All 4 branches covered.">            if (clazz.isMemberClass() &amp;&amp; !Modifier.isStatic(clazz.getModifiers())) {</span>
+                Class&lt;?&gt;[] types;
+<span class="fc bfc" id="L1033" title="All 2 branches covered.">                for (Constructor&lt;?&gt; constructor : constructors) {</span>
+<span class="fc bfc" id="L1034" title="All 2 branches covered.">                    if ((types = constructor.getParameterTypes()).length == 1</span>
+<span class="pc bpc" id="L1035" title="1 of 2 branches missed.">                            &amp;&amp; types[0].equals(clazz.getDeclaringClass())) {</span>
+<span class="fc" id="L1036">                        defaultConstructor = constructor;</span>
+<span class="fc" id="L1037">                        break;</span>
+                    }
+                }
+            }
+        }
+
+<span class="fc" id="L1043">        return defaultConstructor;</span>
+    }
+
+    public static Constructor&lt;?&gt; getCreatorConstructor(Constructor[] constructors) {
+<span class="fc" id="L1047">        Constructor&lt;?&gt; creatorConstructor = null;</span>
+
+<span class="fc bfc" id="L1049" title="All 2 branches covered.">        for (Constructor&lt;?&gt; constructor : constructors) {</span>
+<span class="fc" id="L1050">            JSONCreator annotation = constructor.getAnnotation(JSONCreator.class);</span>
+<span class="fc bfc" id="L1051" title="All 2 branches covered.">            if (annotation != null) {</span>
+<span class="pc bpc" id="L1052" title="1 of 2 branches missed.">                if (creatorConstructor != null) {</span>
+<span class="nc" id="L1053">                    throw new JSONException(&quot;multi-JSONCreator&quot;);</span>
+                }
+
+<span class="fc" id="L1056">                creatorConstructor = constructor;</span>
+                // 不应该break，否则多个构造方法上存在 JSONCreator 注解时，并不会触发上述异常抛出
+            }
+        }
+<span class="fc bfc" id="L1060" title="All 2 branches covered.">        if (creatorConstructor != null) {</span>
+<span class="fc" id="L1061">            return creatorConstructor;</span>
+        }
+
+<span class="fc bfc" id="L1064" title="All 2 branches covered.">        for (Constructor constructor : constructors) {</span>
+<span class="fc" id="L1065">            Annotation[][] paramAnnotationArrays = TypeUtils.getParameterAnnotations(constructor);</span>
+
+<span class="fc bfc" id="L1067" title="All 2 branches covered.">            if (paramAnnotationArrays.length == 0) {</span>
+<span class="fc" id="L1068">                continue;</span>
+            }
+<span class="fc" id="L1070">            boolean match = true;</span>
+<span class="fc bfc" id="L1071" title="All 2 branches covered.">            for (Annotation[] paramAnnotationArray : paramAnnotationArrays) {</span>
+<span class="fc" id="L1072">                boolean paramMatch = false;</span>
+<span class="pc bfc" id="L1073" title="All 2 branches covered.">                for (Annotation paramAnnotation : paramAnnotationArray) {</span>
+<span class="pc bpc" id="L1074" title="1 of 2 branches missed.">                    if (paramAnnotation instanceof JSONField) {</span>
+<span class="fc" id="L1075">                        paramMatch = true;</span>
+<span class="fc" id="L1076">                        break;</span>
+                    }
+                }
+<span class="fc bfc" id="L1079" title="All 2 branches covered.">                if (!paramMatch) {</span>
+<span class="fc" id="L1080">                    match = false;</span>
+<span class="fc" id="L1081">                    break;</span>
+                }
+            }
+
+<span class="fc bfc" id="L1085" title="All 2 branches covered.">            if (match) {</span>
+<span class="pc bpc" id="L1086" title="1 of 2 branches missed.">                if (creatorConstructor != null) {</span>
+<span class="nc" id="L1087">                    throw new JSONException(&quot;multi-JSONCreator&quot;);</span>
+                }
+
+<span class="fc" id="L1090">                creatorConstructor = constructor;</span>
+            }
+        }
+
+<span class="fc" id="L1094">        return creatorConstructor;</span>
+    }
+
+    private static Method getFactoryMethod(Class&lt;?&gt; clazz, Method[] methods, boolean jacksonCompatible) {
+<span class="fc" id="L1098">        Method factoryMethod = null;</span>
+
+<span class="fc bfc" id="L1100" title="All 2 branches covered.">        for (Method method : methods) {</span>
+<span class="fc bfc" id="L1101" title="All 2 branches covered.">            if (!Modifier.isStatic(method.getModifiers())) {</span>
+<span class="fc" id="L1102">                continue;</span>
+            }
+
+<span class="fc bfc" id="L1105" title="All 2 branches covered.">            if (!clazz.isAssignableFrom(method.getReturnType())) {</span>
+<span class="fc" id="L1106">                continue;</span>
+            }
+
+<span class="fc" id="L1109">            JSONCreator annotation = TypeUtils.getAnnotation(method, JSONCreator.class);</span>
+<span class="fc bfc" id="L1110" title="All 2 branches covered.">            if (annotation != null) {</span>
+<span class="fc bfc" id="L1111" title="All 2 branches covered.">                if (factoryMethod != null) {</span>
+<span class="fc" id="L1112">                    throw new JSONException(&quot;multi-JSONCreator&quot;);</span>
+                }
+
+<span class="fc" id="L1115">                factoryMethod = method;</span>
+                // 不应该break，否则多个静态工厂方法上存在 JSONCreator 注解时，并不会触发上述异常抛出
+            }
+        }
+
+<span class="fc bfc" id="L1120" title="All 4 branches covered.">        if (factoryMethod == null &amp;&amp; jacksonCompatible) {</span>
+<span class="pc bpc" id="L1121" title="1 of 2 branches missed.">            for (Method method : methods) {</span>
+<span class="pc bpc" id="L1122" title="1 of 2 branches missed.">                if (TypeUtils.isJacksonCreator(method)) {</span>
+<span class="fc" id="L1123">                    factoryMethod = method;</span>
+<span class="fc" id="L1124">                    break;</span>
+                }
+            }
+        }
+<span class="fc" id="L1128">        return factoryMethod;</span>
+    }
+
+    /**
+     * @deprecated
+     */
+    public static Class&lt;?&gt; getBuilderClass(JSONType type) {
+<span class="fc" id="L1135">        return getBuilderClass(null, type);</span>
+    }
+
+    public static Class&lt;?&gt; getBuilderClass(Class&lt;?&gt; clazz, JSONType type) {
+<span class="fc bfc" id="L1139" title="All 4 branches covered.">        if (clazz != null &amp;&amp; clazz.getName().equals(&quot;org.springframework.security.web.savedrequest.DefaultSavedRequest&quot;)) {</span>
+<span class="fc" id="L1140">            return TypeUtils.loadClass(&quot;org.springframework.security.web.savedrequest.DefaultSavedRequest$Builder&quot;);</span>
+        }
+
+<span class="fc bfc" id="L1143" title="All 2 branches covered.">        if (type == null) {</span>
+<span class="fc" id="L1144">            return null;</span>
+        }
+
+<span class="fc" id="L1147">        Class&lt;?&gt; builderClass = type.builder();</span>
+
+<span class="fc bfc" id="L1149" title="All 2 branches covered.">        if (builderClass == Void.class) {</span>
+<span class="fc" id="L1150">            return null;</span>
+        }
+
+<span class="fc" id="L1153">        return builderClass;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

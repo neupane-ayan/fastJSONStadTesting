@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Item.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.asm</a> &gt; <span class="el_source">Item.java</span></div><h1>Item.java</h1><pre class="source lang-java linenums">/***
+ * ASM: a very small and fast Java bytecode manipulation framework
+ * Copyright (c) 2000-2007 INRIA, France Telecom
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holders nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+package com.alibaba.fastjson.asm;
+
+/**
+ * A constant pool item. Constant pool items can be created with the 'newXXX' methods in the {@link ClassWriter} class.
+ * 
+ * @author Eric Bruneton
+ */
+final class Item {
+
+    /**
+     * Index of this item in the constant pool.
+     */
+    int    index;
+
+    int    type;
+
+    /**
+     * Value of this item, for an integer item.
+     */
+    int    intVal;
+
+    /**
+     * Value of this item, for a long item.
+     */
+    long   longVal;
+
+    /**
+     * First part of the value of this item, for items that do not hold a primitive value.
+     */
+    String strVal1;
+
+    /**
+     * Second part of the value of this item, for items that do not hold a primitive value.
+     */
+    String strVal2;
+
+    /**
+     * Third part of the value of this item, for items that do not hold a primitive value.
+     */
+    String strVal3;
+
+    /**
+     * The hash code value of this constant pool item.
+     */
+    int    hashCode;
+
+    /**
+     * Link to another constant pool item, used for collision lists in the constant pool's hash table.
+     */
+    Item   next;
+
+    /**
+     * Constructs an uninitialized {@link Item}.
+     */
+<span class="fc" id="L84">    Item(){</span>
+<span class="fc" id="L85">    }</span>
+
+    /**
+     * Constructs a copy of the given item.
+     * 
+     * @param index index of the item to be constructed.
+     * @param i the item that must be copied into the item to be constructed.
+     */
+<span class="fc" id="L93">    Item(final int index, final Item i){</span>
+<span class="fc" id="L94">        this.index = index;</span>
+<span class="fc" id="L95">        type = i.type;</span>
+<span class="fc" id="L96">        intVal = i.intVal;</span>
+<span class="fc" id="L97">        longVal = i.longVal;</span>
+<span class="fc" id="L98">        strVal1 = i.strVal1;</span>
+<span class="fc" id="L99">        strVal2 = i.strVal2;</span>
+<span class="fc" id="L100">        strVal3 = i.strVal3;</span>
+<span class="fc" id="L101">        hashCode = i.hashCode;</span>
+<span class="fc" id="L102">    }</span>
+
+    /**
+     * Sets this item to an item that do not hold a primitive value.
+     * 
+     * @param type the type of this item.
+     * @param strVal1 first part of the value of this item.
+     * @param strVal2 second part of the value of this item.
+     * @param strVal3 third part of the value of this item.
+     */
+    void set(final int type, final String strVal1, final String strVal2, final String strVal3) {
+<span class="fc" id="L113">        this.type = type;</span>
+<span class="fc" id="L114">        this.strVal1 = strVal1;</span>
+<span class="fc" id="L115">        this.strVal2 = strVal2;</span>
+<span class="fc" id="L116">        this.strVal3 = strVal3;</span>
+<span class="fc bfc" id="L117" title="All 3 branches covered.">        switch (type) {</span>
+            case 1 /* ClassWriter.UTF8 */:
+            case 8 /* ClassWriter.STR */:
+            case 7 /* ClassWriter.CLASS */:
+            case 13 /* ClassWriter.TYPE_NORMAL */:
+<span class="fc" id="L122">                hashCode = 0x7FFFFFFF &amp; (type + strVal1.hashCode());</span>
+<span class="fc" id="L123">                return;</span>
+            case 12 /* ClassWriter.NAME_TYPE */:
+<span class="fc" id="L125">                hashCode = 0x7FFFFFFF &amp; (type + strVal1.hashCode() * strVal2.hashCode());</span>
+<span class="fc" id="L126">                return;</span>
+                // ClassWriter.FIELD:
+                // ClassWriter.METH:
+                // ClassWriter.IMETH:
+            default:
+<span class="fc" id="L131">                hashCode = 0x7FFFFFFF &amp; (type + strVal1.hashCode() * strVal2.hashCode() * strVal3.hashCode());</span>
+        }
+<span class="fc" id="L133">    }</span>
+    
+    /**
+     * Sets this item to an integer item.
+     *
+     * @param intVal the value of this item.
+     */
+    void set(final int intVal) {
+<span class="fc" id="L141">        this.type = 3 /* ClassWriter.INT */;</span>
+<span class="fc" id="L142">        this.intVal = intVal;</span>
+<span class="fc" id="L143">        this.hashCode = 0x7FFFFFFF &amp; (type + intVal);</span>
+<span class="fc" id="L144">    }</span>
+
+    /**
+     * Indicates if the given item is equal to this one. &lt;i&gt;This method assumes that the two items have the same
+     * {@link #type}&lt;/i&gt;.
+     * 
+     * @param i the item to be compared to this one. Both items must have the same {@link #type}.
+     * @return &lt;tt&gt;true&lt;/tt&gt; if the given item if equal to this one, &lt;tt&gt;false&lt;/tt&gt; otherwise.
+     */
+    boolean isEqualTo(final Item i) {
+<span class="pc bpc" id="L154" title="1 of 5 branches missed.">        switch (type) {</span>
+            case 1 /* ClassWriter.UTF8 */:
+            case 8 /* ClassWriter.STR */:
+            case 7 /* ClassWriter.CLASS */ :
+            case 13 /* ClassWriter.TYPE_NORMAL */ :
+<span class="fc" id="L159">                return i.strVal1.equals(strVal1);</span>
+            case 15 /* ClassWriter.TYPE_MERGED */ :
+            case 5 /* ClassWriter.LONG */ :
+            case 6 /* ClassWriter.DOUBLE */:
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                return i.longVal == longVal;</span>
+            case 3 /* ClassWriter.INT */ :
+            case 4 /* ClassWriter.FLOAT */:
+<span class="fc bfc" id="L166" title="All 2 branches covered.">                return i.intVal == intVal;</span>
+            case 12 /* ClassWriter.NAME_TYPE */:
+<span class="fc bfc" id="L168" title="All 4 branches covered.">                return i.strVal1.equals(strVal1) &amp;&amp; i.strVal2.equals(strVal2);</span>
+                // case ClassWriter.FIELD:
+                // case ClassWriter.METH:
+                // case ClassWriter.IMETH:
+            default:
+<span class="fc bfc" id="L173" title="All 6 branches covered.">                return i.strVal1.equals(strVal1) &amp;&amp; i.strVal2.equals(strVal2) &amp;&amp; i.strVal3.equals(strVal3);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

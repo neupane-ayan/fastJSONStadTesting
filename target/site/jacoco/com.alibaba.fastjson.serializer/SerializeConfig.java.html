@@ -1,0 +1,934 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SerializeConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">SerializeConfig.java</span></div><h1>SerializeConfig.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2018 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.serializer;
+
+import com.alibaba.fastjson.*;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
+import com.alibaba.fastjson.parser.deserializer.Jdk8DateCodec;
+import com.alibaba.fastjson.parser.deserializer.OptionalCodec;
+import com.alibaba.fastjson.spi.Module;
+import com.alibaba.fastjson.support.moneta.MonetaCodec;
+import com.alibaba.fastjson.support.springfox.SwaggerJsonSerializer;
+import com.alibaba.fastjson.util.*;
+import com.alibaba.fastjson.util.IdentityHashMap;
+import com.alibaba.fastjson.util.ServiceLoader;
+
+import javax.xml.datatype.XMLGregorianCalendar;
+import java.io.File;
+import java.io.Serializable;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.*;
+import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.*;
+import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.atomic.*;
+import java.util.regex.Pattern;
+
+/**
+ * circular references detect
+ * 
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public class SerializeConfig {
+
+<span class="fc" id="L53">    public final static SerializeConfig                   globalInstance  = new SerializeConfig();</span>
+
+<span class="fc" id="L55">    private static boolean                                awtError        = false;</span>
+<span class="fc" id="L56">    private static boolean                                jdk8Error       = false;</span>
+<span class="fc" id="L57">    private static boolean                                oracleJdbcError = false;</span>
+<span class="fc" id="L58">    private static boolean                                springfoxError  = false;</span>
+<span class="fc" id="L59">    private static boolean                                guavaError      = false;</span>
+    
+<span class="fc" id="L61">    private static boolean                                jodaError       = false;</span>
+
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">    private boolean                                       asm             = !ASMUtils.IS_ANDROID;</span>
+    private ASMSerializerFactory                          asmFactory;
+<span class="fc" id="L65">    protected String                                      typeKey         = JSON.DEFAULT_TYPE_KEY;</span>
+    public PropertyNamingStrategy                         propertyNamingStrategy;
+
+    private final IdentityHashMap&lt;Type, ObjectSerializer&gt; serializers;
+    private final IdentityHashMap&lt;Type, IdentityHashMap&lt;Type, ObjectSerializer&gt;&gt; mixInSerializers;
+
+    private final boolean                                 fieldBased;
+
+<span class="fc" id="L73">    private long[]                                        denyClasses =</span>
+            {
+                    4165360493669296979L,
+                    4446674157046724083L
+            };
+
+<span class="fc" id="L79">    private List&lt;Module&gt;                                    modules                = new ArrayList&lt;Module&gt;();</span>
+
+	public String getTypeKey() {
+<span class="fc" id="L82">		return typeKey;</span>
+	}
+
+	public void setTypeKey(String typeKey) {
+<span class="fc" id="L86">		this.typeKey = typeKey;</span>
+<span class="fc" id="L87">	}</span>
+	
+    private final JavaBeanSerializer createASMSerializer(SerializeBeanInfo beanInfo) throws Exception {
+<span class="fc" id="L90">        JavaBeanSerializer serializer = asmFactory.createJavaBeanSerializer(beanInfo);</span>
+        
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        for (int i = 0; i &lt; serializer.sortedGetters.length; ++i) {</span>
+<span class="fc" id="L93">            FieldSerializer fieldDeser = serializer.sortedGetters[i];</span>
+<span class="fc" id="L94">            Class&lt;?&gt; fieldClass = fieldDeser.fieldInfo.fieldClass;</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">            if (fieldClass.isEnum()) {</span>
+<span class="fc" id="L96">                ObjectSerializer fieldSer = this.getObjectWriter(fieldClass);</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">                if (!(fieldSer instanceof EnumSerializer)) {</span>
+<span class="nc" id="L98">                    serializer.writeDirect = false;</span>
+                }
+            }
+        }
+     
+<span class="fc" id="L103">        return serializer;</span>
+    }
+
+    public final ObjectSerializer createJavaBeanSerializer(Class&lt;?&gt; clazz) {
+<span class="fc" id="L107">        String className = clazz.getName();</span>
+<span class="fc" id="L108">        long hashCode64 = TypeUtils.fnv1a_64(className);</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">	    if (Arrays.binarySearch(denyClasses, hashCode64) &gt;= 0) {</span>
+<span class="nc" id="L110">	        throw new JSONException(&quot;not support class : &quot; + className);</span>
+        }
+
+<span class="fc" id="L113">	    SerializeBeanInfo beanInfo = TypeUtils.buildBeanInfo(clazz, null, propertyNamingStrategy, fieldBased);</span>
+<span class="fc bfc" id="L114" title="All 4 branches covered.">	    if (beanInfo.fields.length == 0 &amp;&amp; Iterable.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L115">	        return MiscCodec.instance;</span>
+	    }
+
+<span class="fc" id="L118">	    return createJavaBeanSerializer(beanInfo);</span>
+	}
+	
+	public ObjectSerializer createJavaBeanSerializer(SerializeBeanInfo beanInfo) {
+<span class="fc" id="L122">	    JSONType jsonType = beanInfo.jsonType;</span>
+
+<span class="fc bfc" id="L124" title="All 4 branches covered.">        boolean asm = this.asm &amp;&amp; !fieldBased;</span>
+	    
+<span class="fc bfc" id="L126" title="All 2 branches covered.">	    if (jsonType != null) {</span>
+<span class="fc" id="L127">	        Class&lt;?&gt; serializerClass = jsonType.serializer();</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">	        if (serializerClass != Void.class) {</span>
+	            try {
+<span class="fc" id="L130">                    Object seralizer = serializerClass.newInstance();</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">                    if (seralizer instanceof ObjectSerializer) {</span>
+<span class="fc" id="L132">                        return (ObjectSerializer) seralizer;</span>
+                    }
+<span class="nc" id="L134">                } catch (Throwable e) {</span>
+                    // skip
+<span class="nc" id="L136">                }</span>
+	        }
+	        
+<span class="fc bfc" id="L139" title="All 2 branches covered.">	        if (jsonType.asm() == false) {</span>
+<span class="fc" id="L140">	            asm = false;</span>
+	        }
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">	        if (asm) {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">                for (SerializerFeature feature : jsonType.serialzeFeatures()) {</span>
+<span class="pc bpc" id="L145" title="1 of 8 branches missed.">                    if (SerializerFeature.WriteNonStringValueAsString == feature //</span>
+                            || SerializerFeature.WriteEnumUsingToString == feature //
+                            || SerializerFeature.NotWriteDefaultValue == feature
+                            || SerializerFeature.BrowserCompatible == feature) {
+<span class="fc" id="L149">                        asm = false;</span>
+<span class="fc" id="L150">                        break;</span>
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L155" title="All 2 branches covered.">            if (asm) {</span>
+<span class="fc" id="L156">                final Class&lt;? extends SerializeFilter&gt;[] filterClasses = jsonType.serialzeFilters();</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                if (filterClasses.length != 0) {</span>
+<span class="fc" id="L158">                    asm = false;</span>
+                }
+            }
+        }
+
+<span class="fc" id="L163">	    Class&lt;?&gt; clazz = beanInfo.beanType;</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">		if (!Modifier.isPublic(beanInfo.beanType.getModifiers())) {</span>
+<span class="fc" id="L165">			return new JavaBeanSerializer(beanInfo);</span>
+		}
+
+
+
+<span class="pc bpc" id="L170" title="1 of 8 branches missed.">		if (asm &amp;&amp; asmFactory.classLoader.isExternalClass(clazz)</span>
+				|| clazz == Serializable.class || clazz == Object.class) {
+<span class="fc" id="L172">			asm = false;</span>
+		}
+
+<span class="fc bfc" id="L175" title="All 4 branches covered.">		if (asm &amp;&amp; !ASMUtils.checkName(clazz.getSimpleName())) {</span>
+<span class="fc" id="L176">		    asm = false;</span>
+		}
+
+<span class="fc bfc" id="L179" title="All 4 branches covered.">		if (asm &amp;&amp; beanInfo.beanType.isInterface()) {</span>
+<span class="fc" id="L180">		    asm = false;</span>
+        }
+		
+<span class="fc bfc" id="L183" title="All 2 branches covered.">		if (asm) {</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">    		for(FieldInfo fieldInfo : beanInfo.fields){</span>
+<span class="fc" id="L185">                Field field = fieldInfo.field;</span>
+<span class="fc bfc" id="L186" title="All 4 branches covered.">                if (field != null &amp;&amp; !field.getType().equals(fieldInfo.fieldClass)) {</span>
+<span class="fc" id="L187">                    asm = false;</span>
+<span class="fc" id="L188">                    break;</span>
+                }
+
+<span class="fc" id="L191">                Method method = fieldInfo.method;</span>
+<span class="fc bfc" id="L192" title="All 4 branches covered.">                if (method != null &amp;&amp; !method.getReturnType().equals(fieldInfo.fieldClass)) {</span>
+<span class="fc" id="L193">                    asm = false;</span>
+<span class="fc" id="L194">                    break;</span>
+                }
+
+<span class="fc bfc" id="L197" title="All 2 branches covered.">                if (fieldInfo.fieldClass.isEnum()</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">                        &amp;&amp; get(fieldInfo.fieldClass) != EnumSerializer.instance) {</span>
+<span class="fc" id="L199">                    asm = false;</span>
+<span class="fc" id="L200">                    break;</span>
+                }
+
+<span class="fc" id="L203">    			JSONField annotation = fieldInfo.getAnnotation();</span>
+    			
+<span class="fc bfc" id="L205" title="All 2 branches covered.">    			if (annotation == null) {</span>
+<span class="fc" id="L206">    			    continue;</span>
+    			}
+
+<span class="fc" id="L209">    			String format = annotation.format();</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">    			if (format.length() != 0) {</span>
+<span class="pc bpc" id="L211" title="1 of 4 branches missed.">    			    if (fieldInfo.fieldClass == String.class &amp;&amp; &quot;trim&quot;.equals(format)) {</span>
+
+                    } else {
+<span class="fc" id="L214">                        asm = false;</span>
+<span class="fc" id="L215">                        break;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L219" title="All 2 branches covered.">                if ((!ASMUtils.checkName(annotation.name())) //</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">                        || annotation.jsonDirect()</span>
+<span class="fc bfc" id="L221" title="All 2 branches covered.">                        || annotation.serializeUsing() != Void.class</span>
+<span class="fc bfc" id="L222" title="All 2 branches covered.">                        || annotation.unwrapped()</span>
+                        ) {
+<span class="fc" id="L224">    				asm = false;</span>
+<span class="fc" id="L225">    				break;</span>
+    			}
+
+<span class="fc bfc" id="L228" title="All 2 branches covered.">                for (SerializerFeature feature : annotation.serialzeFeatures()) {</span>
+<span class="pc bpc" id="L229" title="2 of 10 branches missed.">                    if (SerializerFeature.WriteNonStringValueAsString == feature //</span>
+                            || SerializerFeature.WriteEnumUsingToString == feature //
+                            || SerializerFeature.NotWriteDefaultValue == feature
+                            || SerializerFeature.BrowserCompatible == feature
+                            || SerializerFeature.WriteClassName == feature) {
+<span class="fc" id="L234">                        asm = false;</span>
+<span class="fc" id="L235">                        break;</span>
+                    }
+                }
+
+<span class="pc bpc" id="L239" title="2 of 4 branches missed.">                if (TypeUtils.isAnnotationPresentOneToMany(method) || TypeUtils.isAnnotationPresentManyToMany(method)) {</span>
+<span class="nc" id="L240">    			    asm = false;</span>
+<span class="nc" id="L241">    			    break;</span>
+                }
+<span class="pc bpc" id="L243" title="2 of 4 branches missed.">                if (annotation.defaultValue() != null &amp;&amp; !&quot;&quot;.equals(annotation.defaultValue())) {</span>
+<span class="nc" id="L244">                    asm = false;</span>
+<span class="nc" id="L245">                    break;</span>
+                }
+    		}
+		}
+		
+<span class="fc bfc" id="L250" title="All 2 branches covered.">		if (asm) {</span>
+			try {
+<span class="fc" id="L252">                ObjectSerializer asmSerializer = createASMSerializer(beanInfo);</span>
+<span class="pc bpc" id="L253" title="1 of 2 branches missed.">                if (asmSerializer != null) {</span>
+<span class="fc" id="L254">                    return asmSerializer;</span>
+                }
+<span class="nc" id="L256">            } catch (ClassNotFoundException ex) {</span>
+			    // skip
+<span class="fc" id="L258">			} catch (ClassFormatError e) {</span>
+			    // skip
+<span class="nc" id="L260">			} catch (ClassCastException e) {</span>
+			    // skip
+<span class="nc" id="L262">            } catch (OutOfMemoryError e) {</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">			    if (e.getMessage().indexOf(&quot;Metaspace&quot;) != -1) {</span>
+<span class="nc" id="L264">			        throw e;</span>
+                }
+                // skip
+<span class="fc" id="L267">			} catch (Throwable e) {</span>
+<span class="fc" id="L268">				throw new JSONException(&quot;create asm serializer error, verson &quot; + JSON.VERSION + &quot;, class &quot; + clazz, e);</span>
+<span class="pc" id="L269">			}</span>
+		}
+
+<span class="fc" id="L272">		return new JavaBeanSerializer(beanInfo);</span>
+	}
+
+	public boolean isAsmEnable() {
+<span class="fc" id="L276">		return asm;</span>
+	}
+
+	public void setAsmEnable(boolean asmEnable) {
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">	    if (ASMUtils.IS_ANDROID) {</span>
+<span class="nc" id="L281">	        return;</span>
+	    }
+<span class="fc" id="L283">		this.asm = asmEnable;</span>
+<span class="fc" id="L284">	}</span>
+
+	public static SerializeConfig getGlobalInstance() {
+<span class="fc" id="L287">		return globalInstance;</span>
+	}
+
+	public SerializeConfig() {
+<span class="fc" id="L291">		this(IdentityHashMap.DEFAULT_SIZE);</span>
+<span class="fc" id="L292">	}</span>
+
+    public SerializeConfig(boolean fieldBase) {
+<span class="fc" id="L295">	    this(IdentityHashMap.DEFAULT_SIZE, fieldBase);</span>
+<span class="fc" id="L296">    }</span>
+
+    public SerializeConfig(int tableSize) {
+<span class="fc" id="L299">        this(tableSize, false);</span>
+<span class="fc" id="L300">    }</span>
+
+<span class="fc" id="L302">	public SerializeConfig(int tableSize, boolean fieldBase) {</span>
+<span class="fc" id="L303">	    this.fieldBased = fieldBase;</span>
+<span class="fc" id="L304">	    serializers = new IdentityHashMap&lt;Type, ObjectSerializer&gt;(tableSize);</span>
+<span class="fc" id="L305">        this.mixInSerializers = new IdentityHashMap&lt;Type, IdentityHashMap&lt;Type, ObjectSerializer&gt;&gt;(16);</span>
+		try {
+<span class="pc bpc" id="L307" title="1 of 2 branches missed.">		    if (asm) {</span>
+<span class="fc" id="L308">		        asmFactory = new ASMSerializerFactory();</span>
+		    }
+<span class="nc" id="L310">		} catch (Throwable eror) {</span>
+<span class="nc" id="L311">		    asm = false;</span>
+<span class="fc" id="L312">		}</span>
+
+<span class="fc" id="L314">        initSerializers();</span>
+<span class="fc" id="L315">	}</span>
+
+    private void initSerializers() {
+<span class="fc" id="L318">        put(Boolean.class, BooleanCodec.instance);</span>
+<span class="fc" id="L319">        put(Character.class, CharacterCodec.instance);</span>
+<span class="fc" id="L320">        put(Byte.class, IntegerCodec.instance);</span>
+<span class="fc" id="L321">        put(Short.class, IntegerCodec.instance);</span>
+<span class="fc" id="L322">        put(Integer.class, IntegerCodec.instance);</span>
+<span class="fc" id="L323">        put(Long.class, LongCodec.instance);</span>
+<span class="fc" id="L324">        put(Float.class, FloatCodec.instance);</span>
+<span class="fc" id="L325">        put(Double.class, DoubleSerializer.instance);</span>
+<span class="fc" id="L326">        put(BigDecimal.class, BigDecimalCodec.instance);</span>
+<span class="fc" id="L327">        put(BigInteger.class, BigIntegerCodec.instance);</span>
+<span class="fc" id="L328">        put(String.class, StringCodec.instance);</span>
+<span class="fc" id="L329">        put(byte[].class, PrimitiveArraySerializer.instance);</span>
+<span class="fc" id="L330">        put(short[].class, PrimitiveArraySerializer.instance);</span>
+<span class="fc" id="L331">        put(int[].class, PrimitiveArraySerializer.instance);</span>
+<span class="fc" id="L332">        put(long[].class, PrimitiveArraySerializer.instance);</span>
+<span class="fc" id="L333">        put(float[].class, PrimitiveArraySerializer.instance);</span>
+<span class="fc" id="L334">        put(double[].class, PrimitiveArraySerializer.instance);</span>
+<span class="fc" id="L335">        put(boolean[].class, PrimitiveArraySerializer.instance);</span>
+<span class="fc" id="L336">        put(char[].class, PrimitiveArraySerializer.instance);</span>
+<span class="fc" id="L337">        put(Object[].class, ObjectArrayCodec.instance);</span>
+<span class="fc" id="L338">        put(Class.class, MiscCodec.instance);</span>
+
+<span class="fc" id="L340">        put(SimpleDateFormat.class, MiscCodec.instance);</span>
+<span class="fc" id="L341">        put(Currency.class, new MiscCodec());</span>
+<span class="fc" id="L342">        put(TimeZone.class, MiscCodec.instance);</span>
+<span class="fc" id="L343">        put(InetAddress.class, MiscCodec.instance);</span>
+<span class="fc" id="L344">        put(Inet4Address.class, MiscCodec.instance);</span>
+<span class="fc" id="L345">        put(Inet6Address.class, MiscCodec.instance);</span>
+<span class="fc" id="L346">        put(InetSocketAddress.class, MiscCodec.instance);</span>
+<span class="fc" id="L347">        put(File.class, MiscCodec.instance);</span>
+<span class="fc" id="L348">        put(Appendable.class, AppendableSerializer.instance);</span>
+<span class="fc" id="L349">        put(StringBuffer.class, AppendableSerializer.instance);</span>
+<span class="fc" id="L350">        put(StringBuilder.class, AppendableSerializer.instance);</span>
+<span class="fc" id="L351">        put(Charset.class, ToStringSerializer.instance);</span>
+<span class="fc" id="L352">        put(Pattern.class, ToStringSerializer.instance);</span>
+<span class="fc" id="L353">        put(Locale.class, ToStringSerializer.instance);</span>
+<span class="fc" id="L354">        put(URI.class, ToStringSerializer.instance);</span>
+<span class="fc" id="L355">        put(URL.class, ToStringSerializer.instance);</span>
+<span class="fc" id="L356">        put(UUID.class, ToStringSerializer.instance);</span>
+
+        // atomic
+<span class="fc" id="L359">        put(AtomicBoolean.class, AtomicCodec.instance);</span>
+<span class="fc" id="L360">        put(AtomicInteger.class, AtomicCodec.instance);</span>
+<span class="fc" id="L361">        put(AtomicLong.class, AtomicCodec.instance);</span>
+<span class="fc" id="L362">        put(AtomicReference.class, ReferenceCodec.instance);</span>
+<span class="fc" id="L363">        put(AtomicIntegerArray.class, AtomicCodec.instance);</span>
+<span class="fc" id="L364">        put(AtomicLongArray.class, AtomicCodec.instance);</span>
+
+<span class="fc" id="L366">        put(WeakReference.class, ReferenceCodec.instance);</span>
+<span class="fc" id="L367">        put(SoftReference.class, ReferenceCodec.instance);</span>
+
+<span class="fc" id="L369">        put(LinkedList.class, CollectionCodec.instance);</span>
+<span class="fc" id="L370">    }</span>
+
+    /**
+	 * add class level serialize filter
+	 * @since 1.2.10
+	 */
+	public void addFilter(Class&lt;?&gt; clazz, SerializeFilter filter) {
+<span class="fc" id="L377">	    ObjectSerializer serializer = getObjectWriter(clazz);</span>
+	    
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">	    if (serializer instanceof SerializeFilterable) {</span>
+<span class="fc" id="L380">	        SerializeFilterable filterable = (SerializeFilterable) serializer;</span>
+	        
+<span class="fc bfc" id="L382" title="All 2 branches covered.">	        if (this != SerializeConfig.globalInstance) {</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">	            if (filterable == MapSerializer.instance) {</span>
+<span class="fc" id="L384">	                MapSerializer newMapSer = new MapSerializer();</span>
+<span class="fc" id="L385">	                this.put(clazz, newMapSer);</span>
+<span class="fc" id="L386">	                newMapSer.addFilter(filter);</span>
+<span class="fc" id="L387">	                return;</span>
+	            }
+	        }
+	        
+<span class="fc" id="L391">	        filterable.addFilter(filter);</span>
+	    }
+<span class="fc" id="L393">	}</span>
+	
+    /** class level serializer feature config
+     * @since 1.2.12
+     */
+    public void config(Class&lt;?&gt; clazz, SerializerFeature feature, boolean value) {
+<span class="fc" id="L399">        ObjectSerializer serializer = getObjectWriter(clazz, false);</span>
+        
+<span class="fc bfc" id="L401" title="All 2 branches covered.">        if (serializer == null) {</span>
+<span class="fc" id="L402">            SerializeBeanInfo beanInfo = TypeUtils.buildBeanInfo(clazz, null, propertyNamingStrategy);</span>
+            
+<span class="fc bfc" id="L404" title="All 2 branches covered.">            if (value) {</span>
+<span class="fc" id="L405">                beanInfo.features |= feature.mask;</span>
+            } else {
+<span class="fc" id="L407">                beanInfo.features &amp;= ~feature.mask;</span>
+            }
+            
+<span class="fc" id="L410">            serializer = this.createJavaBeanSerializer(beanInfo);</span>
+            
+<span class="fc" id="L412">            put(clazz, serializer);</span>
+<span class="fc" id="L413">            return;</span>
+        }
+
+<span class="pc bpc" id="L416" title="1 of 2 branches missed.">        if (serializer instanceof JavaBeanSerializer) {</span>
+<span class="fc" id="L417">            JavaBeanSerializer javaBeanSerializer = (JavaBeanSerializer) serializer;</span>
+<span class="fc" id="L418">            SerializeBeanInfo beanInfo = javaBeanSerializer.beanInfo;</span>
+            
+<span class="fc" id="L420">            int originalFeaturs = beanInfo.features;</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">            if (value) {</span>
+<span class="fc" id="L422">                beanInfo.features |= feature.mask;</span>
+            } else {
+<span class="fc" id="L424">                beanInfo.features &amp;= ~feature.mask;</span>
+            }
+            
+<span class="fc bfc" id="L427" title="All 2 branches covered.">            if (originalFeaturs == beanInfo.features) {</span>
+<span class="fc" id="L428">                return;</span>
+            }
+            
+<span class="fc" id="L431">            Class&lt;?&gt; serializerClass = serializer.getClass();</span>
+<span class="fc bfc" id="L432" title="All 2 branches covered.">            if (serializerClass != JavaBeanSerializer.class) {</span>
+<span class="fc" id="L433">                ObjectSerializer newSerializer = this.createJavaBeanSerializer(beanInfo);</span>
+<span class="fc" id="L434">                this.put(clazz, newSerializer);</span>
+            }
+        }
+<span class="fc" id="L437">    }</span>
+    
+    public ObjectSerializer getObjectWriter(Class&lt;?&gt; clazz) {
+<span class="fc" id="L440">        return getObjectWriter(clazz, true);</span>
+    }
+	
+	public ObjectSerializer getObjectWriter(Class&lt;?&gt; clazz, boolean create) {
+<span class="fc" id="L444">        ObjectSerializer writer = get(clazz);</span>
+
+<span class="fc bfc" id="L446" title="All 2 branches covered.">        if (writer != null) {</span>
+<span class="fc" id="L447">            return writer;</span>
+        }
+
+        try {
+<span class="fc" id="L451">            final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();</span>
+<span class="fc bfc" id="L452" title="All 2 branches covered.">            for (Object o : ServiceLoader.load(AutowiredObjectSerializer.class, classLoader)) {</span>
+<span class="fc bfc" id="L453" title="All 2 branches covered.">                if (!(o instanceof AutowiredObjectSerializer)) {</span>
+<span class="fc" id="L454">                    continue;</span>
+                }
+
+<span class="fc" id="L457">                AutowiredObjectSerializer autowired = (AutowiredObjectSerializer) o;</span>
+<span class="fc bfc" id="L458" title="All 2 branches covered.">                for (Type forType : autowired.getAutowiredFor()) {</span>
+<span class="fc" id="L459">                    put(forType, autowired);</span>
+<span class="fc" id="L460">                }</span>
+<span class="fc" id="L461">            }</span>
+<span class="nc" id="L462">        } catch (ClassCastException ex) {</span>
+            // skip
+<span class="fc" id="L464">        }</span>
+
+<span class="fc" id="L466">        writer = get(clazz);</span>
+
+<span class="fc bfc" id="L468" title="All 2 branches covered.">        if (writer == null) {</span>
+<span class="fc" id="L469">            final ClassLoader classLoader = JSON.class.getClassLoader();</span>
+<span class="fc bfc" id="L470" title="All 2 branches covered.">            if (classLoader != Thread.currentThread().getContextClassLoader()) {</span>
+                try {
+<span class="fc bfc" id="L472" title="All 2 branches covered.">                    for (Object o : ServiceLoader.load(AutowiredObjectSerializer.class, classLoader)) {</span>
+
+<span class="pc bpc" id="L474" title="1 of 2 branches missed.">                        if (!(o instanceof AutowiredObjectSerializer)) {</span>
+<span class="nc" id="L475">                            continue;</span>
+                        }
+
+<span class="fc" id="L478">                        AutowiredObjectSerializer autowired = (AutowiredObjectSerializer) o;</span>
+<span class="fc bfc" id="L479" title="All 2 branches covered.">                        for (Type forType : autowired.getAutowiredFor()) {</span>
+<span class="fc" id="L480">                            put(forType, autowired);</span>
+<span class="fc" id="L481">                        }</span>
+<span class="fc" id="L482">                    }</span>
+<span class="nc" id="L483">                } catch (ClassCastException ex) {</span>
+                    // skip
+<span class="fc" id="L485">                }</span>
+
+<span class="fc" id="L487">                writer = get(clazz);</span>
+            }
+        }
+
+<span class="fc bfc" id="L491" title="All 2 branches covered.">        for (Module module : modules) {</span>
+<span class="fc" id="L492">            writer = module.createSerializer(this, clazz);</span>
+<span class="fc bfc" id="L493" title="All 2 branches covered.">            if (writer != null) {</span>
+<span class="fc" id="L494">                put(clazz, writer);</span>
+<span class="fc" id="L495">                return writer;</span>
+            }
+<span class="fc" id="L497">        }</span>
+        
+<span class="fc bfc" id="L499" title="All 2 branches covered.">        if (writer == null) {</span>
+<span class="fc" id="L500">            String className = clazz.getName();</span>
+            Class&lt;?&gt; superClass;
+
+<span class="fc bfc" id="L503" title="All 2 branches covered.">            if (Map.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L504">                put(clazz, writer = MapSerializer.instance);</span>
+<span class="fc bfc" id="L505" title="All 2 branches covered.">            } else if (List.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L506">                put(clazz, writer = ListSerializer.instance);</span>
+<span class="fc bfc" id="L507" title="All 2 branches covered.">            } else if (Collection.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L508">                put(clazz, writer = CollectionCodec.instance);</span>
+<span class="fc bfc" id="L509" title="All 2 branches covered.">            } else if (Date.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L510">                put(clazz, writer = DateCodec.instance);</span>
+<span class="fc bfc" id="L511" title="All 2 branches covered.">            } else if (JSONAware.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L512">                put(clazz, writer = JSONAwareSerializer.instance);</span>
+<span class="fc bfc" id="L513" title="All 2 branches covered.">            } else if (JSONSerializable.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L514">                put(clazz, writer = JSONSerializableSerializer.instance);</span>
+<span class="fc bfc" id="L515" title="All 2 branches covered.">            } else if (JSONStreamAware.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L516">                put(clazz, writer = MiscCodec.instance);</span>
+<span class="fc bfc" id="L517" title="All 2 branches covered.">            } else if (clazz.isEnum()) {</span>
+<span class="fc" id="L518">                Class mixedInType = (Class) JSON.getMixInAnnotations(clazz);</span>
+
+                JSONType jsonType;
+<span class="fc bfc" id="L521" title="All 2 branches covered.">                if (mixedInType != null) {</span>
+<span class="fc" id="L522">                    jsonType = TypeUtils.getAnnotation(mixedInType, JSONType.class);</span>
+                } else {
+<span class="fc" id="L524">                    jsonType = TypeUtils.getAnnotation(clazz, JSONType.class);</span>
+                }
+
+<span class="fc bfc" id="L527" title="All 4 branches covered.">                if (jsonType != null &amp;&amp; jsonType.serializeEnumAsJavaBean()) {</span>
+<span class="fc" id="L528">                    put(clazz, writer = createJavaBeanSerializer(clazz));</span>
+                } else {
+<span class="fc" id="L530">                    Member member = null;</span>
+<span class="fc bfc" id="L531" title="All 2 branches covered.">                    if (mixedInType != null) {</span>
+<span class="fc" id="L532">                        Member mixedInMember = getEnumValueField(mixedInType);</span>
+<span class="pc bpc" id="L533" title="1 of 2 branches missed.">                        if (mixedInMember != null) {</span>
+                            try {
+<span class="pc bpc" id="L535" title="1 of 2 branches missed.">                                if (mixedInMember instanceof Method) {</span>
+<span class="fc" id="L536">                                    Method mixedInMethod = (Method) mixedInMember;</span>
+<span class="fc" id="L537">                                    member = clazz.getMethod(mixedInMethod.getName(), mixedInMethod.getParameterTypes());</span>
+                                }
+<span class="nc" id="L539">                            } catch (Exception e) {</span>
+                                // skip
+<span class="fc" id="L541">                            }</span>
+                        }
+<span class="fc" id="L543">                    } else {</span>
+<span class="fc" id="L544">                        member = getEnumValueField(clazz);</span>
+                    }
+<span class="fc bfc" id="L546" title="All 2 branches covered.">                    if (member != null) {</span>
+<span class="fc" id="L547">                        put(clazz, writer = new EnumSerializer(member));</span>
+                    } else {
+<span class="fc" id="L549">                        put(clazz, writer = getEnumSerializer());</span>
+                    }
+                }
+<span class="fc bfc" id="L552" title="All 4 branches covered.">            } else if ((superClass = clazz.getSuperclass()) != null &amp;&amp; superClass.isEnum()) {</span>
+<span class="fc" id="L553">                JSONType jsonType = TypeUtils.getAnnotation(superClass, JSONType.class);</span>
+<span class="pc bpc" id="L554" title="1 of 4 branches missed.">                if (jsonType != null &amp;&amp; jsonType.serializeEnumAsJavaBean()) {</span>
+<span class="fc" id="L555">                    put(clazz, writer = createJavaBeanSerializer(clazz));</span>
+                } else {
+<span class="fc" id="L557">                    put(clazz, writer = getEnumSerializer());</span>
+                }
+<span class="fc bfc" id="L559" title="All 2 branches covered.">            } else if (clazz.isArray()) {</span>
+<span class="fc" id="L560">                Class&lt;?&gt; componentType = clazz.getComponentType();</span>
+<span class="fc" id="L561">                ObjectSerializer compObjectSerializer = getObjectWriter(componentType);</span>
+<span class="fc" id="L562">                put(clazz, writer = new ArraySerializer(componentType, compObjectSerializer));</span>
+<span class="fc bfc" id="L563" title="All 2 branches covered.">            } else if (Throwable.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L564">                SerializeBeanInfo beanInfo = TypeUtils.buildBeanInfo(clazz, null, propertyNamingStrategy);</span>
+<span class="fc" id="L565">                beanInfo.features |= SerializerFeature.WriteClassName.mask;</span>
+<span class="fc" id="L566">                put(clazz, writer = new JavaBeanSerializer(beanInfo));</span>
+<span class="fc bfc" id="L567" title="All 4 branches covered.">            } else if (TimeZone.class.isAssignableFrom(clazz) || Map.Entry.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L568">                put(clazz, writer = MiscCodec.instance);</span>
+<span class="fc bfc" id="L569" title="All 2 branches covered.">            } else if (Appendable.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L570">                put(clazz, writer = AppendableSerializer.instance);</span>
+<span class="fc bfc" id="L571" title="All 2 branches covered.">            } else if (Charset.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L572">                put(clazz, writer = ToStringSerializer.instance);</span>
+<span class="fc bfc" id="L573" title="All 2 branches covered.">            } else if (Enumeration.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L574">                put(clazz, writer = EnumerationSerializer.instance);</span>
+<span class="fc bfc" id="L575" title="All 2 branches covered.">            } else if (Calendar.class.isAssignableFrom(clazz) //</span>
+<span class="fc bfc" id="L576" title="All 2 branches covered.">                    || XMLGregorianCalendar.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L577">                put(clazz, writer = CalendarCodec.instance);</span>
+<span class="fc bfc" id="L578" title="All 2 branches covered.">            } else if (TypeUtils.isClob(clazz)) {</span>
+<span class="fc" id="L579">                put(clazz, writer = ClobSerializer.instance);</span>
+<span class="fc bfc" id="L580" title="All 2 branches covered.">            } else if (TypeUtils.isPath(clazz)) {</span>
+<span class="fc" id="L581">                put(clazz, writer = ToStringSerializer.instance);</span>
+<span class="fc bfc" id="L582" title="All 2 branches covered.">            } else if (Iterator.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L583">                put(clazz, writer = MiscCodec.instance);</span>
+<span class="fc bfc" id="L584" title="All 2 branches covered.">            } else if (org.w3c.dom.Node.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L585">                put(clazz, writer = MiscCodec.instance);</span>
+            } else {
+<span class="fc bfc" id="L587" title="All 2 branches covered.">                if (className.startsWith(&quot;java.awt.&quot;) //</span>
+<span class="pc bpc" id="L588" title="1 of 2 branches missed.">                    &amp;&amp; AwtCodec.support(clazz) //</span>
+                ) {
+                    // awt
+<span class="pc bpc" id="L591" title="1 of 2 branches missed.">                    if (!awtError) {</span>
+                        try {
+<span class="fc" id="L593">                            String[] names = new String[]{</span>
+                                    &quot;java.awt.Color&quot;,
+                                    &quot;java.awt.Font&quot;,
+                                    &quot;java.awt.Point&quot;,
+                                    &quot;java.awt.Rectangle&quot;
+                            };
+<span class="pc bpc" id="L599" title="1 of 2 branches missed.">                            for (String name : names) {</span>
+<span class="fc bfc" id="L600" title="All 2 branches covered.">                                if (name.equals(className)) {</span>
+<span class="fc" id="L601">                                    put(Class.forName(name), writer = AwtCodec.instance);</span>
+<span class="fc" id="L602">                                    return writer;</span>
+                                }
+                            }
+<span class="nc" id="L605">                        } catch (Throwable e) {</span>
+<span class="nc" id="L606">                            awtError = true;</span>
+                            // skip
+<span class="nc" id="L608">                        }</span>
+                    }
+                }
+                
+                // jdk8
+<span class="pc bpc" id="L613" title="1 of 2 branches missed.">                if ((!jdk8Error) //</span>
+<span class="fc bfc" id="L614" title="All 2 branches covered.">                    &amp;&amp; (className.startsWith(&quot;java.time.&quot;) //</span>
+<span class="fc bfc" id="L615" title="All 2 branches covered.">                        || className.startsWith(&quot;java.util.Optional&quot;) //</span>
+<span class="fc bfc" id="L616" title="All 2 branches covered.">                        || className.equals(&quot;java.util.concurrent.atomic.LongAdder&quot;)</span>
+<span class="fc bfc" id="L617" title="All 2 branches covered.">                        || className.equals(&quot;java.util.concurrent.atomic.DoubleAdder&quot;)</span>
+                    )) {
+                    try {
+                        {
+<span class="fc" id="L621">                            String[] names = new String[]{</span>
+                                    &quot;java.time.LocalDateTime&quot;,
+                                    &quot;java.time.LocalDate&quot;,
+                                    &quot;java.time.LocalTime&quot;,
+                                    &quot;java.time.ZonedDateTime&quot;,
+                                    &quot;java.time.OffsetDateTime&quot;,
+                                    &quot;java.time.OffsetTime&quot;,
+                                    &quot;java.time.ZoneOffset&quot;,
+                                    &quot;java.time.ZoneRegion&quot;,
+                                    &quot;java.time.Period&quot;,
+                                    &quot;java.time.Duration&quot;,
+                                    &quot;java.time.Instant&quot;
+                            };
+<span class="fc bfc" id="L634" title="All 2 branches covered.">                            for (String name : names) {</span>
+<span class="fc bfc" id="L635" title="All 2 branches covered.">                                if (name.equals(className)) {</span>
+<span class="fc" id="L636">                                    put(Class.forName(name), writer = Jdk8DateCodec.instance);</span>
+<span class="fc" id="L637">                                    return writer;</span>
+                                }
+                            }
+                        }
+                        {
+<span class="fc" id="L642">                            String[] names = new String[]{</span>
+                                    &quot;java.util.Optional&quot;,
+                                    &quot;java.util.OptionalDouble&quot;,
+                                    &quot;java.util.OptionalInt&quot;,
+                                    &quot;java.util.OptionalLong&quot;
+                            };
+<span class="fc bfc" id="L648" title="All 2 branches covered.">                            for (String name : names) {</span>
+<span class="fc bfc" id="L649" title="All 2 branches covered.">                                if (name.equals(className)) {</span>
+<span class="fc" id="L650">                                    put(Class.forName(name), writer = OptionalCodec.instance);</span>
+<span class="fc" id="L651">                                    return writer;</span>
+                                }
+                            }
+                        }
+                        {
+<span class="fc" id="L656">                            String[] names = new String[]{</span>
+                                    &quot;java.util.concurrent.atomic.LongAdder&quot;,
+                                    &quot;java.util.concurrent.atomic.DoubleAdder&quot;
+                            };
+<span class="pc bpc" id="L660" title="1 of 2 branches missed.">                            for (String name : names) {</span>
+<span class="fc bfc" id="L661" title="All 2 branches covered.">                                if (name.equals(className)) {</span>
+<span class="fc" id="L662">                                    put(Class.forName(name), writer = AdderSerializer.instance);</span>
+<span class="fc" id="L663">                                    return writer;</span>
+                                }
+                            }
+                        }
+<span class="nc" id="L667">                    } catch (Throwable e) {</span>
+                        // skip
+<span class="nc" id="L669">                        jdk8Error = true;</span>
+<span class="nc" id="L670">                    }</span>
+                }
+                
+<span class="pc bpc" id="L673" title="1 of 2 branches missed.">                if ((!oracleJdbcError) //</span>
+<span class="fc bfc" id="L674" title="All 2 branches covered.">                    &amp;&amp; className.startsWith(&quot;oracle.sql.&quot;)) {</span>
+                    try {
+<span class="fc" id="L676">                        String[] names = new String[] {</span>
+                                &quot;oracle.sql.DATE&quot;,
+                                &quot;oracle.sql.TIMESTAMP&quot;
+                        };
+
+<span class="pc bpc" id="L681" title="1 of 2 branches missed.">                        for (String name : names) {</span>
+<span class="fc bfc" id="L682" title="All 2 branches covered.">                            if (name.equals(className)) {</span>
+<span class="fc" id="L683">                                put(Class.forName(name), writer = DateCodec.instance);</span>
+<span class="fc" id="L684">                                return writer;</span>
+                            }
+                        }
+<span class="nc" id="L687">                    } catch (Throwable e) {</span>
+                        // skip
+<span class="nc" id="L689">                        oracleJdbcError = true;</span>
+<span class="nc" id="L690">                    }</span>
+                }
+                
+<span class="pc bpc" id="L693" title="1 of 2 branches missed.">                if ((!springfoxError) //</span>
+<span class="fc bfc" id="L694" title="All 2 branches covered.">                    &amp;&amp; className.equals(&quot;springfox.documentation.spring.web.json.Json&quot;)) {</span>
+                    try {
+<span class="fc" id="L696">                        put(Class.forName(&quot;springfox.documentation.spring.web.json.Json&quot;), //</span>
+                                writer = SwaggerJsonSerializer.instance);
+<span class="fc" id="L698">                        return writer;</span>
+<span class="nc" id="L699">                    } catch (ClassNotFoundException e) {</span>
+                        // skip
+<span class="nc" id="L701">                        springfoxError = true;</span>
+                    }
+                }
+
+<span class="pc bpc" id="L705" title="1 of 2 branches missed.">                if ((!guavaError) //</span>
+<span class="fc bfc" id="L706" title="All 2 branches covered.">                        &amp;&amp; className.startsWith(&quot;com.google.common.collect.&quot;)) {</span>
+                    try {
+<span class="fc" id="L708">                        String[] names = new String[] {</span>
+                                &quot;com.google.common.collect.HashMultimap&quot;,
+                                &quot;com.google.common.collect.LinkedListMultimap&quot;,
+                                &quot;com.google.common.collect.LinkedHashMultimap&quot;,
+                                &quot;com.google.common.collect.ArrayListMultimap&quot;,
+                                &quot;com.google.common.collect.TreeMultimap&quot;
+                        };
+
+<span class="pc bpc" id="L716" title="1 of 2 branches missed.">                        for (String name : names) {</span>
+<span class="fc bfc" id="L717" title="All 2 branches covered.">                            if (name.equals(className)) {</span>
+<span class="fc" id="L718">                                put(Class.forName(name), writer = GuavaCodec.instance);</span>
+<span class="fc" id="L719">                                return writer;</span>
+                            }
+                        }
+<span class="nc" id="L722">                    } catch (ClassNotFoundException e) {</span>
+                        // skip
+<span class="nc" id="L724">                        guavaError = true;</span>
+<span class="nc" id="L725">                    }</span>
+                }
+
+<span class="fc bfc" id="L728" title="All 2 branches covered.">                if (className.equals(&quot;net.sf.json.JSONNull&quot;)) {</span>
+<span class="fc" id="L729">                    put(clazz, writer = MiscCodec.instance);</span>
+<span class="fc" id="L730">                    return writer;</span>
+                }
+                
+<span class="fc bfc" id="L733" title="All 2 branches covered.">				if (className.equals(&quot;org.json.JSONObject&quot;)) {</span>
+<span class="fc" id="L734">                    put(clazz, writer = JSONObjectCodec.instance);</span>
+<span class="fc" id="L735">                    return writer;</span>
+				}
+
+<span class="pc bpc" id="L738" title="1 of 4 branches missed.">                if ((!jodaError) &amp;&amp; className.startsWith(&quot;org.joda.&quot;)) {</span>
+                    try {
+<span class="fc" id="L740">                        String[] names = new String[] {</span>
+                                &quot;org.joda.time.LocalDate&quot;,
+                                &quot;org.joda.time.LocalDateTime&quot;,
+                                &quot;org.joda.time.LocalTime&quot;,
+                                &quot;org.joda.time.Instant&quot;,
+                                &quot;org.joda.time.DateTime&quot;,
+                                &quot;org.joda.time.Period&quot;,
+                                &quot;org.joda.time.Duration&quot;,
+                                &quot;org.joda.time.DateTimeZone&quot;,
+                                &quot;org.joda.time.UTCDateTimeZone&quot;,
+                                &quot;org.joda.time.tz.CachedDateTimeZone&quot;,
+                                &quot;org.joda.time.tz.FixedDateTimeZone&quot;,
+                        };
+
+<span class="pc bpc" id="L754" title="1 of 2 branches missed.">                        for (String name : names) {</span>
+<span class="fc bfc" id="L755" title="All 2 branches covered.">                            if (name.equals(className)) {</span>
+<span class="fc" id="L756">                                put(Class.forName(name), writer = JodaCodec.instance);</span>
+<span class="fc" id="L757">                                return writer;</span>
+                            }
+                        }
+<span class="nc" id="L760">                    } catch (ClassNotFoundException e) {</span>
+                        // skip
+<span class="nc" id="L762">                        jodaError = true;</span>
+<span class="nc" id="L763">                    }</span>
+                }
+
+<span class="fc bfc" id="L766" title="All 2 branches covered.">                if (&quot;java.nio.HeapByteBuffer&quot;.equals(className)) {</span>
+<span class="fc" id="L767">                    put(clazz, writer = ByteBufferCodec.instance);</span>
+<span class="fc" id="L768">                    return writer;</span>
+                }
+
+<span class="fc bfc" id="L771" title="All 2 branches covered.">                if (&quot;org.javamoney.moneta.Money&quot;.equals(className)) {</span>
+<span class="fc" id="L772">                    put(clazz, writer = MonetaCodec.instance);</span>
+<span class="fc" id="L773">                    return writer;</span>
+                }
+
+<span class="pc bpc" id="L776" title="1 of 2 branches missed.">                if (&quot;com.google.protobuf.Descriptors$FieldDescriptor&quot;.equals(className)) {</span>
+<span class="nc" id="L777">                    put(clazz, writer = ToStringSerializer.instance);</span>
+<span class="nc" id="L778">                    return writer;</span>
+                }
+
+<span class="fc" id="L781">                Class[] interfaces = clazz.getInterfaces();</span>
+<span class="fc bfc" id="L782" title="All 4 branches covered.">                if (interfaces.length == 1 &amp;&amp; interfaces[0].isAnnotation()) {</span>
+<span class="fc" id="L783">                    put(clazz, AnnotationSerializer.instance);</span>
+<span class="fc" id="L784">                    return AnnotationSerializer.instance;</span>
+                }
+
+<span class="fc bfc" id="L787" title="All 2 branches covered.">                if (TypeUtils.isProxy(clazz)) {</span>
+<span class="fc" id="L788">                    Class&lt;?&gt; superClazz = clazz.getSuperclass();</span>
+
+<span class="fc" id="L790">                    ObjectSerializer superWriter = getObjectWriter(superClazz);</span>
+<span class="fc" id="L791">                    put(clazz, superWriter);</span>
+<span class="fc" id="L792">                    return superWriter;</span>
+                }
+
+<span class="fc bfc" id="L795" title="All 2 branches covered.">                if (Proxy.isProxyClass(clazz)) {</span>
+<span class="fc" id="L796">                    Class handlerClass = null;</span>
+
+<span class="pc bpc" id="L798" title="1 of 2 branches missed.">                    if (interfaces.length == 2) {</span>
+<span class="nc" id="L799">                        handlerClass = interfaces[1];</span>
+                    } else {
+<span class="fc bfc" id="L801" title="All 2 branches covered.">                        for (Class proxiedInterface : interfaces) {</span>
+<span class="pc bpc" id="L802" title="1 of 2 branches missed.">                            if (proxiedInterface.getName().startsWith(&quot;org.springframework.aop.&quot;)) {</span>
+<span class="nc" id="L803">                                continue;</span>
+                            }
+<span class="pc bpc" id="L805" title="1 of 2 branches missed.">                            if (handlerClass != null) {</span>
+<span class="nc" id="L806">                                handlerClass = null; // multi-matched</span>
+<span class="nc" id="L807">                                break;</span>
+                            }
+<span class="fc" id="L809">                            handlerClass = proxiedInterface;</span>
+                        }
+                    }
+
+<span class="pc bpc" id="L813" title="1 of 2 branches missed.">                    if (handlerClass != null) {</span>
+<span class="fc" id="L814">                        ObjectSerializer superWriter = getObjectWriter(handlerClass);</span>
+<span class="fc" id="L815">                        put(clazz, superWriter);</span>
+<span class="fc" id="L816">                        return superWriter;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L820" title="All 2 branches covered.">                if (create) {</span>
+<span class="fc" id="L821">                    writer = createJavaBeanSerializer(clazz);</span>
+<span class="fc" id="L822">                    put(clazz, writer);</span>
+                }
+            }
+
+<span class="fc bfc" id="L826" title="All 2 branches covered.">            if (writer == null) {</span>
+<span class="fc" id="L827">                writer = get(clazz);</span>
+            }
+        }
+<span class="fc" id="L830">        return writer;</span>
+    }
+
+    private static Member getEnumValueField(Class clazz) {
+<span class="fc" id="L834">        Member member = null;</span>
+
+<span class="fc" id="L836">        Method[] methods = clazz.getMethods();</span>
+
+<span class="fc bfc" id="L838" title="All 2 branches covered.">        for (Method method : methods) {</span>
+<span class="pc bpc" id="L839" title="1 of 2 branches missed.">            if (method.getReturnType() == Void.class) {</span>
+<span class="nc" id="L840">                continue;</span>
+            }
+<span class="fc" id="L842">            JSONField jsonField = method.getAnnotation(JSONField.class);</span>
+<span class="fc bfc" id="L843" title="All 2 branches covered.">            if (jsonField != null) {</span>
+<span class="pc bpc" id="L844" title="1 of 2 branches missed.">                if (member != null) {</span>
+<span class="nc" id="L845">                    return null;</span>
+                }
+
+<span class="fc" id="L848">                member = method;</span>
+            }
+        }
+
+<span class="fc bfc" id="L852" title="All 2 branches covered.">        for (Field field : clazz.getFields()) {</span>
+<span class="fc" id="L853">            JSONField jsonField = field.getAnnotation(JSONField.class);</span>
+
+<span class="fc bfc" id="L855" title="All 2 branches covered.">            if (jsonField != null) {</span>
+<span class="pc bpc" id="L856" title="1 of 2 branches missed.">                if (member != null) {</span>
+<span class="nc" id="L857">                    return null;</span>
+                }
+
+<span class="fc" id="L860">                member = field;</span>
+            }
+        }
+
+<span class="fc" id="L864">        return member;</span>
+    }
+
+    /**
+     * 可以通过重写这个方法，定义自己的枚举序列化实现
+     * @return 返回一个枚举的反序列化实现
+     * @author zhu.xiaojie
+     * @time 2020-4-5
+     */
+    protected ObjectSerializer getEnumSerializer(){
+<span class="fc" id="L874">        return EnumSerializer.instance;</span>
+    }
+	
+    public final ObjectSerializer get(Type type) {
+<span class="fc" id="L878">        Type mixin = JSON.getMixInAnnotations(type);</span>
+<span class="fc bfc" id="L879" title="All 2 branches covered.">        if (null == mixin) {</span>
+<span class="fc" id="L880">            return this.serializers.get(type);</span>
+        }
+<span class="fc" id="L882">        IdentityHashMap&lt;Type, ObjectSerializer&gt; mixInClasses = this.mixInSerializers.get(type);</span>
+<span class="fc bfc" id="L883" title="All 2 branches covered.">        if (mixInClasses == null) {</span>
+<span class="fc" id="L884">            return null;</span>
+        }
+<span class="fc" id="L886">        return mixInClasses.get(mixin);</span>
+    }
+
+    public boolean put(Object type, Object value) {
+<span class="nc" id="L890">        return put((Type)type, (ObjectSerializer)value);</span>
+    }
+
+    public boolean put(Type type, ObjectSerializer value) {
+<span class="fc" id="L894">        Type mixin = JSON.getMixInAnnotations(type);</span>
+<span class="fc bfc" id="L895" title="All 2 branches covered.">        if (mixin != null) {</span>
+<span class="fc" id="L896">            IdentityHashMap&lt;Type, ObjectSerializer&gt; mixInClasses = this.mixInSerializers.get(type);</span>
+<span class="fc bfc" id="L897" title="All 2 branches covered.">            if (mixInClasses == null) {</span>
+                //多线程下可能会重复创建，但不影响正确性
+<span class="fc" id="L899">                mixInClasses = new IdentityHashMap&lt;Type, ObjectSerializer&gt;(4);</span>
+<span class="fc" id="L900">                mixInSerializers.put(type, mixInClasses);</span>
+            }
+<span class="fc" id="L902">            return mixInClasses.put(mixin, value);</span>
+        }
+<span class="fc" id="L904">        return this.serializers.put(type, value);</span>
+    }
+
+    /**
+     * 1.2.24
+     * @param enumClasses
+     */
+	public void configEnumAsJavaBean(Class&lt;? extends Enum&gt;... enumClasses) {
+<span class="fc bfc" id="L912" title="All 2 branches covered.">        for (Class&lt;? extends Enum&gt; enumClass : enumClasses) {</span>
+<span class="fc" id="L913">            put(enumClass, createJavaBeanSerializer(enumClass));</span>
+        }
+<span class="fc" id="L915">    }</span>
+
+    /**
+     * for spring config support
+     * @param propertyNamingStrategy
+     */
+    public void setPropertyNamingStrategy(PropertyNamingStrategy propertyNamingStrategy) {
+<span class="nc" id="L922">        this.propertyNamingStrategy = propertyNamingStrategy;</span>
+<span class="nc" id="L923">    }</span>
+
+    public void clearSerializers() {
+<span class="fc" id="L926">        this.serializers.clear();</span>
+<span class="fc" id="L927">        this.initSerializers();</span>
+<span class="fc" id="L928">    }</span>
+
+    public void register(Module module) {
+<span class="fc" id="L931">        this.modules.add(module);</span>
+<span class="fc" id="L932">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

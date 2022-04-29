@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClassWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.asm</a> &gt; <span class="el_source">ClassWriter.java</span></div><h1>ClassWriter.java</h1><pre class="source lang-java linenums">/***
+ * ASM: a very small and fast Java bytecode manipulation framework
+ * Copyright (c) 2000-2007 INRIA, France Telecom
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holders nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+package com.alibaba.fastjson.asm;
+
+/**
+ * 
+ * @author Eric Bruneton
+ */
+public class ClassWriter {
+    /**
+     * Minor and major version numbers of the class to be generated.
+     */
+    int                     version;
+
+    /**
+     * Index of the next item to be added in the constant pool.
+     */
+    int                     index;
+
+    /**
+     * The constant pool of this class.
+     */
+    final ByteVector        pool;
+
+    /**
+     * The constant pool's hash table data.
+     */
+    Item[]                  items;
+
+    /**
+     * The threshold of the constant pool's hash table.
+     */
+    int                     threshold;
+
+    /**
+     * A reusable key used to look for items in the {@link #items} hash table.
+     */
+    final Item              key;
+
+    /**
+     * A reusable key used to look for items in the {@link #items} hash table.
+     */
+    final Item              key2;
+
+    /**
+     * A reusable key used to look for items in the {@link #items} hash table.
+     */
+    final Item              key3;
+
+    /**
+     * A type table used to temporarily store internal names that will not necessarily be stored in the constant pool.
+     * This type table is used by the control flow and data flow analysis algorithm used to compute stack map frames
+     * from scratch. This array associates to each index &lt;tt&gt;i&lt;/tt&gt; the Item whose index is &lt;tt&gt;i&lt;/tt&gt;. All Item objects
+     * stored in this array are also stored in the {@link #items} hash table. These two arrays allow to retrieve an Item
+     * from its index or, conversely, to get the index of an Item from its value. Each Item stores an internal name in
+     * its {@link Item#strVal1} field.
+     */
+    Item[]                  typeTable;
+
+    /**
+     * The access flags of this class.
+     */
+    private int             access;
+
+    /**
+     * The constant pool item that contains the internal name of this class.
+     */
+    private int             name;
+
+    /**
+     * The internal name of this class.
+     */
+    String                  thisName;
+
+    /**
+     * The constant pool item that contains the internal name of the super class of this class.
+     */
+    private int             superName;
+
+    /**
+     * Number of interfaces implemented or extended by this class or interface.
+     */
+    private int             interfaceCount;
+
+    /**
+     * The interfaces implemented or extended by this class or interface. More precisely, this array contains the
+     * indexes of the constant pool items that contain the internal names of these interfaces.
+     */
+    private int[]           interfaces;
+
+    /**
+     * The fields of this class. These fields are stored in a linked list of {@link FieldWriter} objects, linked to each
+     * other by their {@link FieldWriter#next} field. This field stores the first element of this list.
+     */
+    FieldWriter             firstField;
+
+    /**
+     * The fields of this class. These fields are stored in a linked list of {@link FieldWriter} objects, linked to each
+     * other by their {@link FieldWriter#next} field. This field stores the last element of this list.
+     */
+    FieldWriter             lastField;
+
+    /**
+     * The methods of this class. These methods are stored in a linked list of {@link MethodWriter} objects, linked to
+     * each other by their {@link MethodWriter#next} field. This field stores the first element of this list.
+     */
+    MethodWriter            firstMethod;
+
+    /**
+     * The methods of this class. These methods are stored in a linked list of {@link MethodWriter} objects, linked to
+     * each other by their {@link MethodWriter#next} field. This field stores the last element of this list.
+     */
+    MethodWriter            lastMethod;
+
+    // ------------------------------------------------------------------------
+    // Constructor
+    // ------------------------------------------------------------------------
+
+    public ClassWriter(){
+<span class="fc" id="L147">        this(0);</span>
+<span class="fc" id="L148">    }</span>
+
+<span class="fc" id="L150">    private ClassWriter(final int flags){</span>
+<span class="fc" id="L151">        index = 1;</span>
+<span class="fc" id="L152">        pool = new ByteVector();</span>
+<span class="fc" id="L153">        items = new Item[256];</span>
+<span class="fc" id="L154">        threshold = (int) (0.75d * items.length);</span>
+<span class="fc" id="L155">        key = new Item();</span>
+<span class="fc" id="L156">        key2 = new Item();</span>
+<span class="fc" id="L157">        key3 = new Item();</span>
+<span class="fc" id="L158">    }</span>
+
+    // ------------------------------------------------------------------------
+    // Implementation of the ClassVisitor interface
+    // ------------------------------------------------------------------------
+
+    public void visit(final int version, final int access, final String name, final String superName, final String[] interfaces) {
+<span class="fc" id="L165">        this.version = version;</span>
+<span class="fc" id="L166">        this.access = access;</span>
+<span class="fc" id="L167">        this.name = newClassItem(name).index;</span>
+<span class="fc" id="L168">        thisName = name;</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">        this.superName = superName == null ? 0 : newClassItem(superName).index;</span>
+<span class="pc bpc" id="L170" title="1 of 4 branches missed.">        if (interfaces != null &amp;&amp; interfaces.length &gt; 0) {</span>
+<span class="fc" id="L171">            interfaceCount = interfaces.length;</span>
+<span class="fc" id="L172">            this.interfaces = new int[interfaceCount];</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">            for (int i = 0; i &lt; interfaceCount; ++i) {</span>
+<span class="fc" id="L174">                this.interfaces[i] = newClassItem(interfaces[i]).index;</span>
+            }
+        }
+<span class="fc" id="L177">    }</span>
+
+    // ------------------------------------------------------------------------
+    // Other public methods
+    // ------------------------------------------------------------------------
+
+    /**
+     * Returns the bytecode of the class that was build with this class writer.
+     * 
+     * @return the bytecode of the class that was build with this class writer.
+     */
+    public byte[] toByteArray() {
+        // computes the real size of the bytecode of this class
+<span class="fc" id="L190">        int size = 24 + 2 * interfaceCount;</span>
+<span class="fc" id="L191">        int nbFields = 0;</span>
+<span class="fc" id="L192">        FieldWriter fb = firstField;</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        while (fb != null) {</span>
+<span class="fc" id="L194">            ++nbFields;</span>
+<span class="fc" id="L195">            size += fb.getSize();</span>
+<span class="fc" id="L196">            fb = fb.next;</span>
+        }
+<span class="fc" id="L198">        int nbMethods = 0;</span>
+<span class="fc" id="L199">        MethodWriter mb = firstMethod;</span>
+<span class="fc bfc" id="L200" title="All 2 branches covered.">        while (mb != null) {</span>
+<span class="fc" id="L201">            ++nbMethods;</span>
+<span class="fc" id="L202">            size += mb.getSize();</span>
+<span class="fc" id="L203">            mb = mb.next;</span>
+        }
+<span class="fc" id="L205">        int attributeCount = 0;</span>
+<span class="fc" id="L206">        size += pool.length;</span>
+        // allocates a byte vector of this size, in order to avoid unnecessary
+        // arraycopy operations in the ByteVector.enlarge() method
+<span class="fc" id="L209">        ByteVector out = new ByteVector(size);</span>
+<span class="fc" id="L210">        out.putInt(0xCAFEBABE).putInt(version);</span>
+<span class="fc" id="L211">        out.putShort(index).putByteArray(pool.data, 0, pool.length);</span>
+<span class="fc" id="L212">        int mask = 393216; // Opcodes.ACC_DEPRECATED | ClassWriter.ACC_SYNTHETIC_ATTRIBUTE | ((access &amp; ClassWriter.ACC_SYNTHETIC_ATTRIBUTE) / (ClassWriter.ACC_SYNTHETIC_ATTRIBUTE / Opcodes.ACC_SYNTHETIC));</span>
+<span class="fc" id="L213">        out.putShort(access &amp; ~mask).putShort(name).putShort(superName);</span>
+<span class="fc" id="L214">        out.putShort(interfaceCount);</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        for (int i = 0; i &lt; interfaceCount; ++i) {</span>
+<span class="fc" id="L216">            out.putShort(interfaces[i]);</span>
+        }
+<span class="fc" id="L218">        out.putShort(nbFields);</span>
+<span class="fc" id="L219">        fb = firstField;</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        while (fb != null) {</span>
+<span class="fc" id="L221">            fb.put(out);</span>
+<span class="fc" id="L222">            fb = fb.next;</span>
+        }
+<span class="fc" id="L224">        out.putShort(nbMethods);</span>
+<span class="fc" id="L225">        mb = firstMethod;</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        while (mb != null) {</span>
+<span class="fc" id="L227">            mb.put(out);</span>
+<span class="fc" id="L228">            mb = mb.next;</span>
+        }
+<span class="fc" id="L230">        out.putShort(attributeCount);</span>
+<span class="fc" id="L231">        return out.data;</span>
+    }
+
+    // ------------------------------------------------------------------------
+    // Utility methods: constant pool management
+    // ------------------------------------------------------------------------
+
+    /**
+     * Adds a number or string constant to the constant pool of the class being build. Does nothing if the constant pool
+     * already contains a similar item.
+     * 
+     * @param cst the value of the constant to be added to the constant pool. This parameter must be an {@link Integer},
+     * a {@link Float}, a {@link Long}, a {@link Double}, a {@link String} or a {@link Type}.
+     * @return a new or already existing constant item with the given value.
+     */
+    Item newConstItem(final Object cst) {
+<span class="fc bfc" id="L247" title="All 2 branches covered.">        if (cst instanceof Integer) {</span>
+<span class="fc" id="L248">            int val = ((Integer) cst).intValue();</span>
+            // return newInteger(val);
+<span class="fc" id="L250">            key.set(val);</span>
+<span class="fc" id="L251">            Item result = get(key);</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">            if (result == null) {</span>
+<span class="fc" id="L253">                pool.putByte(3 /* INT */ ).putInt(val);</span>
+<span class="fc" id="L254">                result = new Item(index++, key);</span>
+<span class="fc" id="L255">                put(result);</span>
+            }
+<span class="fc" id="L257">            return result;</span>
+<span class="fc bfc" id="L258" title="All 2 branches covered.">        } else if (cst instanceof String) {</span>
+<span class="fc" id="L259">            return newString((String) cst);</span>
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">        } else if (cst instanceof Type) {</span>
+<span class="fc" id="L261">            Type t = (Type) cst;</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">            return newClassItem(t.sort == 10 /*Type.OBJECT*/ ? t.getInternalName() : t.getDescriptor());</span>
+        } else {
+<span class="nc" id="L264">            throw new IllegalArgumentException(&quot;value &quot; + cst);</span>
+        }
+    }
+
+    public int newUTF8(final String value) {
+<span class="fc" id="L269">        key.set(1 /* UTF8 */, value, null, null);</span>
+<span class="fc" id="L270">        Item result = get(key);</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">        if (result == null) {</span>
+<span class="fc" id="L272">            pool.putByte(1 /* UTF8 */).putUTF8(value);</span>
+<span class="fc" id="L273">            result = new Item(index++, key);</span>
+<span class="fc" id="L274">            put(result);</span>
+        }
+<span class="fc" id="L276">        return result.index;</span>
+    }
+
+    public Item newClassItem(final String value) {
+<span class="fc" id="L280">        key2.set(7 /* CLASS */, value, null, null);</span>
+<span class="fc" id="L281">        Item result = get(key2);</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        if (result == null) {</span>
+<span class="fc" id="L283">            pool.put12(7 /* CLASS */, newUTF8(value));</span>
+<span class="fc" id="L284">            result = new Item(index++, key2);</span>
+<span class="fc" id="L285">            put(result);</span>
+        }
+<span class="fc" id="L287">        return result;</span>
+    }
+
+    /**
+     * Adds a field reference to the constant pool of the class being build. Does nothing if the constant pool already
+     * contains a similar item.
+     * 
+     * @param owner the internal name of the field's owner class.
+     * @param name the field's name.
+     * @param desc the field's descriptor.
+     * @return a new or already existing field reference item.
+     */
+    Item newFieldItem(final String owner, final String name, final String desc) {
+<span class="fc" id="L300">        key3.set(9 /* FIELD */, owner, name, desc);</span>
+<span class="fc" id="L301">        Item result = get(key3);</span>
+<span class="fc bfc" id="L302" title="All 2 branches covered.">        if (result == null) {</span>
+            // put122(9 /* FIELD */, newClassItem(owner).index, newNameTypeItem(name, desc).index);
+<span class="fc" id="L304">            int s1 = newClassItem(owner).index, s2 = newNameTypeItem(name, desc).index;</span>
+<span class="fc" id="L305">            pool.put12(9 /* FIELD */, s1).putShort(s2);</span>
+<span class="fc" id="L306">            result = new Item(index++, key3);</span>
+<span class="fc" id="L307">            put(result);</span>
+        }
+<span class="fc" id="L309">        return result;</span>
+    }
+
+    /**
+     * Adds a method reference to the constant pool of the class being build. Does nothing if the constant pool already
+     * contains a similar item.
+     * 
+     * @param owner the internal name of the method's owner class.
+     * @param name the method's name.
+     * @param desc the method's descriptor.
+     * @param itf &lt;tt&gt;true&lt;/tt&gt; if &lt;tt&gt;owner&lt;/tt&gt; is an interface.
+     * @return a new or already existing method reference item.
+     */
+    Item newMethodItem(final String owner, final String name, final String desc, final boolean itf) {
+<span class="fc bfc" id="L323" title="All 2 branches covered.">        int type = itf ? 11 /* IMETH */ : 10 /* METH */;</span>
+<span class="fc" id="L324">        key3.set(type, owner, name, desc);</span>
+<span class="fc" id="L325">        Item result = get(key3);</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">        if (result == null) {</span>
+            // put122(type, newClassItem(owner).index, newNameTypeItem(name, desc).index);
+<span class="fc" id="L328">            int s1 = newClassItem(owner).index, s2 = newNameTypeItem(name, desc).index;</span>
+<span class="fc" id="L329">            pool.put12(type, s1).putShort(s2);</span>
+<span class="fc" id="L330">            result = new Item(index++, key3);</span>
+<span class="fc" id="L331">            put(result);</span>
+        }
+<span class="fc" id="L333">        return result;</span>
+    }
+
+    private Item newString(final String value) {
+<span class="fc" id="L337">        key2.set(8 /* STR */, value, null, null);</span>
+<span class="fc" id="L338">        Item result = get(key2);</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        if (result == null) {</span>
+<span class="fc" id="L340">            pool.put12(8 /*STR*/, newUTF8(value));</span>
+<span class="fc" id="L341">            result = new Item(index++, key2);</span>
+<span class="fc" id="L342">            put(result);</span>
+        }
+<span class="fc" id="L344">        return result;</span>
+    }
+
+    public Item newNameTypeItem(final String name, final String desc) {
+<span class="fc" id="L348">        key2.set(12 /* NAME_TYPE */, name, desc, null);</span>
+<span class="fc" id="L349">        Item result = get(key2);</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">        if (result == null) {</span>
+            //put122(12 /* NAME_TYPE */, newUTF8(name), newUTF8(desc));
+<span class="fc" id="L352">            int s1 = newUTF8(name), s2 = newUTF8(desc);</span>
+<span class="fc" id="L353">            pool.put12(12 /* NAME_TYPE */, s1).putShort(s2);</span>
+<span class="fc" id="L354">            result = new Item(index++, key2);</span>
+<span class="fc" id="L355">            put(result);</span>
+        }
+<span class="fc" id="L357">        return result;</span>
+    }
+
+
+    private Item get(final Item key) {
+<span class="fc" id="L362">        Item i = items[key.hashCode % items.length];</span>
+<span class="fc bfc" id="L363" title="All 6 branches covered.">        while (i != null &amp;&amp; (i.type != key.type || !key.isEqualTo(i))) {</span>
+<span class="fc" id="L364">            i = i.next;</span>
+        }
+<span class="fc" id="L366">        return i;</span>
+    }
+
+    private void put(final Item i) {
+<span class="fc bfc" id="L370" title="All 2 branches covered.">        if (index &gt; threshold) {</span>
+<span class="fc" id="L371">            int ll = items.length;</span>
+<span class="fc" id="L372">            int nl = ll * 2 + 1;</span>
+<span class="fc" id="L373">            Item[] newItems = new Item[nl];</span>
+<span class="fc bfc" id="L374" title="All 2 branches covered.">            for (int l = ll - 1; l &gt;= 0; --l) {</span>
+<span class="fc" id="L375">                Item j = items[l];</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">                while (j != null) {</span>
+<span class="fc" id="L377">                    int index = j.hashCode % newItems.length;</span>
+<span class="fc" id="L378">                    Item k = j.next;</span>
+<span class="fc" id="L379">                    j.next = newItems[index];</span>
+<span class="fc" id="L380">                    newItems[index] = j;</span>
+<span class="fc" id="L381">                    j = k;</span>
+<span class="fc" id="L382">                }</span>
+            }
+<span class="fc" id="L384">            items = newItems;</span>
+<span class="fc" id="L385">            threshold = (int) (nl * 0.75);</span>
+        }
+<span class="fc" id="L387">        int index = i.hashCode % items.length;</span>
+<span class="fc" id="L388">        i.next = items[index];</span>
+<span class="fc" id="L389">        items[index] = i;</span>
+<span class="fc" id="L390">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

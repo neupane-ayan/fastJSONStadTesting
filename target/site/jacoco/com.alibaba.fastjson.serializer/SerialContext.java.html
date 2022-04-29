@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SerialContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">SerialContext.java</span></div><h1>SerialContext.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+public class SerialContext {
+
+    public final SerialContext parent;
+    public final Object        object;
+    public final Object        fieldName;
+    public final int           features;
+
+<span class="fc" id="L10">    public SerialContext(SerialContext parent, Object object, Object fieldName, int features, int fieldFeatures){</span>
+<span class="fc" id="L11">        this.parent = parent;</span>
+<span class="fc" id="L12">        this.object = object;</span>
+<span class="fc" id="L13">        this.fieldName = fieldName;</span>
+<span class="fc" id="L14">        this.features = features;</span>
+<span class="fc" id="L15">    }</span>
+
+    public String toString() {
+<span class="fc bfc" id="L18" title="All 2 branches covered.">        if (parent == null) {</span>
+<span class="fc" id="L19">            return &quot;$&quot;;</span>
+        } else {
+<span class="fc" id="L21">            StringBuilder buf = new StringBuilder();</span>
+<span class="fc" id="L22">            toString(buf);</span>
+<span class="fc" id="L23">            return buf.toString();</span>
+        }
+    }
+
+    protected void toString(StringBuilder buf) {
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        if (parent == null) {</span>
+<span class="fc" id="L29">            buf.append('$');</span>
+        } else {
+<span class="fc" id="L31">            parent.toString(buf);</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">            if (fieldName == null) {</span>
+<span class="nc" id="L33">                buf.append(&quot;.null&quot;);</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            } else if (fieldName instanceof Integer) {</span>
+<span class="fc" id="L35">                buf.append('[');</span>
+<span class="fc" id="L36">                buf.append(((Integer)fieldName).intValue());</span>
+<span class="fc" id="L37">                buf.append(']');</span>
+            } else {
+<span class="fc" id="L39">                buf.append('.');</span>
+
+<span class="fc" id="L41">                String fieldName = this.fieldName.toString();</span>
+<span class="fc" id="L42">                boolean special = false;</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">                for (int i = 0; i &lt; fieldName.length(); ++i) {</span>
+<span class="fc" id="L44">                    char ch = fieldName.charAt(i);</span>
+<span class="pc bpc" id="L45" title="2 of 14 branches missed.">                    if ((ch &gt;= '0' &amp;&amp; ch &lt;='9') || (ch &gt;= 'A' &amp;&amp; ch &lt;='Z') || (ch &gt;= 'a' &amp;&amp; ch &lt;='z') || ch &gt; 128) {</span>
+<span class="nc" id="L46">                        continue;</span>
+                    }
+<span class="fc" id="L48">                    special = true;</span>
+<span class="fc" id="L49">                    break;</span>
+                }
+
+<span class="fc bfc" id="L52" title="All 2 branches covered.">                if (special) {</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                    for (int i = 0; i &lt; fieldName.length(); ++i) {</span>
+<span class="fc" id="L54">                        char ch = fieldName.charAt(i);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                        if (ch == '\\') {</span>
+<span class="fc" id="L56">                            buf.append('\\');</span>
+<span class="fc" id="L57">                            buf.append('\\');</span>
+<span class="fc" id="L58">                            buf.append('\\');</span>
+<span class="pc bpc" id="L59" title="2 of 14 branches missed.">                        } else if ((ch &gt;= '0' &amp;&amp; ch &lt;='9') || (ch &gt;= 'A' &amp;&amp; ch &lt;='Z') || (ch &gt;= 'a' &amp;&amp; ch &lt;='z') || ch &gt; 128) {</span>
+<span class="fc" id="L60">                            buf.append(ch);</span>
+<span class="fc" id="L61">                            continue;</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                        } else if(ch == '\&quot;'){</span>
+<span class="fc" id="L63">                            buf.append('\\');</span>
+<span class="fc" id="L64">                            buf.append('\\');</span>
+<span class="fc" id="L65">                            buf.append('\\');</span>
+                        } else {
+<span class="fc" id="L67">                            buf.append('\\');</span>
+<span class="fc" id="L68">                            buf.append('\\');</span>
+                        }
+<span class="fc" id="L70">                        buf.append(ch);</span>
+                    }
+                } else {
+<span class="fc" id="L73">                    buf.append(fieldName);</span>
+                }
+            }
+        }
+<span class="fc" id="L77">    }</span>
+
+    /**
+     * @deprecated
+     */
+    public SerialContext getParent() {
+<span class="nc" id="L83">        return parent;</span>
+    }
+
+    /**
+     * @deprecated
+     */
+    public Object getObject() {
+<span class="nc" id="L90">        return object;</span>
+    }
+
+    /**
+     * @deprecated
+     */
+    public Object getFieldName() {
+<span class="nc" id="L97">        return fieldName;</span>
+    }
+
+    /**
+     * @deprecated
+     */
+    public String getPath() {
+<span class="nc" id="L104">        return toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

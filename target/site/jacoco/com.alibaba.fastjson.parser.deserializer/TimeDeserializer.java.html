@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TimeDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">TimeDeserializer.java</span></div><h1>TimeDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONScanner;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.util.TypeUtils;
+
+<span class="fc" id="L13">public class TimeDeserializer implements ObjectDeserializer {</span>
+
+<span class="fc" id="L15">    public final static TimeDeserializer instance = new TimeDeserializer();</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type clazz, Object fieldName) {
+<span class="fc" id="L19">        JSONLexer lexer = parser.lexer;</span>
+        
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="fc" id="L22">            lexer.nextToken(JSONToken.LITERAL_STRING);</span>
+            
+<span class="fc bfc" id="L24" title="All 2 branches covered.">            if (lexer.token() != JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L25">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+            
+<span class="fc" id="L28">            lexer.nextTokenWithColon(JSONToken.LITERAL_INT);</span>
+            
+<span class="fc bfc" id="L30" title="All 2 branches covered.">            if (lexer.token() != JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L31">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+            
+<span class="fc" id="L34">            long time = lexer.longValue();</span>
+<span class="fc" id="L35">            lexer.nextToken(JSONToken.RBRACE);</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            if (lexer.token() != JSONToken.RBRACE) {</span>
+<span class="fc" id="L37">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+<span class="fc" id="L39">            lexer.nextToken(JSONToken.COMMA);</span>
+            
+<span class="fc" id="L41">            return (T) new java.sql.Time(time);</span>
+        }
+        
+<span class="fc" id="L44">        Object val = parser.parse();</span>
+
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (val == null) {</span>
+<span class="fc" id="L47">            return null;</span>
+        }
+
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (val instanceof java.sql.Time) {</span>
+<span class="fc" id="L51">            return (T) val;</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        } else if (val instanceof BigDecimal) {</span>
+<span class="nc" id="L53">            return (T) new java.sql.Time(TypeUtils.longValue((BigDecimal) val));</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        } else if (val instanceof Number) {</span>
+<span class="fc" id="L55">            return (T) new java.sql.Time(((Number) val).longValue());</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        } else if (val instanceof String) {</span>
+<span class="fc" id="L57">            String strVal = (String) val;</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (strVal.length() == 0) {</span>
+<span class="fc" id="L59">                return null;</span>
+            }
+            
+            long longVal;
+<span class="fc" id="L63">            JSONScanner dateLexer = new JSONScanner(strVal);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (dateLexer.scanISO8601DateIfMatch()) {</span>
+<span class="fc" id="L65">                longVal = dateLexer.getCalendar().getTimeInMillis();</span>
+            } else {
+<span class="fc" id="L67">                boolean isDigit = true;</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">                for (int i = 0; i&lt; strVal.length(); ++i) {</span>
+<span class="fc" id="L69">                    char ch = strVal.charAt(i);</span>
+<span class="pc bpc" id="L70" title="1 of 4 branches missed.">                    if (ch &lt; '0' || ch &gt; '9') {</span>
+<span class="fc" id="L71">                        isDigit = false;</span>
+<span class="fc" id="L72">                        break;</span>
+                    }
+                }
+<span class="fc bfc" id="L75" title="All 2 branches covered.">                if (!isDigit) {</span>
+<span class="fc" id="L76">                    dateLexer.close();</span>
+<span class="fc" id="L77">                    return (T) java.sql.Time.valueOf(strVal);    </span>
+                }
+                
+<span class="fc" id="L80">                longVal = Long.parseLong(strVal);</span>
+            }
+<span class="fc" id="L82">            dateLexer.close();</span>
+<span class="fc" id="L83">            return (T) new java.sql.Time(longVal);</span>
+        }
+        
+<span class="fc" id="L86">        throw new JSONException(&quot;parse error&quot;);</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L90">        return JSONToken.LITERAL_INT;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

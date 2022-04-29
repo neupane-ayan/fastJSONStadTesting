@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Type.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.asm</a> &gt; <span class="el_source">Type.java</span></div><h1>Type.java</h1><pre class="source lang-java linenums">/***
+ * ASM: a very small and fast Java bytecode manipulation framework
+ * Copyright (c) 2000-2007 INRIA, France Telecom
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holders nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+package com.alibaba.fastjson.asm;
+
+/**
+ * A Java type. This class can be used to make it easier to manipulate type and method descriptors.
+ * 
+ * @author Eric Bruneton
+ * @author Chris Nokleberg
+ */
+public class Type {
+    /**
+     * The &lt;tt&gt;void&lt;/tt&gt; type.
+     */
+<span class="fc" id="L42">    public static final Type VOID_TYPE    = new Type(0, null, ('V' &lt;&lt; 24) | (5 &lt;&lt; 16) | (0 &lt;&lt; 8) | 0, 1);</span>
+
+    /**
+     * The &lt;tt&gt;boolean&lt;/tt&gt; type.
+     */
+<span class="fc" id="L47">    public static final Type BOOLEAN_TYPE = new Type(1, null, ('Z' &lt;&lt; 24) | (0 &lt;&lt; 16) | (5 &lt;&lt; 8) | 1, 1);</span>
+
+    /**
+     * The &lt;tt&gt;char&lt;/tt&gt; type.
+     */
+<span class="fc" id="L52">    public static final Type CHAR_TYPE    = new Type(2, null, ('C' &lt;&lt; 24) | (0 &lt;&lt; 16) | (6 &lt;&lt; 8) | 1, 1);</span>
+
+    /**
+     * The &lt;tt&gt;byte&lt;/tt&gt; type.
+     */
+<span class="fc" id="L57">    public static final Type BYTE_TYPE    = new Type(3, null, ('B' &lt;&lt; 24) | (0 &lt;&lt; 16) | (5 &lt;&lt; 8) | 1, 1);</span>
+
+    /**
+     * The &lt;tt&gt;short&lt;/tt&gt; type.
+     */
+<span class="fc" id="L62">    public static final Type SHORT_TYPE   = new Type(4, null, ('S' &lt;&lt; 24) | (0 &lt;&lt; 16) | (7 &lt;&lt; 8) | 1, 1);</span>
+
+    /**
+     * The &lt;tt&gt;int&lt;/tt&gt; type.
+     */
+<span class="fc" id="L67">    public static final Type INT_TYPE     = new Type(5, null, ('I' &lt;&lt; 24) | (0 &lt;&lt; 16) | (0 &lt;&lt; 8) | 1, 1);</span>
+
+    /**
+     * The &lt;tt&gt;float&lt;/tt&gt; type.
+     */
+<span class="fc" id="L72">    public static final Type FLOAT_TYPE   = new Type(6, null, ('F' &lt;&lt; 24) | (2 &lt;&lt; 16) | (2 &lt;&lt; 8) | 1, 1);</span>
+
+    /**
+     * The &lt;tt&gt;long&lt;/tt&gt; type.
+     */
+<span class="fc" id="L77">    public static final Type LONG_TYPE    = new Type(7, null, ('J' &lt;&lt; 24) | (1 &lt;&lt; 16) | (1 &lt;&lt; 8) | 2, 1);</span>
+
+    /**
+     * The &lt;tt&gt;double&lt;/tt&gt; type.
+     */
+<span class="fc" id="L82">    public static final Type DOUBLE_TYPE  = new Type(8, null, ('D' &lt;&lt; 24) | (3 &lt;&lt; 16) | (3 &lt;&lt; 8) | 2, 1);</span>
+
+    // ------------------------------------------------------------------------
+    // Fields
+    // ------------------------------------------------------------------------
+
+    /**
+     * The sort of this Java type.
+     */
+    protected final int        sort;
+
+    /**
+     * A buffer containing the internal name of this Java type. This field is only used for reference types.
+     */
+    private final char[]     buf;
+
+    /**
+     * The offset of the internal name of this Java type in {@link #buf buf} or, for primitive types, the size,
+     * descriptor and getOpcode offsets for this type (byte 0 contains the size, byte 1 the descriptor, byte 2 the
+     * offset for IALOAD or IASTORE, byte 3 the offset for all other instructions).
+     */
+    private final int        off;
+
+    /**
+     * The length of the internal name of this Java type.
+     */
+    private final int        len;
+
+    // ------------------------------------------------------------------------
+    // Constructors
+    // ------------------------------------------------------------------------
+
+<span class="fc" id="L114">    private Type(final int sort, final char[] buf, final int off, final int len){</span>
+<span class="fc" id="L115">        this.sort = sort;</span>
+<span class="fc" id="L116">        this.buf = buf;</span>
+<span class="fc" id="L117">        this.off = off;</span>
+<span class="fc" id="L118">        this.len = len;</span>
+<span class="fc" id="L119">    }</span>
+
+    /**
+     * Returns the Java type corresponding to the given type descriptor.
+     * 
+     * @param typeDescriptor a type descriptor.
+     * @return the Java type corresponding to the given type descriptor.
+     */
+    public static Type getType(final String typeDescriptor) {
+<span class="fc" id="L128">        return getType(typeDescriptor.toCharArray(), 0);</span>
+    }
+
+    public static int getArgumentsAndReturnSizes(final String desc) {
+<span class="fc" id="L132">        int n = 1;</span>
+<span class="fc" id="L133">        int c = 1;</span>
+        while (true) {
+<span class="fc" id="L135">            char car = desc.charAt(c++);</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">            if (car == ')') {</span>
+<span class="fc" id="L137">                car = desc.charAt(c);</span>
+<span class="pc bpc" id="L138" title="2 of 6 branches missed.">                return n &lt;&lt; 2 | (car == 'V' ? 0 : (car == 'D' || car == 'J' ? 2 : 1));</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">            } else if (car == 'L') {</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                while (desc.charAt(c++) != ';') {</span>
+                }
+<span class="fc" id="L142">                n += 1;</span>
+//            } else if (car == '[') {
+//                while ((car = desc.charAt(c)) == '[') {
+//                    ++c;
+//                }
+//                if (car == 'D' || car == 'J') {
+//                    n -= 1;
+//                }
+<span class="pc bpc" id="L150" title="2 of 4 branches missed.">            } else if (car == 'D' || car == 'J') {</span>
+<span class="nc" id="L151">                n += 2;</span>
+            } else {
+<span class="fc" id="L153">                n += 1;</span>
+            }
+<span class="fc" id="L155">        }</span>
+    }
+
+    /**
+     * Returns the Java type corresponding to the given type descriptor.
+     * 
+     * @param buf a buffer containing a type descriptor.
+     * @param off the offset of this descriptor in the previous buffer.
+     * @return the Java type corresponding to the given type descriptor.
+     */
+    private static Type getType(final char[] buf, final int off) {
+        int len;
+<span class="fc bfc" id="L167" title="All 11 branches covered.">        switch (buf[off]) {</span>
+            case 'V':
+<span class="fc" id="L169">                return VOID_TYPE;</span>
+            case 'Z':
+<span class="fc" id="L171">                return BOOLEAN_TYPE;</span>
+            case 'C':
+<span class="fc" id="L173">                return CHAR_TYPE;</span>
+            case 'B':
+<span class="fc" id="L175">                return BYTE_TYPE;</span>
+            case 'S':
+<span class="fc" id="L177">                return SHORT_TYPE;</span>
+            case 'I':
+<span class="fc" id="L179">                return INT_TYPE;</span>
+            case 'F':
+<span class="fc" id="L181">                return FLOAT_TYPE;</span>
+            case 'J':
+<span class="fc" id="L183">                return LONG_TYPE;</span>
+            case 'D':
+<span class="fc" id="L185">                return DOUBLE_TYPE;</span>
+            case '[':
+<span class="fc" id="L187">                len = 1;</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">                while (buf[off + len] == '[') {</span>
+<span class="fc" id="L189">                    ++len;</span>
+                }
+<span class="fc bfc" id="L191" title="All 2 branches covered.">                if (buf[off + len] == 'L') {</span>
+<span class="fc" id="L192">                    ++len;</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">                    while (buf[off + len] != ';') {</span>
+<span class="fc" id="L194">                        ++len;</span>
+                    }
+                }
+<span class="fc" id="L197">                return new Type(9 /*ARRAY*/, buf, off, len + 1);</span>
+                // case 'L':
+            default:
+<span class="fc" id="L200">                len = 1;</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">                while (buf[off + len] != ';') {</span>
+<span class="fc" id="L202">                    ++len;</span>
+                }
+<span class="fc" id="L204">                return new Type(10/*OBJECT*/, buf, off + 1, len - 1);</span>
+        }
+    }
+
+    public String getInternalName() {
+<span class="fc" id="L209">        return new String(buf, off, len);</span>
+    }
+
+    // ------------------------------------------------------------------------
+    // Conversion to type descriptors
+    // ------------------------------------------------------------------------
+
+    /**
+     * Returns the descriptor corresponding to this Java type.
+     *
+     * @return the descriptor corresponding to this Java type.
+     */
+    String getDescriptor() {
+<span class="fc" id="L222">        return new String(this.buf, off, len);</span>
+    }
+
+    private int getDimensions() {
+<span class="nc" id="L226">        int i = 1;</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        while (buf[off + i] == '[') {</span>
+<span class="nc" id="L228">            ++i;</span>
+        }
+<span class="nc" id="L230">        return i;</span>
+    }
+
+    static Type[] getArgumentTypes(final String methodDescriptor) {
+<span class="fc" id="L234">        char[] buf = methodDescriptor.toCharArray();</span>
+<span class="fc" id="L235">        int off = 1;</span>
+<span class="fc" id="L236">        int size = 0;</span>
+        for (;;) {
+<span class="fc" id="L238">            char car = buf[off++];</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">            if (car == ')') {</span>
+<span class="fc" id="L240">                break;</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">            } else if (car == 'L') {</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">                while (buf[off++] != ';') {</span>
+                }
+<span class="fc" id="L244">                ++size;</span>
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">            } else if (car != '[') {</span>
+<span class="fc" id="L246">                ++size;</span>
+            }
+<span class="fc" id="L248">        }</span>
+
+<span class="fc" id="L250">        Type[] args = new Type[size];</span>
+<span class="fc" id="L251">        off = 1;</span>
+<span class="fc" id="L252">        size = 0;</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">        while (buf[off] != ')') {</span>
+<span class="fc" id="L254">            args[size] = getType(buf, off);</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">            off += args[size].len + (args[size].sort == 10 /*OBJECT*/ ? 2 : 0);</span>
+<span class="fc" id="L256">            size += 1;</span>
+        }
+<span class="fc" id="L258">        return args;</span>
+    }
+
+    protected String getClassName() {
+<span class="pc bpc" id="L262" title="7 of 11 branches missed.">        switch (sort) {</span>
+            case 0: //VOID:
+<span class="nc" id="L264">                return &quot;void&quot;;</span>
+            case 1: //BOOLEAN:
+<span class="fc" id="L266">                return &quot;boolean&quot;;</span>
+            case 2: //CHAR:
+<span class="nc" id="L268">                return &quot;char&quot;;</span>
+            case 3: //BYTE:
+<span class="fc" id="L270">                return &quot;byte&quot;;</span>
+            case 4: //SHORT:
+<span class="nc" id="L272">                return &quot;short&quot;;</span>
+            case 5: //INT:
+<span class="fc" id="L274">                return &quot;int&quot;;</span>
+            case 6: //FLOAT:
+<span class="nc" id="L276">                return &quot;float&quot;;</span>
+            case 7: //LONG:
+<span class="nc" id="L278">                return &quot;long&quot;;</span>
+            case 8: //DOUBLE:
+<span class="nc" id="L280">                return &quot;double&quot;;</span>
+            case 9: //ARRAY:
+<span class="nc" id="L282">                Type elementType = getType(buf, off + getDimensions());</span>
+<span class="nc" id="L283">                StringBuilder b = new StringBuilder(elementType.getClassName());</span>
+<span class="nc bnc" id="L284" title="All 2 branches missed.">                for (int i = getDimensions(); i &gt; 0; --i) {</span>
+<span class="nc" id="L285">                    b.append(&quot;[]&quot;);</span>
+                }
+<span class="nc" id="L287">                return b.toString();</span>
+            // case OBJECT:
+            default:
+<span class="fc" id="L290">                return new String(buf, off, len).replace('/', '.');</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

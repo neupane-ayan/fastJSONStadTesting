@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">FieldDeserializer.java</span></div><h1>FieldDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.serializer.BeanContext;
+import com.alibaba.fastjson.util.FieldInfo;
+import com.alibaba.fastjson.util.TypeUtils;
+
+import java.lang.reflect.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+public abstract class FieldDeserializer {
+
+    public final FieldInfo fieldInfo;
+
+    protected final Class&lt;?&gt; clazz;
+
+    protected BeanContext beanContext;
+
+<span class="fc" id="L26">    public FieldDeserializer(Class&lt;?&gt; clazz, FieldInfo fieldInfo) {</span>
+<span class="fc" id="L27">        this.clazz = clazz;</span>
+<span class="fc" id="L28">        this.fieldInfo = fieldInfo;</span>
+<span class="fc" id="L29">    }</span>
+
+    public Class&lt;?&gt; getOwnerClass() {
+<span class="fc" id="L32">        return clazz;</span>
+    }
+
+    public abstract void parseField(DefaultJSONParser parser, Object object, Type objectType,
+                                    Map&lt;String, Object&gt; fieldValues);
+
+    public int getFastMatchToken() {
+<span class="nc" id="L39">        return 0;</span>
+    }
+
+    public void setValue(Object object, boolean value) {
+<span class="fc" id="L43">        setValue(object, Boolean.valueOf(value));</span>
+<span class="fc" id="L44">    }</span>
+
+    public void setValue(Object object, int value) {
+<span class="fc" id="L47">        setValue(object, Integer.valueOf(value));</span>
+<span class="fc" id="L48">    }</span>
+
+    public void setValue(Object object, long value) {
+<span class="fc" id="L51">        setValue(object, Long.valueOf(value));</span>
+<span class="fc" id="L52">    }</span>
+
+    public void setValue(Object object, String value) {
+<span class="fc" id="L55">        setValue(object, (Object) value);</span>
+<span class="fc" id="L56">    }</span>
+
+    @SuppressWarnings({&quot;rawtypes&quot;, &quot;unchecked&quot;})
+    public void setValue(Object object, Object value) {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (value == null //</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                &amp;&amp; fieldInfo.fieldClass.isPrimitive()) {</span>
+<span class="fc" id="L62">            return;</span>
+<span class="fc bfc" id="L63" title="All 4 branches covered.">        } else if (fieldInfo.fieldClass == String.class</span>
+                &amp;&amp; fieldInfo.format != null
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">                &amp;&amp; fieldInfo.format.equals(&quot;trim&quot;)) {</span>
+<span class="fc" id="L66">            value = ((String) value).trim();</span>
+        }
+
+        try {
+<span class="fc" id="L70">            Method method = fieldInfo.method;</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (method != null) {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                if (fieldInfo.getOnly) {</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                    if (fieldInfo.fieldClass == AtomicInteger.class) {</span>
+<span class="fc" id="L74">                        AtomicInteger atomic = (AtomicInteger) method.invoke(object);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L76">                            atomic.set(((AtomicInteger) value).get());</span>
+                        } else {
+<span class="nc" id="L78">                            degradeValueAssignment(fieldInfo.field, method, object, value);</span>
+                        }
+<span class="fc bfc" id="L80" title="All 2 branches covered.">                    } else if (fieldInfo.fieldClass == AtomicLong.class) {</span>
+<span class="fc" id="L81">                        AtomicLong atomic = (AtomicLong) method.invoke(object);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L83">                            atomic.set(((AtomicLong) value).get());</span>
+                        } else {
+<span class="nc" id="L85">                            degradeValueAssignment(fieldInfo.field, method, object, value);</span>
+                        }
+<span class="fc bfc" id="L87" title="All 2 branches covered.">                    } else if (fieldInfo.fieldClass == AtomicBoolean.class) {</span>
+<span class="fc" id="L88">                        AtomicBoolean atomic = (AtomicBoolean) method.invoke(object);</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L90">                            atomic.set(((AtomicBoolean) value).get());</span>
+                        } else {
+<span class="nc" id="L92">                            degradeValueAssignment(fieldInfo.field, method, object, value);</span>
+                        }
+<span class="fc bfc" id="L94" title="All 2 branches covered.">                    } else if (Map.class.isAssignableFrom(method.getReturnType())) {</span>
+<span class="fc" id="L95">                        Map map = null;</span>
+                        try {
+<span class="fc" id="L97">                            map = (Map) method.invoke(object);</span>
+<span class="nc" id="L98">                        } catch (InvocationTargetException e) {</span>
+<span class="nc" id="L99">                            degradeValueAssignment(fieldInfo.field, method, object, value);</span>
+<span class="nc" id="L100">                            return;</span>
+<span class="fc" id="L101">                        }</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">                        if (map != null) {</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                            if (map == Collections.emptyMap()) {</span>
+<span class="fc" id="L104">                                return;</span>
+                            }
+
+<span class="pc bpc" id="L107" title="1 of 4 branches missed.">                            if (map.isEmpty() &amp;&amp; ((Map) value).isEmpty()) {</span>
+<span class="fc" id="L108">                                return;</span>
+                            }
+
+<span class="fc" id="L111">                            String mapClassName = map.getClass().getName();</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">                            if (mapClassName.equals(&quot;java.util.ImmutableCollections$Map1&quot;)</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">                                    || mapClassName.equals(&quot;java.util.ImmutableCollections$MapN&quot;)</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">                                    || mapClassName.startsWith(&quot;java.util.Collections$Unmodifiable&quot;)) {</span>
+                                // skip
+
+<span class="fc" id="L117">                                return;</span>
+                            }
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                            if (map.getClass().getName().equals(&quot;kotlin.collections.EmptyMap&quot;)) {</span>
+<span class="fc" id="L121">                                degradeValueAssignment(fieldInfo.field, method, object, value);</span>
+<span class="fc" id="L122">                                return;</span>
+                            }
+
+<span class="fc" id="L125">                            map.putAll((Map) value);</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">                        } else if (value != null) {</span>
+<span class="fc" id="L127">                            degradeValueAssignment(fieldInfo.field, method, object, value);</span>
+                        }
+<span class="fc" id="L129">                    } else {</span>
+<span class="fc" id="L130">                        Collection collection = null;</span>
+                        try {
+<span class="fc" id="L132">                            collection = (Collection) method.invoke(object);</span>
+<span class="nc" id="L133">                        } catch (InvocationTargetException e) {</span>
+<span class="nc" id="L134">                            degradeValueAssignment(fieldInfo.field, method, object, value);</span>
+<span class="nc" id="L135">                            return;</span>
+<span class="fc" id="L136">                        }</span>
+<span class="fc bfc" id="L137" title="All 4 branches covered.">                        if (collection != null &amp;&amp; value != null) {</span>
+<span class="fc" id="L138">                            String collectionClassName = collection.getClass().getName();</span>
+
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                            if (collection == Collections.emptySet()</span>
+<span class="pc bpc" id="L141" title="2 of 6 branches missed.">                                    || collection == Collections.emptyList()</span>
+                                    || collectionClassName == &quot;java.util.ImmutableCollections$ListN&quot;
+                                    || collectionClassName == &quot;java.util.ImmutableCollections$List12&quot;
+<span class="fc bfc" id="L144" title="All 2 branches covered.">                                    || collectionClassName.startsWith(&quot;java.util.Collections$Unmodifiable&quot;)) {</span>
+                                // skip
+<span class="fc" id="L146">                                return;</span>
+                            }
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">                            if (!collection.isEmpty()) {</span>
+<span class="fc" id="L150">                                collection.clear();</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">                            } else if (((Collection) value).isEmpty()) {</span>
+<span class="fc" id="L152">                                return; //skip</span>
+                            }
+
+
+<span class="fc bfc" id="L156" title="All 2 branches covered.">                            if (collectionClassName.equals(&quot;kotlin.collections.EmptyList&quot;)</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                                    || collectionClassName.equals(&quot;kotlin.collections.EmptySet&quot;)) {</span>
+<span class="fc" id="L158">                                degradeValueAssignment(fieldInfo.field, method, object, value);</span>
+<span class="fc" id="L159">                                return;</span>
+                            }
+<span class="fc" id="L161">                            collection.addAll((Collection) value);</span>
+<span class="pc bpc" id="L162" title="1 of 4 branches missed.">                        } else if (collection == null &amp;&amp; value != null) {</span>
+<span class="fc" id="L163">                            degradeValueAssignment(fieldInfo.field, method, object, value);</span>
+                        }
+<span class="fc" id="L165">                    }</span>
+                } else {
+<span class="fc" id="L167">                    method.invoke(object, value);</span>
+                }
+            } else {
+<span class="fc" id="L170">                final Field field = fieldInfo.field;</span>
+                
+<span class="fc bfc" id="L172" title="All 2 branches covered.">                if (fieldInfo.getOnly) {</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">                    if (fieldInfo.fieldClass == AtomicInteger.class) {</span>
+<span class="fc" id="L174">                        AtomicInteger atomic = (AtomicInteger) field.get(object);</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L176">                            atomic.set(((AtomicInteger) value).get());</span>
+                        }
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                    } else if (fieldInfo.fieldClass == AtomicLong.class) {</span>
+<span class="fc" id="L179">                        AtomicLong atomic = (AtomicLong) field.get(object);</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L181">                            atomic.set(((AtomicLong) value).get());</span>
+                        }
+<span class="fc bfc" id="L183" title="All 2 branches covered.">                    } else if (fieldInfo.fieldClass == AtomicBoolean.class) {</span>
+<span class="fc" id="L184">                        AtomicBoolean atomic = (AtomicBoolean) field.get(object);</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L186">                            atomic.set(((AtomicBoolean) value).get());</span>
+                        }
+<span class="fc bfc" id="L188" title="All 2 branches covered.">                    } else if (Map.class.isAssignableFrom(fieldInfo.fieldClass)) {</span>
+<span class="fc" id="L189">                        Map map = (Map) field.get(object);</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">                        if (map != null) {</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">                            if (map == Collections.emptyMap()</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                                    || map.getClass().getName().startsWith(&quot;java.util.Collections$Unmodifiable&quot;)) {</span>
+                                // skip
+<span class="fc" id="L194">                                return;</span>
+                            }
+<span class="fc" id="L196">                            map.putAll((Map) value);</span>
+                        }
+<span class="fc" id="L198">                    } else {</span>
+<span class="fc" id="L199">                        Collection collection = (Collection) field.get(object);</span>
+<span class="pc bpc" id="L200" title="1 of 4 branches missed.">                        if (collection != null &amp;&amp; value != null) {</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">                            if (collection == Collections.emptySet()</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">                                    || collection == Collections.emptyList()</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                                    || collection.getClass().getName().startsWith(&quot;java.util.Collections$Unmodifiable&quot;)) {</span>
+                                // skip
+<span class="fc" id="L205">                                return;</span>
+                            }
+
+<span class="fc" id="L208">                            collection.clear();</span>
+<span class="fc" id="L209">                            collection.addAll((Collection) value);</span>
+                        }
+<span class="fc" id="L211">                    }</span>
+                } else {
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">                    if (field != null) {</span>
+<span class="fc" id="L214">                        field.set(object, value);</span>
+                    }
+                }
+            }
+<span class="fc" id="L218">        } catch (Exception e) {</span>
+<span class="fc" id="L219">            throw new JSONException(&quot;set property error, &quot; + clazz.getName() + &quot;#&quot; + fieldInfo.name, e);</span>
+<span class="fc" id="L220">        }</span>
+<span class="fc" id="L221">    }</span>
+
+    /**
+     * kotlin代理类property的get方法会抛未初始化异常，用set方法直接赋值
+     */
+    private static boolean degradeValueAssignment(
+            Field field,
+            Method getMethod,
+            Object object,
+            Object value
+    ) throws InvocationTargetException, IllegalAccessException {
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        if (setFieldValue(field, object, value)) {</span>
+<span class="fc" id="L233">            return true;</span>
+        }
+
+        try {
+<span class="fc" id="L237">            Method setMethod = object</span>
+<span class="fc" id="L238">                    .getClass()</span>
+<span class="nc" id="L239">                    .getDeclaredMethod(&quot;set&quot; + getMethod.getName().substring(3), getMethod.getReturnType());</span>
+<span class="nc" id="L240">            setMethod.invoke(object, value);</span>
+<span class="nc" id="L241">            return true;</span>
+<span class="nc" id="L242">        } catch (InvocationTargetException ignored) {</span>
+<span class="fc" id="L243">        } catch (NoSuchMethodException ignored) {</span>
+<span class="nc" id="L244">        } catch (IllegalAccessException ignored) {</span>
+<span class="pc" id="L245">        }</span>
+<span class="fc" id="L246">        return false;</span>
+    }
+
+    private static boolean setFieldValue(Field field, Object object, Object value) throws IllegalAccessException {
+<span class="fc bfc" id="L250" title="All 2 branches covered.">        if (field != null</span>
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">                &amp;&amp; !Modifier.isFinal(field.getModifiers())) {</span>
+<span class="fc" id="L252">            field.set(object, value);</span>
+<span class="fc" id="L253">            return true;</span>
+        }
+<span class="fc" id="L255">        return false;</span>
+    }
+
+    public void setWrappedValue(String key, Object value) {
+<span class="nc" id="L259">        throw new JSONException(&quot;TODO&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

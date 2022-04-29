@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSONArray.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson</a> &gt; <span class="el_source">JSONArray.java</span></div><h1>JSONArray.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson;
+
+import static com.alibaba.fastjson.util.TypeUtils.castToBigDecimal;
+import static com.alibaba.fastjson.util.TypeUtils.castToBigInteger;
+import static com.alibaba.fastjson.util.TypeUtils.castToBoolean;
+import static com.alibaba.fastjson.util.TypeUtils.castToByte;
+import static com.alibaba.fastjson.util.TypeUtils.castToDate;
+import static com.alibaba.fastjson.util.TypeUtils.castToDouble;
+import static com.alibaba.fastjson.util.TypeUtils.castToFloat;
+import static com.alibaba.fastjson.util.TypeUtils.castToInt;
+import static com.alibaba.fastjson.util.TypeUtils.castToLong;
+import static com.alibaba.fastjson.util.TypeUtils.castToShort;
+import static com.alibaba.fastjson.util.TypeUtils.castToSqlDate;
+import static com.alibaba.fastjson.util.TypeUtils.castToString;
+import static com.alibaba.fastjson.util.TypeUtils.castToTimestamp;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
+
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.util.TypeUtils;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public class JSONArray extends JSON implements List&lt;Object&gt;, Cloneable, RandomAccess, Serializable {
+
+    private static final long  serialVersionUID = 1L;
+    private final List&lt;Object&gt; list;
+    protected transient Object relatedArray;
+    protected transient Type   componentType;
+
+<span class="fc" id="L53">    public JSONArray(){</span>
+<span class="fc" id="L54">        this.list = new ArrayList&lt;Object&gt;();</span>
+<span class="fc" id="L55">    }</span>
+
+<span class="fc" id="L57">    public JSONArray(List&lt;Object&gt; list){</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (list == null){</span>
+<span class="nc" id="L59">            throw new IllegalArgumentException(&quot;list is null.&quot;);</span>
+        }
+<span class="fc" id="L61">        this.list = list;</span>
+<span class="fc" id="L62">    }</span>
+
+<span class="fc" id="L64">    public JSONArray(int initialCapacity){</span>
+<span class="fc" id="L65">        this.list = new ArrayList&lt;Object&gt;(initialCapacity);</span>
+<span class="fc" id="L66">    }</span>
+
+    /**
+     * @since 1.1.16
+     * @return
+     */
+    public Object getRelatedArray() {
+<span class="fc" id="L73">        return relatedArray;</span>
+    }
+
+    public void setRelatedArray(Object relatedArray) {
+<span class="fc" id="L77">        this.relatedArray = relatedArray;</span>
+<span class="fc" id="L78">    }</span>
+
+    public Type getComponentType() {
+<span class="nc" id="L81">        return componentType;</span>
+    }
+
+    public void setComponentType(Type componentType) {
+<span class="fc" id="L85">        this.componentType = componentType;</span>
+<span class="fc" id="L86">    }</span>
+
+    public int size() {
+<span class="fc" id="L89">        return list.size();</span>
+    }
+
+    public boolean isEmpty() {
+<span class="fc" id="L93">        return list.isEmpty();</span>
+    }
+
+    public boolean contains(Object o) {
+<span class="fc" id="L97">        return list.contains(o);</span>
+    }
+
+    public Iterator&lt;Object&gt; iterator() {
+<span class="fc" id="L101">        return list.iterator();</span>
+    }
+
+    public Object[] toArray() {
+<span class="fc" id="L105">        return list.toArray();</span>
+    }
+
+    public &lt;T&gt; T[] toArray(T[] a) {
+<span class="fc" id="L109">        return list.toArray(a);</span>
+    }
+
+    public boolean add(Object e) {
+<span class="fc" id="L113">        return list.add(e);</span>
+    }
+
+    public JSONArray fluentAdd(Object e) {
+<span class="fc" id="L117">        list.add(e);</span>
+<span class="fc" id="L118">        return this;</span>
+    }
+
+    public boolean remove(Object o) {
+<span class="fc" id="L122">        return list.remove(o);</span>
+    }
+
+    public JSONArray fluentRemove(Object o) {
+<span class="fc" id="L126">        list.remove(o);</span>
+<span class="fc" id="L127">        return this;</span>
+    }
+
+    public boolean containsAll(Collection&lt;?&gt; c) {
+<span class="fc" id="L131">        return list.containsAll(c);</span>
+    }
+
+    public boolean addAll(Collection&lt;?&gt; c) {
+<span class="fc" id="L135">        return list.addAll(c);</span>
+    }
+
+    public JSONArray fluentAddAll(Collection&lt;?&gt; c) {
+<span class="fc" id="L139">        list.addAll(c);</span>
+<span class="fc" id="L140">        return this;</span>
+    }
+
+    public boolean addAll(int index, Collection&lt;?&gt; c) {
+<span class="fc" id="L144">        return list.addAll(index, c);</span>
+    }
+
+    public JSONArray fluentAddAll(int index, Collection&lt;?&gt; c) {
+<span class="nc" id="L148">        list.addAll(index, c);</span>
+<span class="nc" id="L149">        return this;</span>
+    }
+
+    public boolean removeAll(Collection&lt;?&gt; c) {
+<span class="fc" id="L153">        return list.removeAll(c);</span>
+    }
+
+    public JSONArray fluentRemoveAll(Collection&lt;?&gt; c) {
+<span class="fc" id="L157">        list.removeAll(c);</span>
+<span class="fc" id="L158">        return this;</span>
+    }
+
+    public boolean retainAll(Collection&lt;?&gt; c) {
+<span class="fc" id="L162">        return list.retainAll(c);</span>
+    }
+
+    public JSONArray fluentRetainAll(Collection&lt;?&gt; c) {
+<span class="nc" id="L166">        list.retainAll(c);</span>
+<span class="nc" id="L167">        return this;</span>
+    }
+
+    public void clear() {
+<span class="fc" id="L171">        list.clear();</span>
+<span class="fc" id="L172">    }</span>
+
+    public JSONArray fluentClear() {
+<span class="fc" id="L175">        list.clear();</span>
+<span class="fc" id="L176">        return this;</span>
+    }
+
+    public Object set(int index, Object element) {
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        if (index == -1) {</span>
+<span class="fc" id="L181">            list.add(element);</span>
+<span class="fc" id="L182">            return null;</span>
+        }
+
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        if (list.size() &lt;= index) {</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">            for (int i = list.size(); i &lt; index; ++i) {</span>
+<span class="fc" id="L187">                list.add(null);</span>
+            }
+<span class="fc" id="L189">            list.add(element);</span>
+<span class="fc" id="L190">            return null;</span>
+        }
+
+<span class="fc" id="L193">        return list.set(index, element);</span>
+    }
+
+    public JSONArray fluentSet(int index, Object element) {
+<span class="fc" id="L197">        set(index, element);</span>
+<span class="fc" id="L198">        return this;</span>
+    }
+
+    public void add(int index, Object element) {
+<span class="fc" id="L202">        list.add(index, element);</span>
+<span class="fc" id="L203">    }</span>
+
+    public JSONArray fluentAdd(int index, Object element) {
+<span class="nc" id="L206">        list.add(index, element);</span>
+<span class="nc" id="L207">        return this;</span>
+    }
+
+    public Object remove(int index) {
+<span class="fc" id="L211">        return list.remove(index);</span>
+    }
+
+    public JSONArray fluentRemove(int index) {
+<span class="fc" id="L215">        list.remove(index);</span>
+<span class="fc" id="L216">        return this;</span>
+    }
+
+    public int indexOf(Object o) {
+<span class="fc" id="L220">        return list.indexOf(o);</span>
+    }
+
+    public int lastIndexOf(Object o) {
+<span class="fc" id="L224">        return list.lastIndexOf(o);</span>
+    }
+
+    public ListIterator&lt;Object&gt; listIterator() {
+<span class="fc" id="L228">        return list.listIterator();</span>
+    }
+
+    public ListIterator&lt;Object&gt; listIterator(int index) {
+<span class="fc" id="L232">        return list.listIterator(index);</span>
+    }
+
+    public List&lt;Object&gt; subList(int fromIndex, int toIndex) {
+<span class="fc" id="L236">        return list.subList(fromIndex, toIndex);</span>
+    }
+
+    public Object get(int index) {
+<span class="fc" id="L240">        return list.get(index);</span>
+    }
+
+    public JSONObject getJSONObject(int index) {
+<span class="fc" id="L244">        Object value = list.get(index);</span>
+
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (value instanceof JSONObject) {</span>
+<span class="fc" id="L247">            return (JSONObject) value;</span>
+        }
+
+<span class="fc bfc" id="L250" title="All 2 branches covered.">        if (value instanceof Map) {</span>
+<span class="fc" id="L251">            return new JSONObject((Map) value);</span>
+        }
+
+<span class="fc" id="L254">        return (JSONObject) toJSON(value);</span>
+    }
+
+    public JSONArray getJSONArray(int index) {
+<span class="fc" id="L258">        Object value = list.get(index);</span>
+
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        if (value instanceof JSONArray) {</span>
+<span class="fc" id="L261">            return (JSONArray) value;</span>
+        }
+
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">        if (value instanceof List) {</span>
+<span class="fc" id="L265">            return new JSONArray((List) value);</span>
+        }
+
+<span class="nc" id="L268">        return (JSONArray) toJSON(value);</span>
+    }
+
+    public &lt;T&gt; T getObject(int index, Class&lt;T&gt; clazz) {
+<span class="fc" id="L272">        Object obj = list.get(index);</span>
+<span class="fc" id="L273">        return TypeUtils.castToJavaBean(obj, clazz);</span>
+    }
+
+    public &lt;T&gt; T getObject(int index, Type type) {
+<span class="fc" id="L277">        Object obj = list.get(index);</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">        if (type instanceof Class) {</span>
+<span class="fc" id="L279">            return (T) TypeUtils.castToJavaBean(obj, (Class) type);</span>
+        } else {
+<span class="fc" id="L281">            String json = JSON.toJSONString(obj);</span>
+<span class="fc" id="L282">            return (T) JSON.parseObject(json, type);</span>
+        }
+    }
+
+    public Boolean getBoolean(int index) {
+<span class="fc" id="L287">        Object value = get(index);</span>
+
+<span class="fc bfc" id="L289" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L290">            return null;</span>
+        }
+
+<span class="fc" id="L293">        return castToBoolean(value);</span>
+    }
+
+    public boolean getBooleanValue(int index) {
+<span class="fc" id="L297">        Object value = get(index);</span>
+
+<span class="fc bfc" id="L299" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L300">            return false;</span>
+        }
+
+<span class="fc" id="L303">        return castToBoolean(value).booleanValue();</span>
+    }
+
+    public Byte getByte(int index) {
+<span class="fc" id="L307">        Object value = get(index);</span>
+
+<span class="fc" id="L309">        return castToByte(value);</span>
+    }
+
+    public byte getByteValue(int index) {
+<span class="fc" id="L313">        Object value = get(index);</span>
+
+<span class="fc" id="L315">        Byte byteVal = castToByte(value);</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">        if (byteVal == null) {</span>
+<span class="fc" id="L317">            return 0;</span>
+        }
+
+<span class="fc" id="L320">        return byteVal;</span>
+    }
+
+    public Short getShort(int index) {
+<span class="fc" id="L324">        Object value = get(index);</span>
+
+<span class="fc" id="L326">        return castToShort(value);</span>
+    }
+
+    public short getShortValue(int index) {
+<span class="fc" id="L330">        Object value = get(index);</span>
+
+<span class="fc" id="L332">        Short shortVal = castToShort(value);</span>
+<span class="fc bfc" id="L333" title="All 2 branches covered.">        if (shortVal == null) {</span>
+<span class="fc" id="L334">            return 0;</span>
+        }
+
+<span class="fc" id="L337">        return shortVal;</span>
+    }
+
+    public Integer getInteger(int index) {
+<span class="fc" id="L341">        Object value = get(index);</span>
+
+<span class="fc" id="L343">        return castToInt(value);</span>
+    }
+
+    public int getIntValue(int index) {
+<span class="fc" id="L347">        Object value = get(index);</span>
+
+<span class="fc" id="L349">        Integer intVal = castToInt(value);</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">        if (intVal == null) {</span>
+<span class="fc" id="L351">            return 0;</span>
+        }
+
+<span class="fc" id="L354">        return intVal;</span>
+    }
+
+    public Long getLong(int index) {
+<span class="fc" id="L358">        Object value = get(index);</span>
+
+<span class="fc" id="L360">        return castToLong(value);</span>
+    }
+
+    public long getLongValue(int index) {
+<span class="fc" id="L364">        Object value = get(index);</span>
+
+<span class="fc" id="L366">        Long longVal = castToLong(value);</span>
+<span class="fc bfc" id="L367" title="All 2 branches covered.">        if (longVal == null) {</span>
+<span class="fc" id="L368">            return 0L;</span>
+        }
+
+<span class="fc" id="L371">        return longVal;</span>
+    }
+
+    public Float getFloat(int index) {
+<span class="fc" id="L375">        Object value = get(index);</span>
+
+<span class="fc" id="L377">        return castToFloat(value);</span>
+    }
+
+    public float getFloatValue(int index) {
+<span class="fc" id="L381">        Object value = get(index);</span>
+
+<span class="fc" id="L383">        Float floatValue = castToFloat(value);</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">        if (floatValue == null) {</span>
+<span class="fc" id="L385">            return 0F;</span>
+        }
+
+<span class="fc" id="L388">        return floatValue;</span>
+    }
+
+    public Double getDouble(int index) {
+<span class="fc" id="L392">        Object value = get(index);</span>
+
+<span class="fc" id="L394">        return castToDouble(value);</span>
+    }
+
+    public double getDoubleValue(int index) {
+<span class="fc" id="L398">        Object value = get(index);</span>
+
+<span class="fc" id="L400">        Double doubleValue = castToDouble(value);</span>
+<span class="fc bfc" id="L401" title="All 2 branches covered.">        if (doubleValue == null) {</span>
+<span class="fc" id="L402">            return 0D;</span>
+        }
+
+<span class="fc" id="L405">        return doubleValue;</span>
+    }
+
+    public BigDecimal getBigDecimal(int index) {
+<span class="fc" id="L409">        Object value = get(index);</span>
+
+<span class="fc" id="L411">        return castToBigDecimal(value);</span>
+    }
+
+    public BigInteger getBigInteger(int index) {
+<span class="fc" id="L415">        Object value = get(index);</span>
+
+<span class="fc" id="L417">        return castToBigInteger(value);</span>
+    }
+
+    public String getString(int index) {
+<span class="fc" id="L421">        Object value = get(index);</span>
+
+<span class="fc" id="L423">        return castToString(value);</span>
+    }
+
+    public java.util.Date getDate(int index) {
+<span class="fc" id="L427">        Object value = get(index);</span>
+
+<span class="fc" id="L429">        return castToDate(value);</span>
+    }
+
+    public Object getSqlDate(int index) {
+<span class="fc" id="L433">        Object value = get(index);</span>
+
+<span class="fc" id="L435">        return castToSqlDate(value);</span>
+    }
+
+    public Object getTimestamp(int index) {
+<span class="fc" id="L439">        Object value = get(index);</span>
+
+<span class="fc" id="L441">        return castToTimestamp(value);</span>
+    }
+
+    /**
+     * @since  1.2.23
+     */
+    public &lt;T&gt; List&lt;T&gt; toJavaList(Class&lt;T&gt; clazz) {
+<span class="fc" id="L448">        List&lt;T&gt; list = new ArrayList&lt;T&gt;(this.size());</span>
+
+<span class="fc" id="L450">        ParserConfig config = ParserConfig.getGlobalInstance();</span>
+
+<span class="fc bfc" id="L452" title="All 2 branches covered.">        for (Object item : this) {</span>
+<span class="fc" id="L453">            T classItem = (T) TypeUtils.cast(item, clazz, config);</span>
+<span class="fc" id="L454">            list.add(classItem);</span>
+<span class="fc" id="L455">        }</span>
+
+<span class="fc" id="L457">        return list;</span>
+    }
+
+    @Override
+    public Object clone() {
+<span class="fc" id="L462">        return new JSONArray(new ArrayList&lt;Object&gt;(list));</span>
+    }
+
+    public boolean equals(Object obj) {
+<span class="pc bpc" id="L466" title="1 of 2 branches missed.">        if (this == obj) {</span>
+<span class="nc" id="L467">            return true;</span>
+        }
+
+<span class="fc bfc" id="L470" title="All 2 branches covered.">        if (obj instanceof JSONArray) {</span>
+<span class="fc" id="L471">            return this.list.equals(((JSONArray) obj).list);</span>
+        }
+
+<span class="fc" id="L474">        return this.list.equals(obj);</span>
+    }
+
+    public int hashCode() {
+<span class="fc" id="L478">        return this.list.hashCode();</span>
+    }
+
+    private void readObject(final java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L482">        JSONObject.SecureObjectInputStream.ensureFields();</span>
+<span class="pc bpc" id="L483" title="1 of 4 branches missed.">        if (JSONObject.SecureObjectInputStream.fields != null &amp;&amp; !JSONObject.SecureObjectInputStream.fields_error) {</span>
+<span class="fc" id="L484">            ObjectInputStream secIn = new JSONObject.SecureObjectInputStream(in);</span>
+            try {
+<span class="fc" id="L486">                secIn.defaultReadObject();</span>
+<span class="fc" id="L487">                return;</span>
+<span class="nc" id="L488">            } catch (java.io.NotActiveException e) {</span>
+                // skip
+            }
+        }
+
+<span class="fc" id="L493">        in.defaultReadObject();</span>
+<span class="fc bfc" id="L494" title="All 2 branches covered.">        for (Object item : list) {</span>
+<span class="fc bfc" id="L495" title="All 2 branches covered.">            if (item == null) {</span>
+<span class="fc" id="L496">                continue;</span>
+            }
+
+<span class="fc" id="L499">            String typeName = item.getClass().getName();</span>
+<span class="pc bpc" id="L500" title="1 of 2 branches missed.">            if (TypeUtils.getClassFromMapping(typeName) == null) {</span>
+<span class="nc" id="L501">                ParserConfig.global.checkAutoType(typeName, null);</span>
+            }
+<span class="fc" id="L503">        }</span>
+<span class="fc" id="L504">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

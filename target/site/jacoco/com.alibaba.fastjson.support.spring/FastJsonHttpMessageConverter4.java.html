@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastJsonHttpMessageConverter4.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.spring</a> &gt; <span class="el_source">FastJsonHttpMessageConverter4.java</span></div><h1>FastJsonHttpMessageConverter4.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.spring;
+
+import org.springframework.http.HttpInputMessage;
+import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+
+
+/**
+ * keep the class for compatibility
+ * @see FastJsonHttpMessageConverter
+ */
+@Deprecated
+<span class="fc" id="L18">public class FastJsonHttpMessageConverter4 extends FastJsonHttpMessageConverter {</span>
+    @Override
+    protected boolean supports(Class&lt;?&gt; clazz) {
+<span class="fc" id="L21">        return super.supports(clazz);</span>
+    }
+
+    @Override
+    public boolean canRead(Type type, Class&lt;?&gt; contextClass, MediaType mediaType) {
+<span class="fc" id="L26">        return super.canRead(type, contextClass, mediaType);</span>
+    }
+
+    @Override
+    public boolean canWrite(Type type, Class&lt;?&gt; clazz, MediaType mediaType) {
+<span class="fc" id="L31">        return super.canWrite(type, clazz, mediaType);</span>
+    }
+
+    @Override
+    public Object read(Type type, Class&lt;?&gt; contextClass, HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException {
+<span class="fc" id="L36">        return super.read(type, contextClass, inputMessage);</span>
+    }
+
+    @Override
+    public void write(Object o, Type type, MediaType contentType, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
+<span class="fc" id="L41">        super.write(o, type, contentType, outputMessage);</span>
+<span class="fc" id="L42">    }</span>
+
+    @Override
+    protected Object readInternal(Class&lt;?&gt; clazz, HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException {
+<span class="fc" id="L46">        return super.readInternal(clazz, inputMessage);</span>
+    }
+
+    @Override
+    protected void writeInternal(Object object, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
+<span class="fc" id="L51">        super.writeInternal(object, outputMessage);</span>
+<span class="fc" id="L52">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

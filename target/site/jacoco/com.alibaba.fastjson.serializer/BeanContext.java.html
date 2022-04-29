@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BeanContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">BeanContext.java</span></div><h1>BeanContext.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+
+import com.alibaba.fastjson.util.FieldInfo;
+
+/**
+ * @since 1.2.9
+ *
+ */
+public final class BeanContext {
+
+    private final Class&lt;?&gt;  beanClass;
+    private final FieldInfo fieldInfo;
+    private final String format;
+
+<span class="fc" id="L20">    public BeanContext(Class&lt;?&gt; beanClass, FieldInfo fieldInfo){</span>
+<span class="fc" id="L21">        this.beanClass = beanClass;</span>
+<span class="fc" id="L22">        this.fieldInfo = fieldInfo;</span>
+<span class="fc" id="L23">        this.format = fieldInfo.getFormat();</span>
+<span class="fc" id="L24">    }</span>
+
+    public Class&lt;?&gt; getBeanClass() {
+<span class="fc" id="L27">        return beanClass;</span>
+    }
+
+    public Method getMethod() {
+<span class="fc" id="L31">        return fieldInfo.method;</span>
+    }
+
+    public Field getField() {
+<span class="fc" id="L35">        return fieldInfo.field;</span>
+    }
+    
+    public String getName() {
+<span class="fc" id="L39">        return fieldInfo.name;</span>
+    }
+    
+    public String getLabel() {
+<span class="nc" id="L43">        return fieldInfo.label;</span>
+    }
+    
+    public Class&lt;?&gt; getFieldClass() {
+<span class="fc" id="L47">        return fieldInfo.fieldClass;</span>
+    }
+    
+    public Type getFieldType() {
+<span class="fc" id="L51">        return fieldInfo.fieldType;</span>
+    }
+    
+    public int getFeatures() {
+<span class="fc" id="L55">        return fieldInfo.serialzeFeatures;</span>
+    }
+    
+    public boolean isJsonDirect() {
+<span class="fc" id="L59">        return this.fieldInfo.jsonDirect;</span>
+    }
+
+    public &lt;T extends Annotation&gt; T getAnnation(Class&lt;T&gt; annotationClass) {
+<span class="fc" id="L63">        return fieldInfo.getAnnation(annotationClass);</span>
+    }
+    
+    public String getFormat() {
+<span class="fc" id="L67">        return format;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

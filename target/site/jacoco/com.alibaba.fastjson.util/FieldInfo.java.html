@@ -1,0 +1,593 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldInfo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.util</a> &gt; <span class="el_source">FieldInfo.java</span></div><h1>FieldInfo.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.util;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.Map;
+
+import com.alibaba.fastjson.TypeReference;
+import com.alibaba.fastjson.annotation.JSONField;
+
+public class FieldInfo implements Comparable&lt;FieldInfo&gt; {
+
+    public final String     name;
+    public final Method     method;
+    public final Field      field;
+
+<span class="fc" id="L26">    private int             ordinal = 0;</span>
+    public final Class&lt;?&gt;   fieldClass;
+    public final Type       fieldType;
+    public final Class&lt;?&gt;   declaringClass;
+    public final boolean    getOnly;
+    public final int        serialzeFeatures;
+    public final int        parserFeatures;
+    public final String     label;
+
+    private final JSONField fieldAnnotation;
+    private final JSONField methodAnnotation;
+
+    public final boolean    fieldAccess;
+    public final boolean    fieldTransient;
+
+    public final char[]     name_chars;
+    
+    public final boolean    isEnum;
+    public final boolean    jsonDirect;
+    public final boolean    unwrapped;
+    
+    public final String     format;
+
+    public final String[]  alternateNames;
+
+    public final long nameHashCode;
+    
+    public FieldInfo(String name, // 
+                     Class&lt;?&gt; declaringClass, // 
+                     Class&lt;?&gt; fieldClass, // 
+                     Type fieldType, // 
+                     Field field, // 
+                     int ordinal, // 
+                     int serialzeFeatures, // 
+<span class="fc" id="L60">                     int parserFeatures){</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">        if (ordinal &lt; 0) {</span>
+<span class="nc" id="L62">            ordinal = 0;</span>
+        }
+
+<span class="fc" id="L65">        this.name = name;</span>
+<span class="fc" id="L66">        this.declaringClass = declaringClass;</span>
+<span class="fc" id="L67">        this.fieldClass = fieldClass;</span>
+<span class="fc" id="L68">        this.fieldType = fieldType;</span>
+<span class="fc" id="L69">        this.method = null;</span>
+<span class="fc" id="L70">        this.field = field;</span>
+<span class="fc" id="L71">        this.ordinal = ordinal;</span>
+<span class="fc" id="L72">        this.serialzeFeatures = serialzeFeatures;</span>
+<span class="fc" id="L73">        this.parserFeatures = parserFeatures;</span>
+        
+<span class="fc" id="L75">        isEnum = fieldClass.isEnum();</span>
+        
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (field != null) {</span>
+<span class="fc" id="L78">            int modifiers = field.getModifiers();</span>
+<span class="pc bpc" id="L79" title="1 of 4 branches missed.">            fieldAccess = (modifiers &amp; Modifier.PUBLIC) != 0 || method == null;</span>
+<span class="fc" id="L80">            fieldTransient = Modifier.isTransient(modifiers);</span>
+<span class="fc" id="L81">        } else {</span>
+<span class="fc" id="L82">            fieldTransient = false;</span>
+<span class="fc" id="L83">            fieldAccess = false;</span>
+        }
+        
+<span class="fc" id="L86">        name_chars = genFieldNameChars();</span>
+
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (field != null) {</span>
+<span class="fc" id="L89">            TypeUtils.setAccessible(field);</span>
+        }
+        
+<span class="fc" id="L92">        this.label = &quot;&quot;;</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        fieldAnnotation = field == null ? null : TypeUtils.getAnnotation(field, JSONField.class);</span>
+<span class="fc" id="L94">        methodAnnotation = null;</span>
+<span class="fc" id="L95">        this.getOnly = false;</span>
+<span class="fc" id="L96">        this.jsonDirect = false;</span>
+<span class="fc" id="L97">        this.unwrapped = false;</span>
+<span class="fc" id="L98">        this.format = null;</span>
+<span class="fc" id="L99">        this.alternateNames = new String[0];</span>
+
+<span class="fc" id="L101">        nameHashCode = nameHashCode64(name, fieldAnnotation);</span>
+<span class="fc" id="L102">    }</span>
+
+    public FieldInfo(String name, //
+                     Method method, //
+                     Field field, //
+                     Class&lt;?&gt; clazz, //
+                     Type type, //
+                     int ordinal, //
+                     int serialzeFeatures, //
+                     int parserFeatures, //
+                     JSONField fieldAnnotation, //
+                     JSONField methodAnnotation, //
+                     String label){
+<span class="fc" id="L115">        this(name, method, field, clazz, type, ordinal, serialzeFeatures, parserFeatures,</span>
+                fieldAnnotation, methodAnnotation, label, null);
+<span class="fc" id="L117">    }</span>
+
+    public FieldInfo(String name, //
+                     Method method, //
+                     Field field, //
+                     Class&lt;?&gt; clazz, //
+                     Type type, //
+                     int ordinal, //
+                     int serialzeFeatures, //
+                     int parserFeatures, //
+                     JSONField fieldAnnotation, //
+                     JSONField methodAnnotation, //
+                     String label,
+<span class="fc" id="L130">                     Map&lt;TypeVariable, Type&gt; genericInfo){</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        if (field != null) {</span>
+<span class="fc" id="L132">            String fieldName = field.getName();</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">            if (fieldName.equals(name)) {</span>
+<span class="fc" id="L134">                name = fieldName;</span>
+            }
+        }
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (ordinal &lt; 0) {</span>
+<span class="fc" id="L139">            ordinal = 0;</span>
+        }
+        
+<span class="fc" id="L142">        this.name = name;</span>
+<span class="fc" id="L143">        this.method = method;</span>
+<span class="fc" id="L144">        this.field = field;</span>
+<span class="fc" id="L145">        this.ordinal = ordinal;</span>
+<span class="fc" id="L146">        this.serialzeFeatures = serialzeFeatures;</span>
+<span class="fc" id="L147">        this.parserFeatures = parserFeatures;</span>
+<span class="fc" id="L148">        this.fieldAnnotation = fieldAnnotation;</span>
+<span class="fc" id="L149">        this.methodAnnotation = methodAnnotation;</span>
+
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (field != null) {</span>
+<span class="fc" id="L152">            int modifiers = field.getModifiers();</span>
+<span class="fc bfc" id="L153" title="All 4 branches covered.">            fieldAccess = ((modifiers &amp; Modifier.PUBLIC) != 0 || method == null);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            fieldTransient = Modifier.isTransient(modifiers)</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">                    || TypeUtils.isTransient(method);</span>
+<span class="fc" id="L156">        } else {</span>
+<span class="fc" id="L157">            fieldAccess = false;</span>
+<span class="fc" id="L158">            fieldTransient = TypeUtils.isTransient(method);</span>
+        }
+        
+<span class="pc bpc" id="L161" title="1 of 4 branches missed.">        if (label != null &amp;&amp; label.length() &gt; 0) { </span>
+<span class="fc" id="L162">            this.label = label;</span>
+        } else {
+<span class="fc" id="L164">            this.label = &quot;&quot;;</span>
+        }
+        
+<span class="fc" id="L167">        String format = null;</span>
+<span class="fc" id="L168">        JSONField annotation = getAnnotation();</span>
+
+<span class="fc" id="L170">        nameHashCode = nameHashCode64(name, annotation);</span>
+
+<span class="fc" id="L172">        boolean jsonDirect = false;</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (annotation != null) {</span>
+<span class="fc" id="L174">            format = annotation.format();</span>
+
+<span class="fc bfc" id="L176" title="All 2 branches covered.">            if (format.trim().length() == 0) {</span>
+<span class="fc" id="L177">                format = null;</span>
+            }
+<span class="fc" id="L179">            jsonDirect = annotation.jsonDirect();</span>
+<span class="fc" id="L180">            unwrapped = annotation.unwrapped();</span>
+<span class="fc" id="L181">            alternateNames = annotation.alternateNames();</span>
+        } else {
+<span class="fc" id="L183">            jsonDirect = false;</span>
+<span class="fc" id="L184">            unwrapped = false;</span>
+<span class="fc" id="L185">            alternateNames = new String[0];</span>
+        }
+<span class="fc" id="L187">        this.format = format;</span>
+        
+<span class="fc" id="L189">        name_chars = genFieldNameChars();</span>
+
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (method != null) {</span>
+<span class="fc" id="L192">            TypeUtils.setAccessible(method);</span>
+        }
+
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        if (field != null) {</span>
+<span class="fc" id="L196">            TypeUtils.setAccessible(field);</span>
+        }
+
+<span class="fc" id="L199">        boolean getOnly = false;</span>
+        Type fieldType;
+        Class&lt;?&gt; fieldClass;
+<span class="fc bfc" id="L202" title="All 2 branches covered.">        if (method != null) {</span>
+        	Class&lt;?&gt;[] types;
+<span class="fc bfc" id="L204" title="All 2 branches covered.">            if ((types = method.getParameterTypes()).length == 1) {</span>
+<span class="fc" id="L205">                fieldClass = types[0];</span>
+<span class="fc" id="L206">                fieldType = method.getGenericParameterTypes()[0];</span>
+<span class="pc bpc" id="L207" title="2 of 6 branches missed.">            } else if (types.length == 2 &amp;&amp; types[0] == String.class &amp;&amp; types[1] == Object.class) {</span>
+<span class="fc" id="L208">                fieldType = fieldClass = types[0];</span>
+            } else {
+<span class="fc" id="L210">                fieldClass = method.getReturnType();</span>
+<span class="fc" id="L211">                fieldType = method.getGenericReturnType();</span>
+<span class="fc" id="L212">                getOnly = true;</span>
+            }
+<span class="fc" id="L214">            this.declaringClass = method.getDeclaringClass();</span>
+<span class="fc" id="L215">        } else {</span>
+<span class="fc" id="L216">            fieldClass = field.getType();</span>
+<span class="fc" id="L217">            fieldType = field.getGenericType();</span>
+<span class="fc" id="L218">            this.declaringClass = field.getDeclaringClass();</span>
+<span class="fc" id="L219">            getOnly = Modifier.isFinal(field.getModifiers());</span>
+        }
+<span class="fc" id="L221">        this.getOnly = getOnly;</span>
+<span class="pc bpc" id="L222" title="1 of 4 branches missed.">        this.jsonDirect = jsonDirect &amp;&amp; fieldClass == String.class;</span>
+
+<span class="fc bfc" id="L224" title="All 6 branches covered.">        if (clazz != null &amp;&amp; fieldClass == Object.class &amp;&amp; fieldType instanceof TypeVariable) {</span>
+<span class="fc" id="L225">            TypeVariable&lt;?&gt; tv = (TypeVariable&lt;?&gt;) fieldType;</span>
+<span class="fc" id="L226">            Type genericFieldType = getInheritGenericType(clazz, type, tv);</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">            if (genericFieldType != null) {</span>
+<span class="fc" id="L228">                this.fieldClass = TypeUtils.getClass(genericFieldType);</span>
+<span class="fc" id="L229">                this.fieldType = genericFieldType;</span>
+                
+<span class="fc" id="L231">                isEnum = fieldClass.isEnum();</span>
+<span class="fc" id="L232">                return;</span>
+            }
+        }
+
+<span class="fc" id="L236">        Type genericFieldType = fieldType;</span>
+        
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        if (!(fieldType instanceof Class)) {</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">            genericFieldType = getFieldType(clazz, type != null ? type : clazz, fieldType, genericInfo);</span>
+
+<span class="fc bfc" id="L241" title="All 2 branches covered.">            if (genericFieldType != fieldType) {</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">                if (genericFieldType instanceof ParameterizedType) {</span>
+<span class="fc" id="L243">                    fieldClass = TypeUtils.getClass(genericFieldType);</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">                } else if (genericFieldType instanceof Class) {</span>
+<span class="fc" id="L245">                    fieldClass = TypeUtils.getClass(genericFieldType);</span>
+                }
+            }
+        }
+
+<span class="fc" id="L250">        this.fieldType = genericFieldType;</span>
+<span class="fc" id="L251">        this.fieldClass = fieldClass;</span>
+        
+<span class="fc" id="L253">        isEnum = fieldClass.isEnum();</span>
+<span class="fc" id="L254">    }</span>
+
+    private long nameHashCode64(String name, JSONField annotation)
+    {
+<span class="fc bfc" id="L258" title="All 4 branches covered.">        if (annotation != null &amp;&amp; annotation.name().length() != 0) {</span>
+<span class="fc" id="L259">            return TypeUtils.fnv1a_64_lower(name);</span>
+        }
+<span class="fc" id="L261">        return TypeUtils.fnv1a_64_extract(name);</span>
+    }
+
+    protected char[] genFieldNameChars() {
+<span class="fc" id="L265">        int nameLen = this.name.length();</span>
+<span class="fc" id="L266">        char[] name_chars = new char[nameLen + 3];</span>
+<span class="fc" id="L267">        this.name.getChars(0, this.name.length(), name_chars, 1);</span>
+<span class="fc" id="L268">        name_chars[0] = '&quot;';</span>
+<span class="fc" id="L269">        name_chars[nameLen + 1] = '&quot;';</span>
+<span class="fc" id="L270">        name_chars[nameLen + 2] = ':';</span>
+<span class="fc" id="L271">        return name_chars;</span>
+    }
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T extends Annotation&gt; T getAnnation(Class&lt;T&gt; annotationClass) {
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">        if (annotationClass == JSONField.class) {</span>
+<span class="nc" id="L277">            return (T) getAnnotation();</span>
+        }
+        
+<span class="fc" id="L280">        T annotatition = null;</span>
+<span class="pc bpc" id="L281" title="1 of 2 branches missed.">        if (method != null) {</span>
+<span class="fc" id="L282">            annotatition = TypeUtils.getAnnotation(method, annotationClass);</span>
+        }
+        
+<span class="pc bpc" id="L285" title="2 of 4 branches missed.">        if (annotatition == null &amp;&amp; field != null) {</span>
+<span class="fc" id="L286">            annotatition = TypeUtils.getAnnotation(field, annotationClass);</span>
+        }
+        
+<span class="fc" id="L289">        return annotatition;</span>
+    }
+
+    public static Type getFieldType(final Class&lt;?&gt; clazz, final Type type, Type fieldType){
+<span class="fc" id="L293">        return getFieldType(clazz, type, fieldType, null);</span>
+    }
+
+    public static Type getFieldType(final Class&lt;?&gt; clazz, final Type type, Type fieldType, Map&lt;TypeVariable, Type&gt; genericInfo) {
+<span class="pc bpc" id="L297" title="2 of 4 branches missed.">        if (clazz == null || type == null) {</span>
+<span class="nc" id="L298">            return fieldType;</span>
+        }
+
+<span class="fc bfc" id="L301" title="All 2 branches covered.">        if (fieldType instanceof GenericArrayType) {</span>
+<span class="fc" id="L302">            GenericArrayType genericArrayType = (GenericArrayType) fieldType;</span>
+<span class="fc" id="L303">            Type componentType = genericArrayType.getGenericComponentType();</span>
+<span class="fc" id="L304">            Type componentTypeX = getFieldType(clazz, type, componentType, genericInfo);</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">            if (componentType != componentTypeX) {</span>
+<span class="fc" id="L306">                Type fieldTypeX = Array.newInstance(TypeUtils.getClass(componentTypeX), 0).getClass();</span>
+<span class="fc" id="L307">                return fieldTypeX;</span>
+            }
+
+<span class="fc" id="L310">            return fieldType;</span>
+        }
+
+<span class="fc bfc" id="L313" title="All 2 branches covered.">        if (!TypeUtils.isGenericParamType(type)) {</span>
+<span class="fc" id="L314">            return fieldType;</span>
+        }
+
+<span class="fc bfc" id="L317" title="All 2 branches covered.">        if (fieldType instanceof TypeVariable) {</span>
+<span class="fc" id="L318">            ParameterizedType paramType = (ParameterizedType) TypeUtils.getGenericParamType(type);</span>
+<span class="fc" id="L319">            Class&lt;?&gt; parameterizedClass = TypeUtils.getClass(paramType);</span>
+<span class="fc" id="L320">            final TypeVariable&lt;?&gt; typeVar = (TypeVariable&lt;?&gt;) fieldType;</span>
+            
+<span class="fc" id="L322">            TypeVariable&lt;?&gt;[] typeVariables = parameterizedClass.getTypeParameters();</span>
+<span class="pc bpc" id="L323" title="1 of 2 branches missed.">            for (int i = 0; i &lt; typeVariables.length; ++i) {</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">                if (typeVariables[i].getName().equals(typeVar.getName())) {</span>
+<span class="fc" id="L325">                    fieldType = paramType.getActualTypeArguments()[i];</span>
+<span class="fc" id="L326">                    return fieldType;</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L331" title="All 2 branches covered.">        if (fieldType instanceof ParameterizedType) {</span>
+<span class="fc" id="L332">            ParameterizedType parameterizedFieldType = (ParameterizedType) fieldType;</span>
+
+<span class="fc" id="L334">            Type[] arguments = parameterizedFieldType.getActualTypeArguments();</span>
+            TypeVariable&lt;?&gt;[] typeVariables;
+            ParameterizedType paramType;
+
+<span class="fc" id="L338">            boolean changed = getArgument(arguments, genericInfo);</span>
+            //if genericInfo is not working use the old path;
+<span class="fc bfc" id="L340" title="All 2 branches covered.">            if(!changed){</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">                if (type instanceof ParameterizedType) {</span>
+<span class="fc" id="L342">                    paramType = (ParameterizedType) type;</span>
+<span class="fc" id="L343">                    typeVariables = clazz.getTypeParameters();</span>
+<span class="fc bfc" id="L344" title="All 2 branches covered.">                } else if(clazz.getGenericSuperclass() instanceof ParameterizedType) {</span>
+<span class="fc" id="L345">                    paramType = (ParameterizedType) clazz.getGenericSuperclass();</span>
+<span class="fc" id="L346">                    typeVariables = clazz.getSuperclass().getTypeParameters();</span>
+                } else {
+<span class="fc" id="L348">                    paramType = parameterizedFieldType;</span>
+<span class="fc" id="L349">                    typeVariables = type.getClass().getTypeParameters();</span>
+                }
+
+<span class="fc" id="L352">                changed = getArgument(arguments, typeVariables, paramType.getActualTypeArguments());</span>
+            }
+
+<span class="fc bfc" id="L355" title="All 2 branches covered.">            if (changed) {</span>
+<span class="fc" id="L356">                fieldType = TypeReference.intern(</span>
+<span class="fc" id="L357">                        new ParameterizedTypeImpl(arguments, parameterizedFieldType.getOwnerType(),</span>
+<span class="fc" id="L358">                                parameterizedFieldType.getRawType())</span>
+                );
+<span class="fc" id="L360">                return fieldType;</span>
+            }
+        }
+
+<span class="fc" id="L364">        return fieldType;</span>
+    }
+
+    private static boolean getArgument(Type[] typeArgs, Map&lt;TypeVariable, Type&gt; genericInfo){
+<span class="pc bpc" id="L368" title="1 of 4 branches missed.">        if(genericInfo == null || genericInfo.size() == 0){</span>
+<span class="fc" id="L369">            return false;</span>
+        }
+<span class="fc" id="L371">        boolean changed = false;</span>
+<span class="fc bfc" id="L372" title="All 2 branches covered.">        for (int i = 0; i &lt; typeArgs.length; ++i) {</span>
+<span class="fc" id="L373">            Type typeArg = typeArgs[i];</span>
+<span class="pc bpc" id="L374" title="1 of 2 branches missed.">            if (typeArg instanceof ParameterizedType) {</span>
+<span class="nc" id="L375">                ParameterizedType p_typeArg = (ParameterizedType) typeArg;</span>
+<span class="nc" id="L376">                Type[] p_typeArg_args = p_typeArg.getActualTypeArguments();</span>
+<span class="nc" id="L377">                boolean p_changed = getArgument(p_typeArg_args, genericInfo);</span>
+<span class="nc bnc" id="L378" title="All 2 branches missed.">                if (p_changed) {</span>
+<span class="nc" id="L379">                    typeArgs[i] = TypeReference.intern(</span>
+<span class="nc" id="L380">                            new ParameterizedTypeImpl(p_typeArg_args, p_typeArg.getOwnerType(), p_typeArg.getRawType())</span>
+                    );
+<span class="nc" id="L382">                    changed = true;</span>
+                }
+<span class="pc bfc" id="L384" title="All 2 branches covered.">            } else if (typeArg instanceof TypeVariable) {</span>
+<span class="fc bfc" id="L385" title="All 2 branches covered.">                if (genericInfo.containsKey(typeArg)) {</span>
+<span class="fc" id="L386">                    typeArgs[i] = genericInfo.get(typeArg);</span>
+<span class="fc" id="L387">                    changed = true;</span>
+                }
+            }
+        }
+
+<span class="fc" id="L392">        return changed;</span>
+    }
+
+    private static boolean getArgument(Type[] typeArgs, TypeVariable[] typeVariables, Type[] arguments) {
+<span class="pc bpc" id="L396" title="1 of 4 branches missed.">        if (arguments == null || typeVariables.length == 0) {</span>
+<span class="fc" id="L397">            return false;</span>
+        }
+
+<span class="fc" id="L400">        boolean changed = false;</span>
+<span class="fc bfc" id="L401" title="All 2 branches covered.">        for (int i = 0; i &lt; typeArgs.length; ++i) {</span>
+<span class="fc" id="L402">            Type typeArg = typeArgs[i];</span>
+<span class="fc bfc" id="L403" title="All 2 branches covered.">            if (typeArg instanceof ParameterizedType) {</span>
+<span class="fc" id="L404">                ParameterizedType p_typeArg = (ParameterizedType) typeArg;</span>
+<span class="fc" id="L405">                Type[] p_typeArg_args = p_typeArg.getActualTypeArguments();</span>
+<span class="fc" id="L406">                boolean p_changed = getArgument(p_typeArg_args, typeVariables, arguments);</span>
+<span class="fc bfc" id="L407" title="All 2 branches covered.">                if (p_changed) {</span>
+<span class="fc" id="L408">                    typeArgs[i] = TypeReference.intern(</span>
+<span class="fc" id="L409">                            new ParameterizedTypeImpl(p_typeArg_args, p_typeArg.getOwnerType(), p_typeArg.getRawType())</span>
+                    );
+<span class="fc" id="L411">                    changed = true;</span>
+                }
+<span class="fc bfc" id="L413" title="All 2 branches covered.">            } else if (typeArg instanceof TypeVariable) {</span>
+<span class="fc bfc" id="L414" title="All 2 branches covered.">                for (int j = 0; j &lt; typeVariables.length; ++j) {</span>
+<span class="fc bfc" id="L415" title="All 2 branches covered.">                    if (typeArg.equals(typeVariables[j])) {</span>
+<span class="fc" id="L416">                        typeArgs[i] = arguments[j];</span>
+<span class="fc" id="L417">                        changed = true;</span>
+                    }
+                }
+            }
+        }
+
+<span class="fc" id="L423">        return changed;</span>
+    }
+
+    private static Type getInheritGenericType(Class&lt;?&gt; clazz, Type type, TypeVariable&lt;?&gt; tv) {
+<span class="fc" id="L427">        GenericDeclaration gd = tv.getGenericDeclaration();</span>
+
+<span class="fc" id="L429">        Class&lt;?&gt; class_gd = null;</span>
+<span class="fc bfc" id="L430" title="All 2 branches covered.">        if (gd instanceof Class) {</span>
+<span class="fc" id="L431">            class_gd = (Class&lt;?&gt;) tv.getGenericDeclaration();</span>
+        }
+
+<span class="fc" id="L434">        Type[] arguments = null;</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">        if (class_gd == clazz) {</span>
+<span class="fc bfc" id="L436" title="All 2 branches covered.">            if (type instanceof ParameterizedType) {</span>
+<span class="fc" id="L437">                ParameterizedType ptype = (ParameterizedType) type;</span>
+<span class="fc" id="L438">                arguments = ptype.getActualTypeArguments();</span>
+<span class="fc" id="L439">            }</span>
+        } else {
+<span class="pc bpc" id="L441" title="1 of 6 branches missed.">            for (Class&lt;?&gt; c = clazz; c != null &amp;&amp; c != Object.class &amp;&amp; c != class_gd; c = c.getSuperclass()) {</span>
+<span class="fc" id="L442">                Type superType = c.getGenericSuperclass();</span>
+
+<span class="fc bfc" id="L444" title="All 2 branches covered.">                if (superType instanceof ParameterizedType) {</span>
+<span class="fc" id="L445">                    ParameterizedType p_superType = (ParameterizedType) superType;</span>
+<span class="fc" id="L446">                    Type[] p_superType_args = p_superType.getActualTypeArguments();</span>
+<span class="fc" id="L447">                    getArgument(p_superType_args, c.getTypeParameters(), arguments);</span>
+<span class="fc" id="L448">                    arguments = p_superType_args;</span>
+                }
+            }
+        }
+
+<span class="pc bpc" id="L453" title="1 of 4 branches missed.">        if (arguments == null || class_gd == null) {</span>
+<span class="fc" id="L454">            return null;</span>
+        }
+
+<span class="fc" id="L457">        Type actualType = null;</span>
+<span class="fc" id="L458">        TypeVariable&lt;?&gt;[] typeVariables = class_gd.getTypeParameters();</span>
+<span class="pc bpc" id="L459" title="1 of 2 branches missed.">        for (int j = 0; j &lt; typeVariables.length; ++j) {</span>
+<span class="fc bfc" id="L460" title="All 2 branches covered.">            if (tv.equals(typeVariables[j])) {</span>
+<span class="fc" id="L461">                actualType = arguments[j];</span>
+<span class="fc" id="L462">                break;</span>
+            }
+        }
+
+<span class="fc" id="L466">        return actualType;</span>
+    }
+
+    public String toString() {
+<span class="fc" id="L470">        return this.name;</span>
+    }
+
+    public Member getMember() {
+<span class="fc bfc" id="L474" title="All 2 branches covered.">        if (method != null) {</span>
+<span class="fc" id="L475">            return method;</span>
+        } else {
+<span class="fc" id="L477">            return field;</span>
+        }
+    }
+
+    protected Class&lt;?&gt; getDeclaredClass() {
+<span class="fc bfc" id="L482" title="All 2 branches covered.">        if (this.method != null) {</span>
+<span class="fc" id="L483">            return this.method.getDeclaringClass();</span>
+        }
+        
+<span class="pc bpc" id="L486" title="1 of 2 branches missed.">        if (this.field != null) {</span>
+<span class="fc" id="L487">            return this.field.getDeclaringClass();</span>
+        }
+        
+<span class="nc" id="L490">        return null;</span>
+    }
+
+    public int compareTo(FieldInfo o) {
+        // Deal extend bridge
+<span class="fc bfc" id="L495" title="All 4 branches covered.">        if (o.method != null &amp;&amp; this.method != null</span>
+<span class="fc bfc" id="L496" title="All 4 branches covered.">                &amp;&amp; o.method.isBridge() &amp;&amp; !this.method.isBridge()</span>
+<span class="fc bfc" id="L497" title="All 2 branches covered.">                &amp;&amp; o.method.getName().equals(this.method.getName())) {</span>
+<span class="fc" id="L498">            return 1;</span>
+        }
+
+<span class="fc bfc" id="L501" title="All 2 branches covered.">        if (this.ordinal &lt; o.ordinal) {</span>
+<span class="fc" id="L502">            return -1;</span>
+        }
+
+<span class="fc bfc" id="L505" title="All 2 branches covered.">        if (this.ordinal &gt; o.ordinal) {</span>
+<span class="fc" id="L506">            return 1;</span>
+        }
+
+<span class="fc" id="L509">        int result = this.name.compareTo(o.name);</span>
+        
+<span class="fc bfc" id="L511" title="All 2 branches covered.">        if (result != 0) {</span>
+<span class="fc" id="L512">            return result;</span>
+        }
+        
+<span class="fc" id="L515">        Class&lt;?&gt; thisDeclaringClass = this.getDeclaredClass();</span>
+<span class="fc" id="L516">        Class&lt;?&gt; otherDeclaringClass = o.getDeclaredClass();</span>
+        
+<span class="pc bpc" id="L518" title="2 of 6 branches missed.">        if (thisDeclaringClass != null &amp;&amp; otherDeclaringClass != null &amp;&amp; thisDeclaringClass != otherDeclaringClass) {</span>
+<span class="pc bpc" id="L519" title="1 of 2 branches missed.">            if (thisDeclaringClass.isAssignableFrom(otherDeclaringClass)) {</span>
+<span class="nc" id="L520">                return -1;</span>
+            }
+            
+<span class="pc bpc" id="L523" title="1 of 2 branches missed.">            if (otherDeclaringClass.isAssignableFrom(thisDeclaringClass)) {</span>
+<span class="fc" id="L524">                return 1;</span>
+            }
+        }
+<span class="fc bfc" id="L527" title="All 4 branches covered.">        boolean isSampeType = this.field != null &amp;&amp; this.field.getType() == this.fieldClass;</span>
+<span class="fc bfc" id="L528" title="All 4 branches covered.">        boolean oSameType = o.field != null &amp;&amp; o.field.getType() == o.fieldClass;</span>
+        
+<span class="pc bpc" id="L530" title="1 of 4 branches missed.">        if (isSampeType &amp;&amp; !oSameType) {</span>
+<span class="fc" id="L531">            return 1;</span>
+        }
+        
+<span class="pc bpc" id="L534" title="1 of 4 branches missed.">        if (oSameType &amp;&amp; !isSampeType) {</span>
+<span class="fc" id="L535">            return -1;</span>
+        }
+        
+<span class="pc bpc" id="L538" title="3 of 4 branches missed.">        if (o.fieldClass.isPrimitive() &amp;&amp; !this.fieldClass.isPrimitive()) {</span>
+<span class="nc" id="L539">            return 1;</span>
+        }
+        
+<span class="pc bpc" id="L542" title="3 of 4 branches missed.">        if (this.fieldClass.isPrimitive() &amp;&amp; !o.fieldClass.isPrimitive()) {</span>
+<span class="nc" id="L543">            return -1;</span>
+        }
+        
+<span class="fc bfc" id="L546" title="All 4 branches covered.">        if (o.fieldClass.getName().startsWith(&quot;java.&quot;) &amp;&amp; !this.fieldClass.getName().startsWith(&quot;java.&quot;)) {</span>
+<span class="fc" id="L547">            return 1;</span>
+        }
+        
+<span class="pc bpc" id="L550" title="1 of 4 branches missed.">        if (this.fieldClass.getName().startsWith(&quot;java.&quot;) &amp;&amp; !o.fieldClass.getName().startsWith(&quot;java.&quot;)) {</span>
+<span class="fc" id="L551">            return -1;</span>
+        }
+        
+<span class="fc" id="L554">        return this.fieldClass.getName().compareTo(o.fieldClass.getName());</span>
+    }
+    
+    public JSONField getAnnotation() {
+<span class="fc bfc" id="L558" title="All 2 branches covered.">        if (this.fieldAnnotation != null) {</span>
+<span class="fc" id="L559">            return this.fieldAnnotation;</span>
+        }
+        
+<span class="fc" id="L562">        return this.methodAnnotation;</span>
+    }
+
+    public String getFormat() {
+<span class="fc" id="L566">        return format;</span>
+    }
+
+    public Object get(Object javaObject) throws IllegalAccessException, InvocationTargetException {
+<span class="fc bfc" id="L570" title="All 2 branches covered.">        return method != null</span>
+<span class="fc" id="L571">                ? method.invoke(javaObject)</span>
+<span class="fc" id="L572">                : field.get(javaObject);</span>
+    }
+
+    public void set(Object javaObject, Object value) throws IllegalAccessException, InvocationTargetException {
+<span class="fc bfc" id="L576" title="All 2 branches covered.">        if (method != null) {</span>
+<span class="fc" id="L577">            method.invoke(javaObject, new Object[] { value });</span>
+<span class="fc" id="L578">            return;</span>
+        }
+
+<span class="fc" id="L581">        field.set(javaObject, value);</span>
+<span class="fc" id="L582">    }</span>
+
+    public void setAccessible() throws SecurityException {
+<span class="fc bfc" id="L585" title="All 2 branches covered.">        if (method != null) {</span>
+<span class="fc" id="L586">            TypeUtils.setAccessible(method);</span>
+<span class="fc" id="L587">            return;</span>
+        }
+
+<span class="fc" id="L590">        TypeUtils.setAccessible(field);</span>
+<span class="fc" id="L591">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

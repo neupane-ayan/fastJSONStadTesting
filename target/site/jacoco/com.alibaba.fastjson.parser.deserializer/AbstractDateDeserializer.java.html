@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractDateDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">AbstractDateDeserializer.java</span></div><h1>AbstractDateDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.lang.reflect.Type;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.*;
+import com.alibaba.fastjson.util.TypeUtils;
+
+<span class="fc" id="L13">public abstract class AbstractDateDeserializer extends ContextObjectDeserializer implements ObjectDeserializer {</span>
+
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type clazz, Object fieldName) {
+<span class="fc" id="L16">        return deserialze(parser, clazz, fieldName, null, 0);</span>
+    }
+    
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type clazz, Object fieldName, String format, int features) {
+<span class="fc" id="L22">        JSONLexer lexer = parser.lexer;</span>
+
+        Object val;
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        if (lexer.token() == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L26">            long millis = lexer.longValue();</span>
+<span class="fc" id="L27">            lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">            if (&quot;unixtime&quot;.equals(format)) {</span>
+<span class="fc" id="L29">                millis *= 1000;</span>
+            }
+<span class="fc" id="L31">            val = millis;</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        } else if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L33">            String strVal = lexer.stringVal();</span>
+            
+<span class="fc bfc" id="L35" title="All 2 branches covered.">            if (format != null) {</span>
+<span class="pc bpc" id="L36" title="1 of 4 branches missed.">                if (&quot;yyyy-MM-dd HH:mm:ss.SSSSSSSSS&quot;.equals(format)</span>
+                        &amp;&amp; clazz instanceof Class
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">                        &amp;&amp; ((Class) clazz).getName().equals(&quot;java.sql.Timestamp&quot;)) {</span>
+<span class="fc" id="L39">                    return (T) TypeUtils.castToTimestamp(strVal);</span>
+                }
+
+<span class="fc" id="L42">                SimpleDateFormat simpleDateFormat = null;</span>
+                try {
+<span class="fc" id="L44">                    simpleDateFormat = new SimpleDateFormat(format, parser.lexer.getLocale());</span>
+<span class="fc" id="L45">                } catch (IllegalArgumentException ex) {</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">                    if (format.contains(&quot;T&quot;)) {</span>
+<span class="fc" id="L47">                        String fromat2 = format.replaceAll(&quot;T&quot;, &quot;'T'&quot;);</span>
+                        try {
+<span class="fc" id="L49">                        simpleDateFormat = new SimpleDateFormat(fromat2, parser.lexer.getLocale());</span>
+<span class="nc" id="L50">                        } catch (IllegalArgumentException e2) {</span>
+<span class="nc" id="L51">                            throw ex;</span>
+<span class="fc" id="L52">                        }</span>
+                    }
+<span class="fc" id="L54">                }</span>
+
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">                if (JSON.defaultTimeZone != null) {</span>
+<span class="fc" id="L57">                    simpleDateFormat.setTimeZone(parser.lexer.getTimeZone());</span>
+                }
+
+                try {
+<span class="fc" id="L61">                    val = simpleDateFormat.parse(strVal);</span>
+<span class="fc" id="L62">                } catch (ParseException ex) {</span>
+<span class="fc" id="L63">                    val = null;</span>
+                    // skip
+<span class="fc" id="L65">                }</span>
+
+<span class="pc bpc" id="L67" title="1 of 4 branches missed.">                if (val == null &amp;&amp; JSON.defaultLocale == Locale.CHINA) {</span>
+                    try {
+<span class="fc" id="L69">                        simpleDateFormat = new SimpleDateFormat(format, Locale.US);</span>
+<span class="fc" id="L70">                    } catch (IllegalArgumentException ex) {</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                        if (format.contains(&quot;T&quot;)) {</span>
+<span class="fc" id="L72">                            String fromat2 = format.replaceAll(&quot;T&quot;, &quot;'T'&quot;);</span>
+                            try {
+<span class="fc" id="L74">                                simpleDateFormat = new SimpleDateFormat(fromat2, parser.lexer.getLocale());</span>
+<span class="nc" id="L75">                            } catch (IllegalArgumentException e2) {</span>
+<span class="nc" id="L76">                                throw ex;</span>
+<span class="fc" id="L77">                            }</span>
+                        }
+<span class="fc" id="L79">                    }</span>
+<span class="fc" id="L80">                    simpleDateFormat.setTimeZone(parser.lexer.getTimeZone());</span>
+
+                    try {
+<span class="fc" id="L83">                        val = simpleDateFormat.parse(strVal);</span>
+<span class="fc" id="L84">                    } catch (ParseException ex) {</span>
+<span class="fc" id="L85">                        val = null;</span>
+                        // skip
+<span class="fc" id="L87">                    }</span>
+                }
+
+<span class="fc bfc" id="L90" title="All 2 branches covered.">                if (val == null) {</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">                    if (format.equals(&quot;yyyy-MM-dd'T'HH:mm:ss.SSS&quot;) //</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                            &amp;&amp; strVal.length() == 19) {</span>
+                        try {
+<span class="nc" id="L94">                            SimpleDateFormat df = new SimpleDateFormat(&quot;yyyy-MM-dd'T'HH:mm:ss&quot;, JSON.defaultLocale);</span>
+<span class="nc" id="L95">                            df.setTimeZone(JSON.defaultTimeZone);</span>
+<span class="nc" id="L96">                            val = df.parse(strVal);</span>
+<span class="nc" id="L97">                        } catch (ParseException ex2) {</span>
+                            // skip
+<span class="nc" id="L99">                            val = null;</span>
+<span class="nc" id="L100">                        }</span>
+                    } else {
+                        // skip
+<span class="fc" id="L103">                        val = null;</span>
+                    }
+                }
+<span class="fc" id="L106">            } else {</span>
+<span class="fc" id="L107">                val = null;</span>
+            }
+            
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (val == null) {</span>
+<span class="fc" id="L111">                val = strVal;</span>
+<span class="fc" id="L112">                lexer.nextToken(JSONToken.COMMA);</span>
+                
+<span class="fc bfc" id="L114" title="All 2 branches covered.">                if (lexer.isEnabled(Feature.AllowISO8601DateFormat)) {</span>
+<span class="fc" id="L115">                    JSONScanner iso8601Lexer = new JSONScanner(strVal);</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">                    if (iso8601Lexer.scanISO8601DateIfMatch()) {</span>
+<span class="fc" id="L117">                        val = iso8601Lexer.getCalendar().getTime();</span>
+                    }
+<span class="fc" id="L119">                    iso8601Lexer.close();</span>
+                }
+            }
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        } else if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L123">            lexer.nextToken();</span>
+<span class="fc" id="L124">            val = null;</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        } else if (lexer.token() == JSONToken.LBRACE) {</span>
+<span class="fc" id="L126">            lexer.nextToken();</span>
+            
+            String key;
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L130">                key = lexer.stringVal();</span>
+                
+<span class="fc bfc" id="L132" title="All 2 branches covered.">                if (JSON.DEFAULT_TYPE_KEY.equals(key)) {</span>
+<span class="fc" id="L133">                    lexer.nextToken();</span>
+<span class="fc" id="L134">                    parser.accept(JSONToken.COLON);</span>
+                    
+<span class="fc" id="L136">                    String typeName = lexer.stringVal();</span>
+<span class="fc" id="L137">                    Class&lt;?&gt; type = parser.getConfig().checkAutoType(typeName, null, lexer.getFeatures());</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                    if (type != null) {</span>
+<span class="fc" id="L139">                        clazz = type;</span>
+                    }
+                    
+<span class="fc" id="L142">                    parser.accept(JSONToken.LITERAL_STRING);</span>
+<span class="fc" id="L143">                    parser.accept(JSONToken.COMMA);</span>
+                }
+                
+<span class="fc" id="L146">                lexer.nextTokenWithColon(JSONToken.LITERAL_INT);</span>
+            } else {
+<span class="fc" id="L148">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+            
+            long timeMillis;
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            if (lexer.token() == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L153">                timeMillis = lexer.longValue();</span>
+<span class="fc" id="L154">                lexer.nextToken();</span>
+            } else {
+<span class="fc" id="L156">                throw new JSONException(&quot;syntax error : &quot; + lexer.tokenName());</span>
+            }
+            
+<span class="fc" id="L159">            val = timeMillis;</span>
+            
+<span class="fc" id="L161">            parser.accept(JSONToken.RBRACE);</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        } else if (parser.getResolveStatus() == DefaultJSONParser.TypeNameRedirect) {</span>
+<span class="fc" id="L163">            parser.setResolveStatus(DefaultJSONParser.NONE);</span>
+<span class="fc" id="L164">            parser.accept(JSONToken.COMMA);</span>
+
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">                if (!&quot;val&quot;.equals(lexer.stringVal())) {</span>
+<span class="fc" id="L168">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc" id="L170">                lexer.nextToken();</span>
+            } else {
+<span class="fc" id="L172">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+
+<span class="fc" id="L175">            parser.accept(JSONToken.COLON);</span>
+
+<span class="fc" id="L177">            val = parser.parse();</span>
+
+<span class="fc" id="L179">            parser.accept(JSONToken.RBRACE);</span>
+        } else {
+<span class="fc" id="L181">            val = parser.parse();</span>
+        }
+
+<span class="fc" id="L184">        return (T) cast(parser, clazz, fieldName, val);</span>
+    }
+
+    protected abstract &lt;T&gt; T cast(DefaultJSONParser parser, Type clazz, Object fieldName, Object value);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

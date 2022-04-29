@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MiscCodec.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">MiscCodec.java</span></div><h1>MiscCodec.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2018 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.serializer;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import com.alibaba.fastjson.*;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
+import com.alibaba.fastjson.util.IOUtils;
+import com.alibaba.fastjson.util.TypeUtils;
+import org.w3c.dom.Node;
+
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+<span class="fc" id="L56">public class MiscCodec implements ObjectSerializer, ObjectDeserializer {</span>
+<span class="fc" id="L57">    private static      boolean   FILE_RELATIVE_PATH_SUPPORT = false;</span>
+<span class="fc" id="L58">    public final static MiscCodec instance                   = new MiscCodec();</span>
+    private static      Method    method_paths_get;
+<span class="fc" id="L60">    private static      boolean   method_paths_get_error     = false;</span>
+
+    static {
+<span class="fc" id="L63">        FILE_RELATIVE_PATH_SUPPORT = &quot;true&quot;.equals(IOUtils.getStringProperty(&quot;fastjson.deserializer.fileRelativePathSupport&quot;));</span>
+<span class="fc" id="L64">    }</span>
+
+    public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType,
+                      int features) throws IOException {
+<span class="fc" id="L68">        SerializeWriter out = serializer.out;</span>
+
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L71">            out.writeNull();</span>
+<span class="fc" id="L72">            return;</span>
+        }
+
+<span class="fc" id="L75">        Class&lt;?&gt; objClass = object.getClass();</span>
+
+        String strVal;
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (objClass == SimpleDateFormat.class) {</span>
+<span class="fc" id="L79">            String pattern = ((SimpleDateFormat) object).toPattern();</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (out.isEnabled(SerializerFeature.WriteClassName)) {</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">                if (object.getClass() != fieldType) {</span>
+<span class="fc" id="L83">                    out.write('{');</span>
+<span class="fc" id="L84">                    out.writeFieldName(JSON.DEFAULT_TYPE_KEY);</span>
+<span class="fc" id="L85">                    serializer.write(object.getClass().getName());</span>
+<span class="fc" id="L86">                    out.writeFieldValue(',', &quot;val&quot;, pattern);</span>
+<span class="fc" id="L87">                    out.write('}');</span>
+<span class="fc" id="L88">                    return;</span>
+                }
+            }
+
+<span class="fc" id="L92">            strVal = pattern;</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        } else if (objClass == Class.class) {</span>
+<span class="fc" id="L94">            Class&lt;?&gt; clazz = (Class&lt;?&gt;) object;</span>
+<span class="fc" id="L95">            strVal = clazz.getName();</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        } else if (objClass == InetSocketAddress.class) {</span>
+<span class="fc" id="L97">            InetSocketAddress address = (InetSocketAddress) object;</span>
+
+<span class="fc" id="L99">            InetAddress inetAddress = address.getAddress();</span>
+
+<span class="fc" id="L101">            out.write('{');</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">            if (inetAddress != null) {</span>
+<span class="fc" id="L103">                out.writeFieldName(&quot;address&quot;);</span>
+<span class="fc" id="L104">                serializer.write(inetAddress);</span>
+<span class="fc" id="L105">                out.write(',');</span>
+            }
+<span class="fc" id="L107">            out.writeFieldName(&quot;port&quot;);</span>
+<span class="fc" id="L108">            out.writeInt(address.getPort());</span>
+<span class="fc" id="L109">            out.write('}');</span>
+<span class="fc" id="L110">            return;</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        } else if (object instanceof File) {</span>
+<span class="fc" id="L112">            strVal = ((File) object).getPath();</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        } else if (object instanceof InetAddress) {</span>
+<span class="fc" id="L114">            strVal = ((InetAddress) object).getHostAddress();</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        } else if (object instanceof TimeZone) {</span>
+<span class="fc" id="L116">            TimeZone timeZone = (TimeZone) object;</span>
+<span class="fc" id="L117">            strVal = timeZone.getID();</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        } else if (object instanceof Currency) {</span>
+<span class="fc" id="L119">            Currency currency = (Currency) object;</span>
+<span class="fc" id="L120">            strVal = currency.getCurrencyCode();</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        } else if (object instanceof JSONStreamAware) {</span>
+<span class="fc" id="L122">            JSONStreamAware aware = (JSONStreamAware) object;</span>
+<span class="fc" id="L123">            aware.writeJSONString(out);</span>
+<span class="fc" id="L124">            return;</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        } else if (object instanceof Iterator) {</span>
+<span class="fc" id="L126">            Iterator&lt;?&gt; it = ((Iterator&lt;?&gt;) object);</span>
+<span class="fc" id="L127">            writeIterator(serializer, out, it);</span>
+<span class="fc" id="L128">            return;</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        } else if (object instanceof Iterable) {</span>
+<span class="fc" id="L130">            Iterator&lt;?&gt; it = ((Iterable&lt;?&gt;) object).iterator();</span>
+<span class="fc" id="L131">            writeIterator(serializer, out, it);</span>
+<span class="fc" id="L132">            return;</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        } else if (object instanceof Map.Entry) {</span>
+<span class="fc" id="L134">            Map.Entry entry = (Map.Entry) object;</span>
+<span class="fc" id="L135">            Object objKey = entry.getKey();</span>
+<span class="fc" id="L136">            Object objVal = entry.getValue();</span>
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            if (objKey instanceof String) {</span>
+<span class="fc" id="L139">                String key = (String) objKey;</span>
+
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                if (objVal instanceof String) {</span>
+<span class="fc" id="L142">                    String value = (String) objVal;</span>
+<span class="fc" id="L143">                    out.writeFieldValueStringWithDoubleQuoteCheck('{', key, value);</span>
+<span class="fc" id="L144">                } else {</span>
+<span class="fc" id="L145">                    out.write('{');</span>
+<span class="fc" id="L146">                    out.writeFieldName(key);</span>
+<span class="fc" id="L147">                    serializer.write(objVal);</span>
+                }
+<span class="fc" id="L149">            } else {</span>
+<span class="fc" id="L150">                out.write('{');</span>
+<span class="fc" id="L151">                serializer.write(objKey);</span>
+<span class="fc" id="L152">                out.write(':');</span>
+<span class="fc" id="L153">                serializer.write(objVal);</span>
+            }
+<span class="fc" id="L155">            out.write('}');</span>
+<span class="fc" id="L156">            return;</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        } else if (object.getClass().getName().equals(&quot;net.sf.json.JSONNull&quot;)) {</span>
+<span class="fc" id="L158">            out.writeNull();</span>
+<span class="fc" id="L159">            return;</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">        } else if (object instanceof org.w3c.dom.Node) {</span>
+<span class="fc" id="L161">            strVal = toString((Node) object);</span>
+        } else {
+<span class="nc" id="L163">            throw new JSONException(&quot;not support class : &quot; + objClass);</span>
+        }
+
+<span class="fc" id="L166">        out.writeString(strVal);</span>
+<span class="fc" id="L167">    }</span>
+
+    private static String toString(org.w3c.dom.Node node) {
+        try {
+<span class="fc" id="L171">            TransformerFactory transFactory = TransformerFactory.newInstance();</span>
+<span class="fc" id="L172">            Transformer transformer = transFactory.newTransformer();</span>
+<span class="fc" id="L173">            DOMSource domSource = new DOMSource(node);</span>
+
+<span class="fc" id="L175">            StringWriter out = new StringWriter();</span>
+<span class="fc" id="L176">            transformer.transform(domSource, new StreamResult(out));</span>
+<span class="fc" id="L177">            return out.toString();</span>
+<span class="nc" id="L178">        } catch (TransformerException e) {</span>
+<span class="nc" id="L179">            throw new JSONException(&quot;xml node to string error&quot;, e);</span>
+        }
+    }
+
+    protected void writeIterator(JSONSerializer serializer, SerializeWriter out, Iterator&lt;?&gt; it) {
+<span class="fc" id="L184">        int i = 0;</span>
+<span class="fc" id="L185">        out.write('[');</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        while (it.hasNext()) {</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">            if (i != 0) {</span>
+<span class="fc" id="L188">                out.write(',');</span>
+            }
+<span class="fc" id="L190">            Object item = it.next();</span>
+<span class="fc" id="L191">            serializer.write(item);</span>
+<span class="fc" id="L192">            ++i;</span>
+<span class="fc" id="L193">        }</span>
+<span class="fc" id="L194">        out.write(']');</span>
+<span class="fc" id="L195">        return;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type clazz, Object fieldName) {
+<span class="fc" id="L200">        JSONLexer lexer = parser.lexer;</span>
+
+<span class="fc bfc" id="L202" title="All 2 branches covered.">        if (clazz == InetSocketAddress.class) {</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">            if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L204">                lexer.nextToken();</span>
+<span class="fc" id="L205">                return null;</span>
+            }
+
+<span class="fc" id="L208">            parser.accept(JSONToken.LBRACE);</span>
+
+<span class="fc" id="L210">            InetAddress address = null;</span>
+<span class="fc" id="L211">            int port = 0;</span>
+            for (;;) {
+<span class="fc" id="L213">                String key = lexer.stringVal();</span>
+<span class="fc" id="L214">                lexer.nextToken(JSONToken.COLON);</span>
+
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                if (key.equals(&quot;address&quot;)) {</span>
+<span class="fc" id="L217">                    parser.accept(JSONToken.COLON);</span>
+<span class="fc" id="L218">                    address = parser.parseObject(InetAddress.class);</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">                } else if (key.equals(&quot;port&quot;)) {</span>
+<span class="fc" id="L220">                    parser.accept(JSONToken.COLON);</span>
+<span class="fc bfc" id="L221" title="All 2 branches covered.">                    if (lexer.token() != JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L222">                        throw new JSONException(&quot;port is not int&quot;);</span>
+                    }
+<span class="fc" id="L224">                    port = lexer.intValue();</span>
+<span class="fc" id="L225">                    lexer.nextToken();</span>
+                } else {
+<span class="fc" id="L227">                    parser.accept(JSONToken.COLON);</span>
+<span class="fc" id="L228">                    parser.parse();</span>
+                }
+
+<span class="fc bfc" id="L231" title="All 2 branches covered.">                if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="fc" id="L232">                    lexer.nextToken();</span>
+<span class="fc" id="L233">                    continue;</span>
+                }
+
+                break;
+            }
+
+<span class="fc" id="L239">            parser.accept(JSONToken.RBRACE);</span>
+
+<span class="fc" id="L241">            return (T) new InetSocketAddress(address, port);</span>
+        }
+
+        Object objVal;
+
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (parser.resolveStatus == DefaultJSONParser.TypeNameRedirect) {</span>
+<span class="fc" id="L247">            parser.resolveStatus = DefaultJSONParser.NONE;</span>
+<span class="fc" id="L248">            parser.accept(JSONToken.COMMA);</span>
+
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">            if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">                if (!&quot;val&quot;.equals(lexer.stringVal())) {</span>
+<span class="nc" id="L252">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc" id="L254">                lexer.nextToken();</span>
+            } else {
+<span class="nc" id="L256">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+
+<span class="fc" id="L259">            parser.accept(JSONToken.COLON);</span>
+
+<span class="fc" id="L261">            objVal = parser.parse();</span>
+
+<span class="fc" id="L263">            parser.accept(JSONToken.RBRACE);</span>
+        } else {
+<span class="fc" id="L265">            objVal = parser.parse();</span>
+        }
+
+        String strVal;
+
+<span class="fc bfc" id="L270" title="All 2 branches covered.">        if (objVal == null) {</span>
+<span class="fc" id="L271">            strVal = null;</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        } else if (objVal instanceof String) {</span>
+<span class="fc" id="L273">            strVal = (String) objVal;</span>
+        } else {
+<span class="fc bfc" id="L275" title="All 2 branches covered.">            if (objVal instanceof JSONObject) {</span>
+<span class="fc" id="L276">                JSONObject jsonObject = (JSONObject) objVal;</span>
+
+<span class="fc bfc" id="L278" title="All 2 branches covered.">                if (clazz == Currency.class) {</span>
+<span class="fc" id="L279">                    String currency = jsonObject.getString(&quot;currency&quot;);</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">                    if (currency != null) {</span>
+<span class="fc" id="L281">                        return (T) Currency.getInstance(currency);</span>
+                    }
+
+<span class="fc" id="L284">                    String symbol = jsonObject.getString(&quot;currencyCode&quot;);</span>
+<span class="pc bpc" id="L285" title="1 of 2 branches missed.">                    if (symbol != null) {</span>
+<span class="fc" id="L286">                        return (T) Currency.getInstance(symbol);</span>
+                    }
+                }
+
+<span class="fc bfc" id="L290" title="All 2 branches covered.">                if (clazz == Map.Entry.class) {</span>
+<span class="fc" id="L291">                   return (T) jsonObject.entrySet().iterator().next();</span>
+                }
+
+<span class="fc" id="L294">                return jsonObject.toJavaObject(clazz);</span>
+            }
+<span class="fc" id="L296">            throw new JSONException(&quot;expect string&quot;);</span>
+        }
+
+<span class="fc bfc" id="L299" title="All 4 branches covered.">        if (strVal == null || strVal.length() == 0) {</span>
+<span class="fc" id="L300">            return null;</span>
+        }
+
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (clazz == UUID.class) {</span>
+<span class="fc" id="L304">            return (T) UUID.fromString(strVal);</span>
+        }
+
+<span class="fc bfc" id="L307" title="All 2 branches covered.">        if (clazz == URI.class) {</span>
+<span class="fc" id="L308">            return (T) URI.create(strVal);</span>
+        }
+
+<span class="fc bfc" id="L311" title="All 2 branches covered.">        if (clazz == URL.class) {</span>
+            try {
+<span class="fc" id="L313">                return (T) new URL(strVal);</span>
+<span class="fc" id="L314">            } catch (MalformedURLException e) {</span>
+<span class="fc" id="L315">                throw new JSONException(&quot;create url error&quot;, e);</span>
+            }
+        }
+
+<span class="fc bfc" id="L319" title="All 2 branches covered.">        if (clazz == Pattern.class) {</span>
+<span class="fc" id="L320">            return (T) Pattern.compile(strVal);</span>
+        }
+
+<span class="fc bfc" id="L323" title="All 2 branches covered.">        if (clazz == Locale.class) {</span>
+<span class="fc" id="L324">            return (T) TypeUtils.toLocale(strVal);</span>
+        }
+
+<span class="fc bfc" id="L327" title="All 2 branches covered.">        if (clazz == SimpleDateFormat.class) {</span>
+<span class="fc" id="L328">            SimpleDateFormat dateFormat = new SimpleDateFormat(strVal, lexer.getLocale());</span>
+<span class="fc" id="L329">            dateFormat.setTimeZone(lexer.getTimeZone());</span>
+<span class="fc" id="L330">            return (T) dateFormat;</span>
+        }
+
+<span class="pc bpc" id="L333" title="2 of 6 branches missed.">        if (clazz == InetAddress.class || clazz == Inet4Address.class || clazz == Inet6Address.class) {</span>
+            try {
+<span class="fc" id="L335">                return (T) InetAddress.getByName(strVal);</span>
+<span class="nc" id="L336">            } catch (UnknownHostException e) {</span>
+<span class="nc" id="L337">                throw new JSONException(&quot;deserialize inet adress error&quot;, e);</span>
+            }
+        }
+
+<span class="fc bfc" id="L341" title="All 2 branches covered.">        if (clazz == File.class) {</span>
+<span class="pc bpc" id="L342" title="3 of 4 branches missed.">            if (strVal.indexOf(&quot;..&quot;) &gt;= 0 &amp;&amp; !FILE_RELATIVE_PATH_SUPPORT) {</span>
+<span class="nc" id="L343">                throw new JSONException(&quot;file relative path not support.&quot;);</span>
+            }
+
+<span class="fc" id="L346">            return (T) new File(strVal);</span>
+        }
+
+<span class="fc bfc" id="L349" title="All 2 branches covered.">        if (clazz == TimeZone.class) {</span>
+<span class="fc" id="L350">            return (T) TimeZone.getTimeZone(strVal);</span>
+        }
+
+<span class="fc bfc" id="L353" title="All 2 branches covered.">        if (clazz instanceof ParameterizedType) {</span>
+<span class="fc" id="L354">            ParameterizedType parmeterizedType = (ParameterizedType) clazz;</span>
+<span class="fc" id="L355">            clazz = parmeterizedType.getRawType();</span>
+        }
+
+<span class="fc bfc" id="L358" title="All 2 branches covered.">        if (clazz == Class.class) {</span>
+<span class="fc" id="L359">            return (T) TypeUtils.loadClass(strVal, parser.getConfig().getDefaultClassLoader(), false);</span>
+        }
+
+<span class="fc bfc" id="L362" title="All 2 branches covered.">        if (clazz == Charset.class) {</span>
+<span class="fc" id="L363">            return (T) Charset.forName(strVal);</span>
+        }
+
+<span class="fc bfc" id="L366" title="All 2 branches covered.">        if (clazz == Currency.class) {</span>
+<span class="fc" id="L367">            return (T) Currency.getInstance(strVal);</span>
+        }
+
+<span class="fc bfc" id="L370" title="All 2 branches covered.">        if (clazz == JSONPath.class) {</span>
+<span class="fc" id="L371">            return (T) new JSONPath(strVal);</span>
+        }
+
+
+
+<span class="pc bpc" id="L376" title="1 of 2 branches missed.">        if (clazz instanceof Class) {</span>
+<span class="fc" id="L377">            String className = ((Class) clazz).getName();</span>
+
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">            if (className.equals(&quot;java.nio.file.Path&quot;)) {</span>
+                try {
+<span class="pc bpc" id="L381" title="2 of 4 branches missed.">                    if (method_paths_get == null &amp;&amp; !method_paths_get_error) {</span>
+<span class="fc" id="L382">                        Class&lt;?&gt; paths = TypeUtils.loadClass(&quot;java.nio.file.Paths&quot;);</span>
+<span class="fc" id="L383">                        method_paths_get = paths.getMethod(&quot;get&quot;, String.class, String[].class);</span>
+                    }
+<span class="pc bpc" id="L385" title="1 of 2 branches missed.">                    if (method_paths_get != null) {</span>
+<span class="fc" id="L386">                        return (T) method_paths_get.invoke(null, strVal, new String[0]);</span>
+                    }
+
+<span class="nc" id="L389">                    throw new JSONException(&quot;Path deserialize erorr&quot;);</span>
+<span class="nc" id="L390">                } catch (NoSuchMethodException ex) {</span>
+<span class="nc" id="L391">                    method_paths_get_error = true;</span>
+<span class="nc" id="L392">                } catch (IllegalAccessException ex) {</span>
+<span class="nc" id="L393">                    throw new JSONException(&quot;Path deserialize erorr&quot;, ex);</span>
+<span class="nc" id="L394">                } catch (InvocationTargetException ex) {</span>
+<span class="nc" id="L395">                    throw new JSONException(&quot;Path deserialize erorr&quot;, ex);</span>
+<span class="nc" id="L396">                }</span>
+            }
+
+<span class="nc" id="L399">            throw new JSONException(&quot;MiscCodec not support &quot; + className);</span>
+        }
+
+<span class="nc" id="L402">        throw new JSONException(&quot;MiscCodec not support &quot; + clazz.toString());</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L406">        return JSONToken.LITERAL_STRING;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

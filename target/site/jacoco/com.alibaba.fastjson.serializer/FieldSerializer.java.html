@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">FieldSerializer.java</span></div><h1>FieldSerializer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2018 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.serializer;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
+import com.alibaba.fastjson.util.FieldInfo;
+import com.alibaba.fastjson.util.TypeUtils;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public class FieldSerializer implements Comparable&lt;FieldSerializer&gt; {
+
+    public final FieldInfo        fieldInfo;
+    protected final boolean       writeNull;
+    protected int                 features;
+
+    private final String          double_quoted_fieldPrefix;
+    private String                single_quoted_fieldPrefix;
+    private String                un_quoted_fieldPrefix;
+
+    protected BeanContext         fieldContext;
+
+    private String                format;
+<span class="fc" id="L45">    protected boolean             writeEnumUsingToString  = false;</span>
+<span class="fc" id="L46">    protected boolean             writeEnumUsingName      = false;</span>
+<span class="fc" id="L47">    protected boolean             disableCircularReferenceDetect = false;</span>
+
+<span class="fc" id="L49">    protected boolean             serializeUsing          = false;</span>
+
+<span class="fc" id="L51">    protected boolean             persistenceXToMany      = false; // OneToMany or ManyToMany</span>
+    protected boolean             browserCompatible;
+
+    private RuntimeSerializerInfo runtimeInfo;
+    
+<span class="fc" id="L56">    public FieldSerializer(Class&lt;?&gt; beanType, FieldInfo fieldInfo) {</span>
+<span class="fc" id="L57">        this.fieldInfo = fieldInfo;</span>
+<span class="fc" id="L58">        this.fieldContext = new BeanContext(beanType, fieldInfo);</span>
+
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (beanType != null) {</span>
+<span class="fc" id="L61">            JSONType jsonType = TypeUtils.getAnnotation(beanType,JSONType.class);</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            if (jsonType != null) {</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                for (SerializerFeature feature : jsonType.serialzeFeatures()) {</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">                    if (feature == SerializerFeature.WriteEnumUsingToString) {</span>
+<span class="fc" id="L65">                        writeEnumUsingToString = true;</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">                    } else if(feature == SerializerFeature.WriteEnumUsingName){</span>
+<span class="nc" id="L67">                        writeEnumUsingName = true;</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">                    } else if(feature == SerializerFeature.DisableCircularReferenceDetect){</span>
+<span class="fc" id="L69">                        disableCircularReferenceDetect = true;</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                    } else if(feature == SerializerFeature.BrowserCompatible){</span>
+<span class="fc" id="L71">                        features |= SerializerFeature.BrowserCompatible.mask;</span>
+<span class="fc" id="L72">                        browserCompatible = true;</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                    } else if (feature == SerializerFeature.WriteMapNullValue) {</span>
+<span class="fc" id="L74">                        features |= SerializerFeature.WriteMapNullValue.mask;</span>
+                    }
+                }
+            }
+        }
+        
+<span class="fc" id="L80">        fieldInfo.setAccessible();</span>
+
+<span class="fc" id="L82">        this.double_quoted_fieldPrefix = '&quot;' + fieldInfo.name + &quot;\&quot;:&quot;;</span>
+
+<span class="fc" id="L84">        boolean writeNull = false;</span>
+<span class="fc" id="L85">        JSONField annotation = fieldInfo.getAnnotation();</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (annotation != null) {</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            for (SerializerFeature feature : annotation.serialzeFeatures()) {</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">                if ((feature.getMask() &amp; SerializerFeature.WRITE_MAP_NULL_FEATURES) != 0) {</span>
+<span class="fc" id="L89">                    writeNull = true;</span>
+<span class="fc" id="L90">                    break;</span>
+                }
+            }
+
+<span class="fc" id="L94">            format = annotation.format();</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            if (format.trim().length() == 0) {</span>
+<span class="fc" id="L97">                format = null;</span>
+            }
+
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            for (SerializerFeature feature : annotation.serialzeFeatures()) {</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">                if (feature == SerializerFeature.WriteEnumUsingToString) {</span>
+<span class="fc" id="L102">                    writeEnumUsingToString = true;</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                } else if(feature == SerializerFeature.WriteEnumUsingName){</span>
+<span class="nc" id="L104">                    writeEnumUsingName = true;</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">                } else if(feature == SerializerFeature.DisableCircularReferenceDetect){</span>
+<span class="fc" id="L106">                    disableCircularReferenceDetect = true;</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">                } else if(feature == SerializerFeature.BrowserCompatible){</span>
+<span class="fc" id="L108">                    browserCompatible = true;</span>
+                }
+            }
+            
+<span class="fc" id="L112">            features |= SerializerFeature.of(annotation.serialzeFeatures());</span>
+        }
+        
+<span class="fc" id="L115">        this.writeNull = writeNull;</span>
+
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        persistenceXToMany = TypeUtils.isAnnotationPresentOneToMany(fieldInfo.method)</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">                || TypeUtils.isAnnotationPresentManyToMany(fieldInfo.method);</span>
+<span class="fc" id="L119">    }</span>
+
+    public void writePrefix(JSONSerializer serializer) throws IOException {
+<span class="fc" id="L122">        SerializeWriter out = serializer.out;</span>
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (out.quoteFieldNames) {</span>
+<span class="fc" id="L125">            boolean useSingleQuotes = SerializerFeature.isEnabled(out.features, fieldInfo.serialzeFeatures, SerializerFeature.UseSingleQuotes);</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">            if (useSingleQuotes) {</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">                if (single_quoted_fieldPrefix == null) {</span>
+<span class="fc" id="L128">                    single_quoted_fieldPrefix = '\'' + fieldInfo.name + &quot;\':&quot;;</span>
+                }
+<span class="fc" id="L130">                out.write(single_quoted_fieldPrefix);</span>
+            } else {
+<span class="fc" id="L132">                out.write(double_quoted_fieldPrefix);</span>
+            }
+<span class="fc" id="L134">        } else {</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">            if (un_quoted_fieldPrefix == null) {</span>
+<span class="fc" id="L136">                this.un_quoted_fieldPrefix = fieldInfo.name + &quot;:&quot;;</span>
+            }
+<span class="fc" id="L138">            out.write(un_quoted_fieldPrefix);</span>
+        }
+<span class="fc" id="L140">    }</span>
+
+    public Object getPropertyValueDirect(Object object) throws InvocationTargetException, IllegalAccessException {
+<span class="fc" id="L143">        Object fieldValue =  fieldInfo.get(object);</span>
+<span class="pc bpc" id="L144" title="3 of 4 branches missed.">        if (persistenceXToMany &amp;&amp; !TypeUtils.isHibernateInitialized(fieldValue)) {</span>
+<span class="nc" id="L145">            return null;</span>
+        }
+<span class="fc" id="L147">        return fieldValue;</span>
+    }
+
+    public Object getPropertyValue(Object object) throws InvocationTargetException, IllegalAccessException {
+<span class="fc" id="L151">        Object propertyValue =  fieldInfo.get(object);</span>
+<span class="pc bpc" id="L152" title="1 of 4 branches missed.">        if (format != null &amp;&amp; propertyValue != null) {</span>
+<span class="pc bpc" id="L153" title="1 of 4 branches missed.">            if (fieldInfo.fieldClass == java.util.Date.class || fieldInfo.fieldClass == java.sql.Date.class) {</span>
+<span class="fc" id="L154">                SimpleDateFormat dateFormat = new SimpleDateFormat(format, JSON.defaultLocale);</span>
+<span class="fc" id="L155">                dateFormat.setTimeZone(JSON.defaultTimeZone);</span>
+<span class="fc" id="L156">                return dateFormat.format(propertyValue);</span>
+            }
+        }
+<span class="fc" id="L159">        return propertyValue;</span>
+    }
+    
+    public int compareTo(FieldSerializer o) {
+<span class="nc" id="L163">        return this.fieldInfo.compareTo(o.fieldInfo);</span>
+    }
+    
+
+    public void writeValue(JSONSerializer serializer, Object propertyValue) throws Exception {
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        if (runtimeInfo == null) {</span>
+
+            Class&lt;?&gt; runtimeFieldClass;
+<span class="fc bfc" id="L171" title="All 2 branches covered.">            if (propertyValue == null) {</span>
+<span class="fc" id="L172">                runtimeFieldClass = this.fieldInfo.fieldClass;</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">                if (runtimeFieldClass == byte.class) {</span>
+<span class="nc" id="L174">                    runtimeFieldClass = Byte.class;</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">                } else if (runtimeFieldClass == short.class) {</span>
+<span class="nc" id="L176">                    runtimeFieldClass = Short.class;</span>
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">                } else if (runtimeFieldClass == int.class) {</span>
+<span class="nc" id="L178">                    runtimeFieldClass = Integer.class;</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">                } else if (runtimeFieldClass == long.class) {</span>
+<span class="nc" id="L180">                    runtimeFieldClass = Long.class;</span>
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">                } else if (runtimeFieldClass == float.class) {</span>
+<span class="nc" id="L182">                    runtimeFieldClass = Float.class;</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">                } else if (runtimeFieldClass == double.class) {</span>
+<span class="nc" id="L184">                    runtimeFieldClass = Double.class;</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">                } else if (runtimeFieldClass == boolean.class) {</span>
+<span class="nc" id="L186">                    runtimeFieldClass = Boolean.class;</span>
+                }
+            } else {
+<span class="fc" id="L189">                runtimeFieldClass = propertyValue.getClass();</span>
+            }
+
+<span class="fc" id="L192">            ObjectSerializer fieldSerializer = null;</span>
+<span class="fc" id="L193">            JSONField fieldAnnotation = fieldInfo.getAnnotation();</span>
+
+<span class="fc bfc" id="L195" title="All 4 branches covered.">            if (fieldAnnotation != null &amp;&amp; fieldAnnotation.serializeUsing() != Void.class) {</span>
+<span class="fc" id="L196">                fieldSerializer = (ObjectSerializer) fieldAnnotation.serializeUsing().newInstance();</span>
+<span class="fc" id="L197">                serializeUsing = true;</span>
+            } else {
+<span class="fc bfc" id="L199" title="All 2 branches covered.">                if (format != null) {</span>
+<span class="pc bpc" id="L200" title="1 of 4 branches missed.">                    if (runtimeFieldClass == double.class || runtimeFieldClass == Double.class) {</span>
+<span class="fc" id="L201">                        fieldSerializer = new DoubleSerializer(format);</span>
+<span class="pc bpc" id="L202" title="1 of 4 branches missed.">                    } else if (runtimeFieldClass == float.class || runtimeFieldClass == Float.class) {</span>
+<span class="fc" id="L203">                        fieldSerializer = new FloatCodec(format);</span>
+                    }
+                }
+
+<span class="fc bfc" id="L207" title="All 2 branches covered.">                if (fieldSerializer == null) {</span>
+<span class="fc" id="L208">                    fieldSerializer = serializer.getObjectWriter(runtimeFieldClass);</span>
+                }
+            }
+
+<span class="fc" id="L212">            runtimeInfo = new RuntimeSerializerInfo(fieldSerializer, runtimeFieldClass);</span>
+        }
+        
+<span class="fc" id="L215">        final RuntimeSerializerInfo runtimeInfo = this.runtimeInfo;</span>
+        
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        final int fieldFeatures</span>
+                = (disableCircularReferenceDetect
+                ? (fieldInfo.serialzeFeatures | SerializerFeature.DisableCircularReferenceDetect.mask)
+                : fieldInfo.serialzeFeatures) | features;
+
+<span class="fc bfc" id="L222" title="All 2 branches covered.">        if (propertyValue == null) {</span>
+<span class="fc" id="L223">            SerializeWriter out  = serializer.out;</span>
+
+<span class="fc bfc" id="L225" title="All 2 branches covered.">            if (fieldInfo.fieldClass == Object.class</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">                    &amp;&amp; out.isEnabled(SerializerFeature.WRITE_MAP_NULL_FEATURES)) {</span>
+<span class="fc" id="L227">                out.writeNull();</span>
+<span class="fc" id="L228">                return;</span>
+            }
+
+<span class="fc" id="L231">            Class&lt;?&gt; runtimeFieldClass = runtimeInfo.runtimeFieldClass;</span>
+
+<span class="fc bfc" id="L233" title="All 2 branches covered.">            if (Number.class.isAssignableFrom(runtimeFieldClass)) {</span>
+<span class="fc" id="L234">                out.writeNull(features, SerializerFeature.WriteNullNumberAsZero.mask);</span>
+<span class="fc" id="L235">                return;</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">            } else if (String.class == runtimeFieldClass) {</span>
+<span class="fc" id="L237">                out.writeNull(features, SerializerFeature.WriteNullStringAsEmpty.mask);</span>
+<span class="fc" id="L238">                return;</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">            } else if (Boolean.class == runtimeFieldClass) {</span>
+<span class="fc" id="L240">                out.writeNull(features, SerializerFeature.WriteNullBooleanAsFalse.mask);</span>
+<span class="fc" id="L241">                return;</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">            } else if (Collection.class.isAssignableFrom(runtimeFieldClass)</span>
+<span class="fc bfc" id="L243" title="All 2 branches covered.">                    || runtimeFieldClass.isArray()) {</span>
+<span class="fc" id="L244">                out.writeNull(features, SerializerFeature.WriteNullListAsEmpty.mask);</span>
+<span class="fc" id="L245">                return;</span>
+            }
+
+<span class="fc" id="L248">            ObjectSerializer fieldSerializer = runtimeInfo.fieldSerializer;</span>
+
+<span class="fc bfc" id="L250" title="All 4 branches covered.">            if ((out.isEnabled(SerializerFeature.WRITE_MAP_NULL_FEATURES))</span>
+                    &amp;&amp; fieldSerializer instanceof JavaBeanSerializer) {
+<span class="fc" id="L252">                out.writeNull();</span>
+<span class="fc" id="L253">                return;</span>
+            }
+
+<span class="fc" id="L256">            fieldSerializer.write(serializer, null, fieldInfo.name, fieldInfo.fieldType, fieldFeatures);</span>
+<span class="fc" id="L257">            return;</span>
+        }
+
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        if (fieldInfo.isEnum) {</span>
+<span class="pc bpc" id="L261" title="1 of 2 branches missed.">            if (writeEnumUsingName) {</span>
+<span class="nc" id="L262">                serializer.out.writeString(((Enum&lt;?&gt;) propertyValue).name());</span>
+<span class="nc" id="L263">                return;</span>
+            }
+
+<span class="fc bfc" id="L266" title="All 2 branches covered.">            if (writeEnumUsingToString) {</span>
+<span class="fc" id="L267">                serializer.out.writeString(((Enum&lt;?&gt;) propertyValue).toString());</span>
+<span class="fc" id="L268">                return;</span>
+            }
+        }
+        
+<span class="fc" id="L272">        Class&lt;?&gt; valueClass = propertyValue.getClass();</span>
+        ObjectSerializer valueSerializer;
+<span class="fc bfc" id="L274" title="All 4 branches covered.">        if (valueClass == runtimeInfo.runtimeFieldClass || serializeUsing) {</span>
+<span class="fc" id="L275">            valueSerializer = runtimeInfo.fieldSerializer;</span>
+        } else {
+<span class="fc" id="L277">            valueSerializer = serializer.getObjectWriter(valueClass);</span>
+        }
+        
+<span class="fc bfc" id="L280" title="All 6 branches covered.">        if (format != null &amp;&amp; !(valueSerializer instanceof DoubleSerializer || valueSerializer instanceof FloatCodec)) {</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">            if (valueSerializer instanceof ContextObjectSerializer) {</span>
+<span class="fc" id="L282">                ((ContextObjectSerializer) valueSerializer).write(serializer, propertyValue, this.fieldContext);    </span>
+            } else {
+<span class="fc" id="L284">                serializer.writeWithFormat(propertyValue, format);</span>
+            }
+<span class="fc" id="L286">            return;</span>
+        }
+
+<span class="fc bfc" id="L289" title="All 2 branches covered.">        if (fieldInfo.unwrapped) {</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">            if (valueSerializer instanceof JavaBeanSerializer) {</span>
+<span class="fc" id="L291">                JavaBeanSerializer javaBeanSerializer = (JavaBeanSerializer) valueSerializer;</span>
+<span class="fc" id="L292">                javaBeanSerializer.write(serializer, propertyValue, fieldInfo.name, fieldInfo.fieldType, fieldFeatures, true);</span>
+<span class="fc" id="L293">                return;</span>
+            }
+
+<span class="fc bfc" id="L296" title="All 2 branches covered.">            if (valueSerializer instanceof MapSerializer) {</span>
+<span class="fc" id="L297">                MapSerializer mapSerializer = (MapSerializer) valueSerializer;</span>
+<span class="fc" id="L298">                mapSerializer.write(serializer, propertyValue, fieldInfo.name, fieldInfo.fieldType, fieldFeatures, true);</span>
+<span class="fc" id="L299">                return;</span>
+            }
+        }
+
+<span class="fc bfc" id="L303" title="All 6 branches covered.">        if ((features &amp; SerializerFeature.WriteClassName.mask) != 0</span>
+                &amp;&amp; valueClass != fieldInfo.fieldClass
+                &amp;&amp; valueSerializer instanceof JavaBeanSerializer) {
+<span class="fc" id="L306">            ((JavaBeanSerializer) valueSerializer).write(serializer, propertyValue, fieldInfo.name, fieldInfo.fieldType, fieldFeatures, false);</span>
+<span class="fc" id="L307">            return;</span>
+        }
+
+<span class="pc bpc" id="L310" title="1 of 6 branches missed.">        if (browserCompatible &amp;&amp; (fieldInfo.fieldClass == long.class || fieldInfo.fieldClass == Long.class)) {</span>
+<span class="fc" id="L311">            long value = (Long) propertyValue;</span>
+<span class="fc bfc" id="L312" title="All 4 branches covered.">            if (value &gt; 9007199254740991L || value &lt; -9007199254740991L) {</span>
+<span class="fc" id="L313">                serializer.getWriter().writeString(Long.toString(value));</span>
+<span class="fc" id="L314">                return;</span>
+            }
+        }
+
+<span class="fc" id="L318">        valueSerializer.write(serializer, propertyValue, fieldInfo.name, fieldInfo.fieldType, fieldFeatures);</span>
+<span class="fc" id="L319">    }</span>
+
+    static class RuntimeSerializerInfo {
+        final ObjectSerializer fieldSerializer;
+        final Class&lt;?&gt;         runtimeFieldClass;
+
+<span class="fc" id="L325">        public RuntimeSerializerInfo(ObjectSerializer fieldSerializer, Class&lt;?&gt; runtimeFieldClass){</span>
+<span class="fc" id="L326">            this.fieldSerializer = fieldSerializer;</span>
+<span class="fc" id="L327">            this.runtimeFieldClass = runtimeFieldClass;</span>
+<span class="fc" id="L328">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

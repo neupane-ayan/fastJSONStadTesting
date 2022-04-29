@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SqlDateDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">SqlDateDeserializer.java</span></div><h1>SqlDateDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Date;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONScanner;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.util.TypeUtils;
+
+public class SqlDateDeserializer extends AbstractDateDeserializer implements ObjectDeserializer {
+
+<span class="fc" id="L18">    public final static SqlDateDeserializer instance = new SqlDateDeserializer();</span>
+<span class="fc" id="L19">    public final static SqlDateDeserializer instance_timestamp = new SqlDateDeserializer(true);</span>
+    
+<span class="fc" id="L21">    private boolean                           timestamp = false;</span>
+    
+<span class="fc" id="L23">    public SqlDateDeserializer() {</span>
+        
+<span class="fc" id="L25">    }</span>
+    
+<span class="fc" id="L27">    public SqlDateDeserializer(boolean timestmap) {</span>
+<span class="fc" id="L28">        this.timestamp = true;</span>
+<span class="fc" id="L29">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    protected &lt;T&gt; T cast(DefaultJSONParser parser, Type clazz, Object fieldName, Object val) {
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (timestamp) {</span>
+<span class="fc" id="L34">            return castTimestamp(parser, clazz, fieldName, val);</span>
+        }
+        
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (val == null) {</span>
+<span class="fc" id="L38">            return null;</span>
+        }
+
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (val instanceof java.util.Date) {</span>
+<span class="fc" id="L42">            val = new java.sql.Date(((Date) val).getTime());</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        } else if (val instanceof BigDecimal) {</span>
+<span class="fc" id="L44">            val = (T) new java.sql.Date(TypeUtils.longValue((BigDecimal) val));</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        } else if (val instanceof Number) {</span>
+<span class="fc" id="L46">            val = (T) new java.sql.Date(((Number) val).longValue());</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        } else if (val instanceof String) {</span>
+<span class="fc" id="L48">            String strVal = (String) val;</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            if (strVal.length() == 0) {</span>
+<span class="fc" id="L50">                return null;</span>
+            }
+
+            long longVal;
+
+<span class="fc" id="L55">            JSONScanner dateLexer = new JSONScanner(strVal);</span>
+            try {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                if (dateLexer.scanISO8601DateIfMatch()) {</span>
+<span class="fc" id="L58">                    longVal = dateLexer.getCalendar().getTimeInMillis();</span>
+                } else {
+
+<span class="fc" id="L61">                    DateFormat dateFormat = parser.getDateFormat();</span>
+                    try {
+<span class="fc" id="L63">                        java.util.Date date = (java.util.Date) dateFormat.parse(strVal);</span>
+<span class="fc" id="L64">                        java.sql.Date sqlDate = new java.sql.Date(date.getTime());</span>
+<span class="fc" id="L65">                        return (T) sqlDate;</span>
+<span class="fc" id="L66">                    } catch (ParseException e) {</span>
+                        // skip
+                    }
+
+<span class="fc" id="L70">                    longVal = Long.parseLong(strVal);</span>
+                }
+            } finally {
+<span class="fc" id="L73">                dateLexer.close();</span>
+            }
+<span class="fc" id="L75">            return (T) new java.sql.Date(longVal);</span>
+        } else {
+<span class="fc" id="L77">            throw new JSONException(&quot;parse error : &quot; + val);</span>
+        }
+
+<span class="fc" id="L80">        return (T) val;</span>
+    }
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+    protected &lt;T&gt; T castTimestamp(DefaultJSONParser parser, Type clazz, Object fieldName, Object val) {
+
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (val == null) {</span>
+<span class="fc" id="L87">            return null;</span>
+        }
+
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (val instanceof java.util.Date) {</span>
+<span class="fc" id="L91">            return (T) new java.sql.Timestamp(((Date) val).getTime());</span>
+        }
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (val instanceof BigDecimal) {</span>
+<span class="nc" id="L95">            return (T) new java.sql.Timestamp(TypeUtils.longValue((BigDecimal) val));</span>
+        }
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (val instanceof Number) {</span>
+<span class="fc" id="L99">            return (T) new java.sql.Timestamp(((Number) val).longValue());</span>
+        }
+
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (val instanceof String) {</span>
+<span class="fc" id="L103">            String strVal = (String) val;</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            if (strVal.length() == 0) {</span>
+<span class="fc" id="L105">                return null;</span>
+            }
+
+            long longVal;
+<span class="fc" id="L109">            JSONScanner dateLexer = new JSONScanner(strVal);</span>
+            try {
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                if (strVal.length() &gt; 19</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">                        &amp;&amp; strVal.charAt(4) == '-'</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">                        &amp;&amp; strVal.charAt(7) == '-'</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">                        &amp;&amp; strVal.charAt(10) == ' '</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">                        &amp;&amp; strVal.charAt(13) == ':'</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">                        &amp;&amp; strVal.charAt(16) == ':'</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">                        &amp;&amp; strVal.charAt(19) == '.') {</span>
+<span class="fc" id="L118">                    String dateFomartPattern = parser.getDateFomartPattern();</span>
+<span class="pc bpc" id="L119" title="2 of 4 branches missed.">                    if (dateFomartPattern.length() != strVal.length() &amp;&amp; dateFomartPattern == JSON.DEFFAULT_DATE_FORMAT) {</span>
+<span class="fc" id="L120">                        return (T) java.sql.Timestamp.valueOf(strVal);</span>
+                    }
+                }
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">                if (dateLexer.scanISO8601DateIfMatch(false)) {</span>
+<span class="fc" id="L125">                    longVal = dateLexer.getCalendar().getTimeInMillis();</span>
+                } else {
+<span class="fc" id="L127">                    DateFormat dateFormat = parser.getDateFormat();</span>
+                    try {
+<span class="nc" id="L129">                        java.util.Date date = (java.util.Date) dateFormat.parse(strVal);</span>
+<span class="nc" id="L130">                        java.sql.Timestamp sqlDate = new java.sql.Timestamp(date.getTime());</span>
+<span class="nc" id="L131">                        return (T) sqlDate;</span>
+<span class="fc" id="L132">                    } catch (ParseException e) {</span>
+                        // skip
+                    }
+
+<span class="fc" id="L136">                    longVal = Long.parseLong(strVal);</span>
+                }
+            } finally {
+<span class="fc" id="L139">                dateLexer.close();</span>
+            }
+
+<span class="fc" id="L142">            return (T) new java.sql.Timestamp(longVal);</span>
+        }
+
+<span class="fc" id="L145">        throw new JSONException(&quot;parse error&quot;);</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L149">        return JSONToken.LITERAL_INT;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

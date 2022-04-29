@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastJsonHttpMessageConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.spring</a> &gt; <span class="el_source">FastJsonHttpMessageConverter.java</span></div><h1>FastJsonHttpMessageConverter.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.spring;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONPObject;
+import com.alibaba.fastjson.serializer.SerializeFilter;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson.support.config.FastJsonConfig;
+import org.springframework.core.ResolvableType;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpInputMessage;
+import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.AbstractHttpMessageConverter;
+import org.springframework.http.converter.GenericHttpMessageConverter;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.util.StringUtils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Fastjson for Spring MVC Converter.
+ * &lt;p&gt;
+ * Compatible Spring MVC version 3.2+
+ *
+ * @author VictorZeng
+ * @see AbstractHttpMessageConverter
+ * @see GenericHttpMessageConverter
+ * @since 1.2.10
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * Supported return type:
+ * &lt;/p&gt;
+ * Simple object: Object
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * With property filter :FastJsonContainer[Object]
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Jsonp :MappingFastJsonValue[Object]
+ * &lt;/p&gt;
+ * Jsonp with property filter: MappingFastJsonValue[FastJsonContainer[Object]]
+ */
+
+public class FastJsonHttpMessageConverter extends AbstractHttpMessageConverter&lt;Object&gt;//
+        implements GenericHttpMessageConverter&lt;Object&gt; {
+
+<span class="fc" id="L59">    public static final MediaType APPLICATION_JAVASCRIPT = new MediaType(&quot;application&quot;, &quot;javascript&quot;);</span>
+
+<span class="fc" id="L61">    @Deprecated</span>
+    protected SerializerFeature[] features = new SerializerFeature[0];
+
+<span class="fc" id="L64">    @Deprecated</span>
+    protected SerializeFilter[] filters = new SerializeFilter[0];
+
+    @Deprecated
+    protected String dateFormat;
+
+<span class="fc" id="L70">    private boolean setLengthError = false;</span>
+
+    /**
+     * with fastJson config
+     */
+<span class="fc" id="L75">    private FastJsonConfig fastJsonConfig = new FastJsonConfig();</span>
+
+    /**
+     * @return the fastJsonConfig.
+     * @since 1.2.11
+     */
+    public FastJsonConfig getFastJsonConfig() {
+<span class="fc" id="L82">        return fastJsonConfig;</span>
+    }
+
+    /**
+     * @param fastJsonConfig the fastJsonConfig to set.
+     * @since 1.2.11
+     */
+    public void setFastJsonConfig(FastJsonConfig fastJsonConfig) {
+<span class="fc" id="L90">        this.fastJsonConfig = fastJsonConfig;</span>
+<span class="fc" id="L91">    }</span>
+
+    /**
+     * Can serialize/deserialize all types.
+     */
+    public FastJsonHttpMessageConverter() {
+
+<span class="fc" id="L98">        super(MediaType.ALL);</span>
+<span class="fc" id="L99">    }</span>
+
+    /**
+     * Gets charset.
+     *
+     * @return the charset
+     * @see FastJsonConfig#getCharset()
+     * @deprecated
+     */
+    @Deprecated
+    public Charset getCharset() {
+<span class="fc" id="L110">        return this.fastJsonConfig.getCharset();</span>
+    }
+
+    /**
+     * Sets charset.
+     *
+     * @param charset the charset
+     * @see FastJsonConfig#setCharset(Charset)
+     * @deprecated
+     */
+    @Deprecated
+    public void setCharset(Charset charset) {
+<span class="fc" id="L122">        this.fastJsonConfig.setCharset(charset);</span>
+<span class="fc" id="L123">    }</span>
+
+    /**
+     * Gets date format.
+     *
+     * @return the date format
+     * @see FastJsonConfig#getDateFormat()
+     * @deprecated
+     */
+    @Deprecated
+    public String getDateFormat() {
+<span class="fc" id="L134">        return this.fastJsonConfig.getDateFormat();</span>
+    }
+
+    /**
+     * Sets date format.
+     *
+     * @param dateFormat the date format
+     * @see FastJsonConfig#setDateFormat(String)
+     * @deprecated
+     */
+    @Deprecated
+    public void setDateFormat(String dateFormat) {
+<span class="fc" id="L146">        this.fastJsonConfig.setDateFormat(dateFormat);</span>
+<span class="fc" id="L147">    }</span>
+
+    /**
+     * Get features serializer feature [].
+     *
+     * @return the serializer feature []
+     * @see FastJsonConfig#getSerializerFeatures()
+     * @deprecated
+     */
+    @Deprecated
+    public SerializerFeature[] getFeatures() {
+<span class="fc" id="L158">        return this.fastJsonConfig.getSerializerFeatures();</span>
+    }
+
+    /**
+     * Sets features.
+     *
+     * @param features the features
+     * @see FastJsonConfig#setSerializerFeatures(SerializerFeature...)
+     * @deprecated
+     */
+    @Deprecated
+    public void setFeatures(SerializerFeature... features) {
+<span class="fc" id="L170">        this.fastJsonConfig.setSerializerFeatures(features);</span>
+<span class="fc" id="L171">    }</span>
+
+    /**
+     * Get filters serialize filter [].
+     *
+     * @return the serialize filter []
+     * @see FastJsonConfig#getSerializeFilters()
+     * @deprecated
+     */
+    @Deprecated
+    public SerializeFilter[] getFilters() {
+<span class="fc" id="L182">        return this.fastJsonConfig.getSerializeFilters();</span>
+    }
+
+    /**
+     * Sets filters.
+     *
+     * @param filters the filters
+     * @see FastJsonConfig#setSerializeFilters(SerializeFilter...)
+     * @deprecated
+     */
+    @Deprecated
+    public void setFilters(SerializeFilter... filters) {
+<span class="fc" id="L194">        this.fastJsonConfig.setSerializeFilters(filters);</span>
+<span class="fc" id="L195">    }</span>
+
+    /**
+     * Add serialize filter.
+     *
+     * @param filter the filter
+     * @see FastJsonConfig#setSerializeFilters(SerializeFilter...)
+     * @deprecated
+     */
+    @Deprecated
+    public void addSerializeFilter(SerializeFilter filter) {
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (filter == null) {</span>
+<span class="fc" id="L207">            return;</span>
+        }
+
+<span class="fc" id="L210">        int length = this.fastJsonConfig.getSerializeFilters().length;</span>
+<span class="fc" id="L211">        SerializeFilter[] filters = new SerializeFilter[length + 1];</span>
+<span class="fc" id="L212">        System.arraycopy(this.fastJsonConfig.getSerializeFilters(), 0, filters, 0, length);</span>
+<span class="fc" id="L213">        filters[filters.length - 1] = filter;</span>
+<span class="fc" id="L214">        this.fastJsonConfig.setSerializeFilters(filters);</span>
+<span class="fc" id="L215">    }</span>
+
+    @Override
+    protected boolean supports(Class&lt;?&gt; clazz) {
+<span class="fc" id="L219">        return true;</span>
+    }
+
+
+    public boolean canRead(Type type, Class&lt;?&gt; contextClass, MediaType mediaType) {
+<span class="fc" id="L224">        return super.canRead(contextClass, mediaType);</span>
+    }
+
+
+    public boolean canWrite(Type type, Class&lt;?&gt; clazz, MediaType mediaType) {
+<span class="fc" id="L229">        return super.canWrite(clazz, mediaType);</span>
+    }
+
+    /*
+     * @see org.springframework.http.converter.GenericHttpMessageConverter#read(java.lang.reflect.Type, java.lang.Class, org.springframework.http.HttpInputMessage)
+     */
+    public Object read(Type type, //
+                       Class&lt;?&gt; contextClass, //
+                       HttpInputMessage inputMessage //
+    ) throws IOException, HttpMessageNotReadableException {
+<span class="fc" id="L239">        return readType(getType(type, contextClass), inputMessage);</span>
+    }
+
+    /*
+     * @see org.springframework.http.converter.GenericHttpMessageConverter.write
+     */
+    public void write(Object o, Type type, MediaType contentType, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
+<span class="fc" id="L246">        super.write(o, contentType, outputMessage);// support StreamingHttpOutputMessage in spring4.0+</span>
+        //writeInternal(o, outputMessage);
+<span class="fc" id="L248">    }</span>
+
+
+    /*
+     * @see org.springframework.http.converter.AbstractHttpMessageConverter#readInternal(java.lang.Class, org.springframework.http.HttpInputMessage)
+     */
+    @Override
+    protected Object readInternal(Class&lt;?&gt; clazz, //
+                                  HttpInputMessage inputMessage //
+    ) throws IOException, HttpMessageNotReadableException {
+<span class="fc" id="L258">        return readType(getType(clazz, null), inputMessage);</span>
+    }
+
+    private Object readType(Type type, HttpInputMessage inputMessage) {
+
+        try {
+<span class="fc" id="L264">            InputStream in = inputMessage.getBody();</span>
+<span class="fc" id="L265">            return JSON.parseObject(in,</span>
+<span class="fc" id="L266">                    fastJsonConfig.getCharset(),</span>
+                    type,
+<span class="fc" id="L268">                    fastJsonConfig.getParserConfig(),</span>
+<span class="fc" id="L269">                    fastJsonConfig.getParseProcess(),</span>
+                    JSON.DEFAULT_PARSER_FEATURE,
+<span class="fc" id="L271">                    fastJsonConfig.getFeatures());</span>
+<span class="nc" id="L272">        } catch (JSONException ex) {</span>
+<span class="nc" id="L273">            throw new HttpMessageNotReadableException(&quot;JSON parse error: &quot; + ex.getMessage(), ex);</span>
+<span class="nc" id="L274">        } catch (IOException ex) {</span>
+<span class="nc" id="L275">            throw new HttpMessageNotReadableException(&quot;I/O error while reading input message&quot;, ex);</span>
+        }
+    }
+
+    @Override
+    protected void writeInternal(Object object, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
+
+<span class="fc" id="L282">        ByteArrayOutputStream outnew = new ByteArrayOutputStream();</span>
+        try {
+<span class="fc" id="L284">            HttpHeaders headers = outputMessage.getHeaders();</span>
+
+            //获取全局配置的filter
+<span class="fc" id="L287">            SerializeFilter[] globalFilters = fastJsonConfig.getSerializeFilters();</span>
+<span class="fc" id="L288">            List&lt;SerializeFilter&gt; allFilters = new ArrayList&lt;SerializeFilter&gt;(Arrays.asList(globalFilters));</span>
+
+<span class="fc" id="L290">            boolean isJsonp = false;</span>
+
+            //不知道为什么会有这行代码， 但是为了保持和原来的行为一致，还是保留下来
+<span class="fc" id="L293">            Object value = strangeCodeForJackson(object);</span>
+
+<span class="fc bfc" id="L295" title="All 2 branches covered.">            if (value instanceof FastJsonContainer) {</span>
+<span class="fc" id="L296">                FastJsonContainer fastJsonContainer = (FastJsonContainer) value;</span>
+<span class="fc" id="L297">                PropertyPreFilters filters = fastJsonContainer.getFilters();</span>
+<span class="fc" id="L298">                allFilters.addAll(filters.getFilters());</span>
+<span class="fc" id="L299">                value = fastJsonContainer.getValue();</span>
+            }
+
+            //revise 2017-10-23 ,
+            // 保持原有的MappingFastJsonValue对象的contentType不做修改 保持旧版兼容。
+            // 但是新的JSONPObject将返回标准的contentType：application/javascript ，不对是否有function进行判断
+<span class="fc bfc" id="L305" title="All 2 branches covered.">            if (value instanceof MappingFastJsonValue) {</span>
+<span class="fc bfc" id="L306" title="All 2 branches covered.">                if (!StringUtils.isEmpty(((MappingFastJsonValue) value).getJsonpFunction())) {</span>
+<span class="fc" id="L307">                    isJsonp = true;</span>
+                }
+<span class="fc bfc" id="L309" title="All 2 branches covered.">            } else if (value instanceof JSONPObject) {</span>
+<span class="fc" id="L310">                isJsonp = true;</span>
+            }
+
+
+<span class="fc" id="L314">            int len = JSON.writeJSONStringWithFastJsonConfig(outnew, //</span>
+<span class="fc" id="L315">                    fastJsonConfig.getCharset(), //</span>
+                    value, //
+<span class="fc" id="L317">                    fastJsonConfig.getSerializeConfig(), //</span>
+                    //fastJsonConfig.getSerializeFilters(), //
+<span class="fc" id="L319">                    allFilters.toArray(new SerializeFilter[allFilters.size()]),</span>
+<span class="fc" id="L320">                    fastJsonConfig.getDateFormat(), //</span>
+                    JSON.DEFAULT_GENERATE_FEATURE, //
+<span class="fc" id="L322">                    fastJsonConfig.getSerializerFeatures());</span>
+
+<span class="fc bfc" id="L324" title="All 2 branches covered.">            if (isJsonp) {</span>
+<span class="fc" id="L325">                headers.setContentType(APPLICATION_JAVASCRIPT);</span>
+            }
+
+<span class="pc bpc" id="L328" title="2 of 4 branches missed.">            if (fastJsonConfig.isWriteContentLength() &amp;&amp; !setLengthError) {</span>
+                try {
+<span class="fc" id="L330">                    headers.setContentLength(len);</span>
+<span class="nc" id="L331">                } catch (UnsupportedOperationException ex) {</span>
+                    // skip
+<span class="nc" id="L333">                    setLengthError = true;</span>
+<span class="fc" id="L334">                }</span>
+            }
+
+<span class="fc" id="L337">            outnew.writeTo(outputMessage.getBody());</span>
+
+<span class="nc" id="L339">        } catch (JSONException ex) {</span>
+<span class="nc" id="L340">            throw new HttpMessageNotWritableException(&quot;Could not write JSON: &quot; + ex.getMessage(), ex);</span>
+        } finally {
+<span class="fc" id="L342">            outnew.close();</span>
+        }
+<span class="fc" id="L344">    }</span>
+
+    private Object strangeCodeForJackson(Object obj) {
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">        if (obj != null) {</span>
+<span class="fc" id="L348">            String className = obj.getClass().getName();</span>
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">            if (&quot;com.fasterxml.jackson.databind.node.ObjectNode&quot;.equals(className)) {</span>
+<span class="nc" id="L350">                return obj.toString();</span>
+            }
+        }
+<span class="fc" id="L353">        return obj;</span>
+    }
+
+    protected Type getType(Type type, Class&lt;?&gt; contextClass) {
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">        if (Spring4TypeResolvableHelper.isSupport()) {</span>
+<span class="fc" id="L358">            return Spring4TypeResolvableHelper.getType(type, contextClass);</span>
+        }
+
+<span class="nc" id="L361">        return type;</span>
+    }
+
+
+    private static class Spring4TypeResolvableHelper {
+        private static boolean hasClazzResolvableType;
+
+        static {
+            try {
+<span class="fc" id="L370">                Class.forName(&quot;org.springframework.core.ResolvableType&quot;);</span>
+<span class="fc" id="L371">                hasClazzResolvableType = true;</span>
+<span class="nc" id="L372">            } catch (ClassNotFoundException e) {</span>
+<span class="nc" id="L373">                hasClazzResolvableType = false;</span>
+<span class="fc" id="L374">            }</span>
+<span class="fc" id="L375">        }</span>
+
+        private static boolean isSupport() {
+<span class="fc" id="L378">            return hasClazzResolvableType;</span>
+        }
+
+
+        private static Type getType(Type type, Class&lt;?&gt; contextClass) {
+<span class="fc bfc" id="L383" title="All 2 branches covered.">            if (contextClass != null) {</span>
+<span class="fc" id="L384">                ResolvableType resolvedType = ResolvableType.forType(type);</span>
+<span class="fc bfc" id="L385" title="All 2 branches covered.">                if (type instanceof TypeVariable) {</span>
+<span class="fc" id="L386">                    ResolvableType resolvedTypeVariable = resolveVariable((TypeVariable) type, ResolvableType.forClass(contextClass));</span>
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">                    if (resolvedTypeVariable != ResolvableType.NONE) {</span>
+<span class="fc" id="L388">                        return resolvedTypeVariable.resolve();</span>
+                    }
+<span class="pc bpc" id="L390" title="1 of 4 branches missed.">                } else if (type instanceof ParameterizedType &amp;&amp; resolvedType.hasUnresolvableGenerics()) {</span>
+<span class="nc" id="L391">                    ParameterizedType parameterizedType = (ParameterizedType) type;</span>
+<span class="nc" id="L392">                    Class&lt;?&gt;[] generics = new Class[parameterizedType.getActualTypeArguments().length];</span>
+<span class="nc" id="L393">                    Type[] typeArguments = parameterizedType.getActualTypeArguments();</span>
+
+<span class="nc bnc" id="L395" title="All 2 branches missed.">                    for (int i = 0; i &lt; typeArguments.length; ++i) {</span>
+<span class="nc" id="L396">                        Type typeArgument = typeArguments[i];</span>
+<span class="nc bnc" id="L397" title="All 2 branches missed.">                        if (typeArgument instanceof TypeVariable) {</span>
+<span class="nc" id="L398">                            ResolvableType resolvedTypeArgument = resolveVariable((TypeVariable) typeArgument, ResolvableType.forClass(contextClass));</span>
+<span class="nc bnc" id="L399" title="All 2 branches missed.">                            if (resolvedTypeArgument != ResolvableType.NONE) {</span>
+<span class="nc" id="L400">                                generics[i] = resolvedTypeArgument.resolve();</span>
+                            } else {
+<span class="nc" id="L402">                                generics[i] = ResolvableType.forType(typeArgument).resolve();</span>
+                            }
+<span class="nc" id="L404">                        } else {</span>
+<span class="nc" id="L405">                            generics[i] = ResolvableType.forType(typeArgument).resolve();</span>
+                        }
+                    }
+
+<span class="nc" id="L409">                    return ResolvableType.forClassWithGenerics(resolvedType.getRawClass(), generics).getType();</span>
+                }
+            }
+
+<span class="fc" id="L413">            return type;</span>
+        }
+
+        private static ResolvableType resolveVariable(TypeVariable&lt;?&gt; typeVariable, ResolvableType contextType) {
+            ResolvableType resolvedType;
+<span class="fc bfc" id="L418" title="All 2 branches covered.">            if (contextType.hasGenerics()) {</span>
+<span class="fc" id="L419">                resolvedType = ResolvableType.forType(typeVariable, contextType);</span>
+<span class="pc bpc" id="L420" title="1 of 2 branches missed.">                if (resolvedType.resolve() != null) {</span>
+<span class="fc" id="L421">                    return resolvedType;</span>
+                }
+            }
+
+<span class="fc" id="L425">            ResolvableType superType = contextType.getSuperType();</span>
+<span class="pc bpc" id="L426" title="1 of 2 branches missed.">            if (superType != ResolvableType.NONE) {</span>
+<span class="fc" id="L427">                resolvedType = resolveVariable(typeVariable, superType);</span>
+<span class="pc bpc" id="L428" title="1 of 2 branches missed.">                if (resolvedType.resolve() != null) {</span>
+<span class="fc" id="L429">                    return resolvedType;</span>
+                }
+            }
+<span class="nc bnc" id="L432" title="All 2 branches missed.">            for (ResolvableType ifc : contextType.getInterfaces()) {</span>
+<span class="nc" id="L433">                resolvedType = resolveVariable(typeVariable, ifc);</span>
+<span class="nc bnc" id="L434" title="All 2 branches missed.">                if (resolvedType.resolve() != null) {</span>
+<span class="nc" id="L435">                    return resolvedType;</span>
+                }
+            }
+<span class="nc" id="L438">            return ResolvableType.NONE;</span>
+        }
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

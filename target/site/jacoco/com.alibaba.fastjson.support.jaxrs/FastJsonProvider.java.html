@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastJsonProvider.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.jaxrs</a> &gt; <span class="el_source">FastJsonProvider.java</span></div><h1>FastJsonProvider.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.jaxrs;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.serializer.SerializeFilter;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson.support.config.FastJsonConfig;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.*;
+import javax.ws.rs.ext.*;
+import java.io.*;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Fastjson for JAX-RS Provider.
+ *
+ * @author smallnest
+ * @author VictorZeng
+ * @see MessageBodyReader
+ * @see MessageBodyWriter
+ * @since 1.2.9
+ */
+
+@Provider
+@Consumes({MediaType.WILDCARD})
+@Produces({MediaType.WILDCARD})
+public class FastJsonProvider //
+        implements MessageBodyReader&lt;Object&gt;, MessageBodyWriter&lt;Object&gt; {
+
+    /**
+     * These are classes that we never use for reading
+     * (never try to deserialize instances of these types).
+     */
+<span class="fc" id="L43">    public final static Class&lt;?&gt;[] DEFAULT_UNREADABLES = new Class&lt;?&gt;[]{</span>
+            InputStream.class, Reader.class
+    };
+
+    /**
+     * These are classes that we never use for writing
+     * (never try to serialize instances of these types).
+     */
+<span class="fc" id="L51">    public final static Class&lt;?&gt;[] DEFAULT_UNWRITABLES = new Class&lt;?&gt;[]{</span>
+            InputStream.class,
+            OutputStream.class, Writer.class,
+            StreamingOutput.class, Response.class
+    };
+
+<span class="fc" id="L57">    @Deprecated</span>
+<span class="fc" id="L58">    protected Charset charset = Charset.forName(&quot;UTF-8&quot;);</span>
+
+<span class="fc" id="L60">    @Deprecated</span>
+    protected SerializerFeature[] features = new SerializerFeature[0];
+
+<span class="fc" id="L63">    @Deprecated</span>
+    protected SerializeFilter[] filters = new SerializeFilter[0];
+
+    @Deprecated
+    protected String dateFormat;
+
+    /**
+     * Injectable context object used to locate configured
+     * instance of {@link FastJsonConfig} to use for actual
+     * serialization.
+     */
+    @Context
+    protected Providers providers;
+
+    /**
+     * with fastJson config
+     */
+<span class="fc" id="L80">    private FastJsonConfig fastJsonConfig = new FastJsonConfig();</span>
+
+    /**
+     * allow serialize/deserialize types in clazzes
+     */
+<span class="fc" id="L85">    private Class&lt;?&gt;[] clazzes = null;</span>
+
+    /**
+     * whether set PrettyFormat while exec WriteTo()
+     */
+    private boolean pretty;
+
+
+    /**
+     * @return the fastJsonConfig.
+     * @since 1.2.11
+     */
+    public FastJsonConfig getFastJsonConfig() {
+<span class="fc" id="L98">        return fastJsonConfig;</span>
+    }
+
+    /**
+     * @param fastJsonConfig the fastJsonConfig to set.
+     * @since 1.2.11
+     */
+    public void setFastJsonConfig(FastJsonConfig fastJsonConfig) {
+<span class="fc" id="L106">        this.fastJsonConfig = fastJsonConfig;</span>
+<span class="fc" id="L107">    }</span>
+
+    /**
+     * Can serialize/deserialize all types.
+     */
+<span class="fc" id="L112">    public FastJsonProvider() {</span>
+
+<span class="fc" id="L114">    }</span>
+
+    /**
+     * Only serialize/deserialize all types in clazzes.
+     */
+<span class="fc" id="L119">    public FastJsonProvider(Class&lt;?&gt;[] clazzes) {</span>
+<span class="fc" id="L120">        this.clazzes = clazzes;</span>
+<span class="fc" id="L121">    }</span>
+
+    /**
+     * Set pretty format
+     */
+    public FastJsonProvider setPretty(boolean p) {
+<span class="nc" id="L127">        this.pretty = p;</span>
+<span class="nc" id="L128">        return this;</span>
+    }
+
+    /**
+     * Instantiates a new Fast json provider.
+     *
+     * @param charset the charset
+     * @see FastJsonConfig#setCharset(Charset)
+     * @deprecated
+     */
+    @Deprecated
+<span class="fc" id="L139">    public FastJsonProvider(String charset) {</span>
+<span class="fc" id="L140">        this.fastJsonConfig.setCharset(Charset.forName(charset));</span>
+<span class="fc" id="L141">    }</span>
+
+    /**
+     * Gets charset.
+     *
+     * @return the charset
+     * @see FastJsonConfig#getCharset()
+     * @deprecated
+     */
+    @Deprecated
+    public Charset getCharset() {
+<span class="fc" id="L152">        return this.fastJsonConfig.getCharset();</span>
+    }
+
+    /**
+     * Sets charset.
+     *
+     * @param charset the charset
+     * @see FastJsonConfig#setCharset(Charset)
+     * @deprecated
+     */
+    @Deprecated
+    public void setCharset(Charset charset) {
+<span class="fc" id="L164">        this.fastJsonConfig.setCharset(charset);</span>
+<span class="fc" id="L165">    }</span>
+
+    /**
+     * Gets date format.
+     *
+     * @return the date format
+     * @see FastJsonConfig#getDateFormat()
+     * @deprecated
+     */
+    @Deprecated
+    public String getDateFormat() {
+<span class="fc" id="L176">        return this.fastJsonConfig.getDateFormat();</span>
+    }
+
+    /**
+     * Sets date format.
+     *
+     * @param dateFormat the date format
+     * @see FastJsonConfig#setDateFormat(String)
+     * @deprecated
+     */
+    @Deprecated
+    public void setDateFormat(String dateFormat) {
+<span class="fc" id="L188">        this.fastJsonConfig.setDateFormat(dateFormat);</span>
+<span class="fc" id="L189">    }</span>
+
+    /**
+     * Get features serializer feature [].
+     *
+     * @return the serializer feature []
+     * @see FastJsonConfig#getFeatures()
+     * @deprecated
+     */
+    @Deprecated
+    public SerializerFeature[] getFeatures() {
+<span class="fc" id="L200">        return this.fastJsonConfig.getSerializerFeatures();</span>
+    }
+
+    /**
+     * Sets features.
+     *
+     * @param features the features
+     * @see FastJsonConfig#setFeatures(Feature...)
+     * @deprecated
+     */
+    @Deprecated
+    public void setFeatures(SerializerFeature... features) {
+<span class="fc" id="L212">        this.fastJsonConfig.setSerializerFeatures(features);</span>
+<span class="fc" id="L213">    }</span>
+
+    /**
+     * Get filters serialize filter [].
+     *
+     * @return the serialize filter []
+     * @see FastJsonConfig#getSerializeFilters()
+     * @deprecated
+     */
+    @Deprecated
+    public SerializeFilter[] getFilters() {
+<span class="fc" id="L224">        return this.fastJsonConfig.getSerializeFilters();</span>
+    }
+
+    /**
+     * Sets filters.
+     *
+     * @param filters the filters
+     * @see FastJsonConfig#setSerializeFilters(SerializeFilter...)
+     * @deprecated
+     */
+    @Deprecated
+    public void setFilters(SerializeFilter... filters) {
+<span class="fc" id="L236">        this.fastJsonConfig.setSerializeFilters(filters);</span>
+<span class="fc" id="L237">    }</span>
+
+    /**
+     * Check some are interface/abstract classes to exclude.
+     *
+     * @param type    the type
+     * @param classes the classes
+     * @return the boolean
+     */
+    protected boolean isAssignableFrom(Class&lt;?&gt; type, Class&lt;?&gt;[] classes) {
+
+<span class="fc bfc" id="L248" title="All 2 branches covered.">        if (type == null)</span>
+<span class="fc" id="L249">            return false;</span>
+
+        //  there are some other abstract/interface types to exclude too:
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        for (Class&lt;?&gt; cls : classes) {</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">            if (cls.isAssignableFrom(type)) {</span>
+<span class="fc" id="L254">                return false;</span>
+            }
+        }
+
+<span class="fc" id="L258">        return true;</span>
+    }
+
+    /**
+     * Check whether a class can be serialized or deserialized. It can check
+     * based on packages, annotations on entities or explicit classes.
+     *
+     * @param type class need to check
+     * @return true if valid
+     */
+    protected boolean isValidType(Class&lt;?&gt; type, Annotation[] classAnnotations) {
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">        if (type == null)</span>
+<span class="nc" id="L270">            return false;</span>
+
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        if (clazzes != null) {</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">            for (Class&lt;?&gt; cls : clazzes) { // must strictly equal. Don't check</span>
+                // inheritance
+<span class="fc bfc" id="L275" title="All 2 branches covered.">                if (cls == type)</span>
+<span class="fc" id="L276">                    return true;</span>
+            }
+
+<span class="fc" id="L279">            return false;</span>
+        }
+
+<span class="fc" id="L282">        return true;</span>
+    }
+
+    /**
+     * Check media type like &quot;application/json&quot;.
+     *
+     * @param mediaType media type
+     * @return true if the media type is valid
+     */
+    protected boolean hasMatchingMediaType(MediaType mediaType) {
+<span class="fc bfc" id="L292" title="All 2 branches covered.">        if (mediaType != null) {</span>
+<span class="fc" id="L293">            String subtype = mediaType.getSubtype();</span>
+
+<span class="fc bfc" id="L295" title="All 2 branches covered.">            return ((&quot;json&quot;.equalsIgnoreCase(subtype)) //</span>
+<span class="fc bfc" id="L296" title="All 2 branches covered.">                    || (subtype.endsWith(&quot;+json&quot;)) //</span>
+<span class="fc bfc" id="L297" title="All 2 branches covered.">                    || (&quot;javascript&quot;.equals(subtype)) //</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">                    || (&quot;x-javascript&quot;.equals(subtype)) //</span>
+<span class="fc bfc" id="L299" title="All 2 branches covered.">                    || (&quot;x-json&quot;.equals(subtype)) //</span>
+<span class="fc bfc" id="L300" title="All 2 branches covered.">                    || (&quot;x-www-form-urlencoded&quot;.equalsIgnoreCase(subtype)) //</span>
+<span class="pc bpc" id="L301" title="1 of 2 branches missed.">                    || (subtype.endsWith(&quot;x-www-form-urlencoded&quot;)));</span>
+        }
+<span class="fc" id="L303">        return true;</span>
+    }
+
+    /**
+     * Method that JAX-RS container calls to try to check whether given value
+     * (of specified type) can be serialized by this provider.
+     */
+    public boolean isWriteable(Class&lt;?&gt; type, //
+                               Type genericType, //
+                               Annotation[] annotations, //
+                               MediaType mediaType) {
+<span class="fc bfc" id="L314" title="All 2 branches covered.">        if (!hasMatchingMediaType(mediaType)) {</span>
+<span class="fc" id="L315">            return false;</span>
+        }
+
+<span class="fc bfc" id="L318" title="All 2 branches covered.">        if (!isAssignableFrom(type, DEFAULT_UNWRITABLES))</span>
+<span class="fc" id="L319">            return false;</span>
+
+<span class="fc" id="L321">        return isValidType(type, annotations);</span>
+    }
+
+    /**
+     * Method that JAX-RS container calls to try to figure out serialized length
+     * of given value. always return -1 to denote &quot;not known&quot;.
+     */
+    public long getSize(Object t, //
+                        Class&lt;?&gt; type, //
+                        Type genericType, //
+                        Annotation[] annotations, //
+                        MediaType mediaType) {
+<span class="fc" id="L333">        return -1;</span>
+    }
+
+    /**
+     * Method that JAX-RS container calls to serialize given value.
+     */
+    public void writeTo(Object obj, //
+                        Class&lt;?&gt; type, //
+                        Type genericType, //
+                        Annotation[] annotations, //
+                        MediaType mediaType, //
+                        MultivaluedMap&lt;String, Object&gt; httpHeaders, //
+                        OutputStream entityStream //
+    ) throws IOException, WebApplicationException {
+
+<span class="fc" id="L348">        FastJsonConfig fastJsonConfig = locateConfigProvider(type, mediaType);</span>
+
+<span class="fc" id="L350">        SerializerFeature[] serializerFeatures = fastJsonConfig.getSerializerFeatures();</span>
+
+<span class="pc bpc" id="L352" title="1 of 2 branches missed.">        if (pretty) {</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">            if (serializerFeatures == null)</span>
+<span class="nc" id="L354">                serializerFeatures = new SerializerFeature[]{SerializerFeature.PrettyFormat};</span>
+            else {
+<span class="nc" id="L356">                List&lt;SerializerFeature&gt; featureList = new ArrayList&lt;SerializerFeature&gt;(Arrays.asList(serializerFeatures));</span>
+<span class="nc" id="L357">                featureList.add(SerializerFeature.PrettyFormat);</span>
+<span class="nc" id="L358">                serializerFeatures = featureList.toArray(serializerFeatures);</span>
+            }
+<span class="nc" id="L360">            fastJsonConfig.setSerializerFeatures(serializerFeatures);</span>
+        }
+
+        try {
+<span class="fc" id="L364">            JSON.writeJSONStringWithFastJsonConfig(entityStream, //</span>
+<span class="fc" id="L365">                    fastJsonConfig.getCharset(), //</span>
+                    obj, //
+<span class="fc" id="L367">                    fastJsonConfig.getSerializeConfig(), //</span>
+<span class="fc" id="L368">                    fastJsonConfig.getSerializeFilters(), //</span>
+<span class="fc" id="L369">                    fastJsonConfig.getDateFormat(), //</span>
+                    JSON.DEFAULT_GENERATE_FEATURE, //
+<span class="fc" id="L371">                    fastJsonConfig.getSerializerFeatures());</span>
+
+<span class="fc" id="L373">            entityStream.flush();</span>
+
+<span class="nc" id="L375">        } catch (JSONException ex) {</span>
+
+<span class="nc" id="L377">            throw new WebApplicationException(ex);</span>
+<span class="fc" id="L378">        }</span>
+<span class="fc" id="L379">    }</span>
+
+    /**
+     * Method that JAX-RS container calls to try to check whether values of
+     * given type (and media type) can be deserialized by this provider.
+     */
+    public boolean isReadable(Class&lt;?&gt; type, //
+                              Type genericType, //
+                              Annotation[] annotations, //
+                              MediaType mediaType) {
+
+<span class="fc bfc" id="L390" title="All 2 branches covered.">        if (!hasMatchingMediaType(mediaType)) {</span>
+<span class="fc" id="L391">            return false;</span>
+        }
+
+<span class="fc bfc" id="L394" title="All 2 branches covered.">        if (!isAssignableFrom(type, DEFAULT_UNREADABLES))</span>
+<span class="fc" id="L395">            return false;</span>
+
+<span class="fc" id="L397">        return isValidType(type, annotations);</span>
+    }
+
+    /**
+     * Method that JAX-RS container calls to deserialize given value.
+     */
+    public Object readFrom(Class&lt;Object&gt; type, //
+                           Type genericType, //
+                           Annotation[] annotations, //
+                           MediaType mediaType, //
+                           MultivaluedMap&lt;String, String&gt; httpHeaders, //
+                           InputStream entityStream) throws IOException, WebApplicationException {
+
+        try {
+<span class="fc" id="L411">            FastJsonConfig fastJsonConfig = locateConfigProvider(type, mediaType);</span>
+
+<span class="fc" id="L413">            return JSON.parseObject(entityStream,</span>
+<span class="fc" id="L414">                    fastJsonConfig.getCharset(),</span>
+                    genericType,
+<span class="fc" id="L416">                    fastJsonConfig.getParserConfig(),</span>
+<span class="fc" id="L417">                    fastJsonConfig.getParseProcess(),</span>
+                    JSON.DEFAULT_PARSER_FEATURE,
+<span class="fc" id="L419">                    fastJsonConfig.getFeatures());</span>
+
+<span class="fc" id="L421">        } catch (JSONException ex) {</span>
+
+<span class="fc" id="L423">            throw new WebApplicationException(ex);</span>
+        }
+    }
+
+    /**
+     * Helper method that is called if no config has been explicitly configured.
+     */
+    protected FastJsonConfig locateConfigProvider(Class&lt;?&gt; type, MediaType mediaType) {
+
+<span class="fc bfc" id="L432" title="All 2 branches covered.">        if (providers != null) {</span>
+
+<span class="fc" id="L434">            ContextResolver&lt;FastJsonConfig&gt; resolver = providers.getContextResolver(FastJsonConfig.class, mediaType);</span>
+
+<span class="fc bfc" id="L436" title="All 2 branches covered.">            if (resolver == null) {</span>
+
+<span class="fc" id="L438">                resolver = providers.getContextResolver(FastJsonConfig.class, null);</span>
+            }
+
+<span class="fc bfc" id="L441" title="All 2 branches covered.">            if (resolver != null) {</span>
+
+<span class="fc" id="L443">                return resolver.getContext(type);</span>
+            }
+        }
+
+<span class="fc" id="L447">        return fastJsonConfig;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

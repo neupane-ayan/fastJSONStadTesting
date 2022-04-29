@@ -1,0 +1,869 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaBeanSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">JavaBeanSerializer.java</span></div><h1>JavaBeanSerializer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2018 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.serializer;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.PropertyNamingStrategy;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
+import com.alibaba.fastjson.util.FieldInfo;
+import com.alibaba.fastjson.util.TypeUtils;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public class JavaBeanSerializer extends SerializeFilterable implements ObjectSerializer {
+    // serializers
+    protected final FieldSerializer[] getters;
+    protected final FieldSerializer[] sortedGetters;
+    
+    protected final SerializeBeanInfo  beanInfo;
+
+    private transient volatile long[] hashArray;
+    private transient volatile short[] hashArrayMapping;
+    
+    public JavaBeanSerializer(Class&lt;?&gt; beanType){
+<span class="fc" id="L56">        this(beanType, (Map&lt;String, String&gt;) null);</span>
+<span class="fc" id="L57">    }</span>
+
+    public JavaBeanSerializer(Class&lt;?&gt; beanType, String... aliasList){
+<span class="fc" id="L60">        this(beanType, createAliasMap(aliasList));</span>
+<span class="fc" id="L61">    }</span>
+
+    static Map&lt;String, String&gt; createAliasMap(String... aliasList) {
+<span class="fc" id="L64">        Map&lt;String, String&gt; aliasMap = new HashMap&lt;String, String&gt;();</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (String alias : aliasList) {</span>
+<span class="fc" id="L66">            aliasMap.put(alias, alias);</span>
+        }
+
+<span class="fc" id="L69">        return aliasMap;</span>
+    }
+
+    public JSONType getJSONType() {
+<span class="fc" id="L73">        return beanInfo.jsonType;</span>
+    }
+
+    /**
+     * @since 1.2.42
+     */
+    public Class&lt;?&gt; getType() {
+<span class="nc" id="L80">        return beanInfo.beanType;</span>
+    }
+
+    public JavaBeanSerializer(Class&lt;?&gt; beanType, Map&lt;String, String&gt; aliasMap){
+<span class="fc" id="L84">        this(TypeUtils.buildBeanInfo(beanType, aliasMap, null));</span>
+<span class="fc" id="L85">    }</span>
+    
+<span class="fc" id="L87">    public JavaBeanSerializer(SerializeBeanInfo beanInfo) {</span>
+<span class="fc" id="L88">        this.beanInfo = beanInfo;</span>
+        
+<span class="fc" id="L90">        sortedGetters = new FieldSerializer[beanInfo.sortedFields.length];</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        for (int i = 0; i &lt; sortedGetters.length; ++i) {</span>
+<span class="fc" id="L92">            sortedGetters[i] = new FieldSerializer(beanInfo.beanType, beanInfo.sortedFields[i]);</span>
+        }
+        
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (beanInfo.fields == beanInfo.sortedFields) {</span>
+<span class="fc" id="L96">            getters = sortedGetters;</span>
+        } else {
+<span class="fc" id="L98">            getters = new FieldSerializer[beanInfo.fields.length];</span>
+<span class="fc" id="L99">            boolean hashNotMatch = false;</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            for (int i = 0; i &lt; getters.length; ++i) {</span>
+<span class="fc" id="L101">                FieldSerializer fieldSerializer = getFieldSerializer(beanInfo.fields[i].name);</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">                if (fieldSerializer == null) {</span>
+<span class="fc" id="L103">                    hashNotMatch = true;</span>
+<span class="fc" id="L104">                    break;</span>
+                }
+<span class="fc" id="L106">                getters[i] = fieldSerializer;</span>
+            }
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            if (hashNotMatch) {</span>
+<span class="fc" id="L109">                System.arraycopy(sortedGetters, 0, getters, 0, sortedGetters.length);</span>
+            }
+        }
+
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (beanInfo.jsonType != null) {</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            for (Class&lt;? extends SerializeFilter&gt; filterClass : beanInfo.jsonType.serialzeFilters()) {</span>
+                try {
+<span class="fc" id="L116">                    SerializeFilter filter = filterClass.getConstructor().newInstance();</span>
+<span class="fc" id="L117">                    this.addFilter(filter);</span>
+<span class="nc" id="L118">                } catch (Exception e) {</span>
+                    // skip
+<span class="fc" id="L120">                }</span>
+            }
+        }
+<span class="fc" id="L123">    }</span>
+
+    public void writeDirectNonContext(JSONSerializer serializer, //
+                      Object object, //
+                      Object fieldName, //
+                      Type fieldType, //
+                      int features) throws IOException {
+<span class="fc" id="L130">        write(serializer, object, fieldName, fieldType, features);</span>
+<span class="fc" id="L131">    }</span>
+    
+    public void writeAsArray(JSONSerializer serializer, //
+                                       Object object, //
+                                       Object fieldName, //
+                                       Type fieldType, //
+                                       int features) throws IOException {
+<span class="nc" id="L138">        write(serializer, object, fieldName, fieldType, features);</span>
+<span class="nc" id="L139">    }</span>
+    
+    public void writeAsArrayNonContext(JSONSerializer serializer, //
+                                       Object object, //
+                                       Object fieldName, //
+                                       Type fieldType, //
+                                       int features) throws IOException {
+<span class="nc" id="L146">        write(serializer, object, fieldName, fieldType, features);</span>
+<span class="nc" id="L147">    }</span>
+
+    public void write(JSONSerializer serializer, //
+                      Object object, //
+                      Object fieldName, //
+                      Type fieldType, //
+                      int features) throws IOException {
+<span class="fc" id="L154">        write(serializer, object, fieldName, fieldType, features, false);</span>
+<span class="fc" id="L155">    }</span>
+
+    public void writeNoneASM(JSONSerializer serializer, //
+                      Object object, //
+                      Object fieldName, //
+                      Type fieldType, //
+                      int features) throws IOException {
+<span class="fc" id="L162">        write(serializer, object, fieldName, fieldType, features, false);</span>
+<span class="fc" id="L163">    }</span>
+
+    protected void write(JSONSerializer serializer, //
+                      Object object, //
+                      Object fieldName, //
+                      Type fieldType, //
+                      int features,
+                      boolean unwrapped
+    ) throws IOException {
+<span class="fc" id="L172">        SerializeWriter out = serializer.out;</span>
+
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L175">            out.writeNull();</span>
+<span class="fc" id="L176">            return;</span>
+        }
+
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (writeReference(serializer, object, features)) {</span>
+<span class="fc" id="L180">            return;</span>
+        }
+
+        final FieldSerializer[] getters;
+
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        if (out.sortField) {</span>
+<span class="fc" id="L186">            getters = this.sortedGetters;</span>
+        } else {
+<span class="fc" id="L188">            getters = this.getters;</span>
+        }
+
+<span class="fc" id="L191">        SerialContext parent = serializer.context;</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        if (!this.beanInfo.beanType.isEnum()) {</span>
+<span class="fc" id="L193">            serializer.setContext(parent, object, fieldName, this.beanInfo.features, features);</span>
+        }
+
+<span class="fc" id="L196">        final boolean writeAsArray = isWriteAsArray(serializer, features);</span>
+
+<span class="fc" id="L198">        FieldSerializer errorFieldSerializer = null;</span>
+        try {
+<span class="fc bfc" id="L200" title="All 2 branches covered.">            final char startSeperator = writeAsArray ? '[' : '{';</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">            final char endSeperator = writeAsArray ? ']' : '}';</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            if (!unwrapped) {</span>
+<span class="fc" id="L203">                out.append(startSeperator);</span>
+            }
+
+<span class="fc bfc" id="L206" title="All 4 branches covered.">            if (getters.length &gt; 0 &amp;&amp; out.isEnabled(SerializerFeature.PrettyFormat)) {</span>
+<span class="fc" id="L207">                serializer.incrementIndent();</span>
+<span class="fc" id="L208">                serializer.println();</span>
+            }
+
+<span class="fc" id="L211">            boolean commaFlag = false;</span>
+
+<span class="fc bfc" id="L213" title="All 4 branches covered.">            if ((this.beanInfo.features &amp; SerializerFeature.WriteClassName.mask) != 0</span>
+                ||(features &amp; SerializerFeature.WriteClassName.mask) != 0
+<span class="fc bfc" id="L215" title="All 2 branches covered.">                || serializer.isWriteClassName(fieldType, object)) {</span>
+<span class="fc" id="L216">                Class&lt;?&gt; objClass = object.getClass();</span>
+
+                final Type type;
+<span class="fc bfc" id="L219" title="All 4 branches covered.">                if (objClass != fieldType &amp;&amp; fieldType instanceof WildcardType) {</span>
+<span class="fc" id="L220">                    type = TypeUtils.getClass(fieldType);</span>
+                } else {
+<span class="fc" id="L222">                    type = fieldType;</span>
+                }
+
+<span class="fc bfc" id="L225" title="All 2 branches covered.">                if (objClass != type) {</span>
+<span class="fc" id="L226">                    writeClassName(serializer, beanInfo.typeKey, object);</span>
+<span class="fc" id="L227">                    commaFlag = true;</span>
+                }
+            }
+
+<span class="fc bfc" id="L231" title="All 2 branches covered.">            char seperator = commaFlag ? ',' : '\0';</span>
+
+<span class="fc" id="L233">            final boolean writeClassName = out.isEnabled(SerializerFeature.WriteClassName);</span>
+<span class="fc" id="L234">            char newSeperator = this.writeBefore(serializer, object, seperator);</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">            commaFlag = newSeperator == ',';</span>
+
+<span class="fc" id="L237">            final boolean skipTransient = out.isEnabled(SerializerFeature.SkipTransientField);</span>
+<span class="fc" id="L238">            final boolean ignoreNonFieldGetter = out.isEnabled(SerializerFeature.IgnoreNonFieldGetter);</span>
+
+<span class="fc bfc" id="L240" title="All 2 branches covered.">            for (int i = 0; i &lt; getters.length; ++i) {</span>
+<span class="fc" id="L241">                FieldSerializer fieldSerializer = getters[i];</span>
+
+<span class="fc" id="L243">                Field field = fieldSerializer.fieldInfo.field;</span>
+<span class="fc" id="L244">                FieldInfo fieldInfo = fieldSerializer.fieldInfo;</span>
+<span class="fc" id="L245">                String fieldInfoName = fieldInfo.name;</span>
+<span class="fc" id="L246">                Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+
+<span class="fc" id="L248">                final boolean fieldUseSingleQuotes = SerializerFeature.isEnabled(out.features, fieldInfo.serialzeFeatures, SerializerFeature.UseSingleQuotes);</span>
+<span class="fc bfc" id="L249" title="All 4 branches covered.">                final boolean directWritePrefix = out.quoteFieldNames &amp;&amp; !fieldUseSingleQuotes;</span>
+
+<span class="fc bfc" id="L251" title="All 2 branches covered.">                if (skipTransient) {</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">                    if (fieldInfo.fieldTransient) {</span>
+<span class="fc" id="L253">                        continue;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L257" title="All 2 branches covered.">                if (ignoreNonFieldGetter) {</span>
+<span class="fc bfc" id="L258" title="All 2 branches covered.">                    if (field == null) {</span>
+<span class="fc" id="L259">                        continue;</span>
+                    }
+                }
+
+<span class="fc" id="L263">                boolean notApply = false;</span>
+<span class="fc bfc" id="L264" title="All 2 branches covered.">                if ((!this.applyName(serializer, object, fieldInfoName)) //</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">                    || !this.applyLabel(serializer, fieldInfo.label)) {</span>
+<span class="fc bfc" id="L266" title="All 2 branches covered.">                    if (writeAsArray) {</span>
+<span class="fc" id="L267">                        notApply = true;</span>
+                    } else {
+                        continue;
+                    }
+                }
+
+<span class="fc bfc" id="L273" title="All 2 branches covered.">                if (fieldInfoName.equals(beanInfo.typeKey)</span>
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">                        &amp;&amp; serializer.isWriteClassName(fieldType, object)) {</span>
+<span class="fc" id="L275">                    continue;</span>
+                }
+
+                Object propertyValue;
+
+<span class="fc bfc" id="L280" title="All 2 branches covered.">                if (notApply) {</span>
+<span class="fc" id="L281">                    propertyValue = null;</span>
+                } else {
+                    try {
+<span class="fc" id="L284">                        propertyValue = fieldSerializer.getPropertyValueDirect(object);</span>
+<span class="fc" id="L285">                    } catch (InvocationTargetException ex) {</span>
+<span class="fc" id="L286">                        errorFieldSerializer = fieldSerializer;</span>
+<span class="fc bfc" id="L287" title="All 2 branches covered.">                        if (out.isEnabled(SerializerFeature.IgnoreErrorGetter)) {</span>
+<span class="fc" id="L288">                            propertyValue = null;</span>
+                        } else {
+<span class="fc" id="L290">                            throw ex;</span>
+                        }
+<span class="fc" id="L292">                    }</span>
+                }
+
+<span class="fc bfc" id="L295" title="All 2 branches covered.">                if (!this.apply(serializer, object, fieldInfoName, propertyValue)) {</span>
+<span class="fc" id="L296">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L299" title="All 4 branches covered.">                if (fieldClass == String.class &amp;&amp; &quot;trim&quot;.equals(fieldInfo.format)) {</span>
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">                    if (propertyValue != null) {</span>
+<span class="fc" id="L301">                        propertyValue = ((String) propertyValue).trim();</span>
+                    }
+                }
+
+<span class="fc" id="L305">                String key = fieldInfoName;</span>
+<span class="fc" id="L306">                key = this.processKey(serializer, object, key, propertyValue);</span>
+
+<span class="fc" id="L308">                Object originalValue = propertyValue;</span>
+<span class="fc" id="L309">                propertyValue = this.processValue(serializer, fieldSerializer.fieldContext, object, fieldInfoName,</span>
+                                                        propertyValue, features);
+
+<span class="fc bfc" id="L312" title="All 2 branches covered.">                if (propertyValue == null) {</span>
+<span class="fc" id="L313">                    int serialzeFeatures = fieldInfo.serialzeFeatures;</span>
+<span class="fc" id="L314">                    JSONField jsonField = fieldInfo.getAnnotation();</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">                    if (beanInfo.jsonType != null) {</span>
+<span class="fc" id="L316">                        serialzeFeatures |= SerializerFeature.of(beanInfo.jsonType.serialzeFeatures());</span>
+                    }
+                    // beanInfo.jsonType
+<span class="fc bfc" id="L319" title="All 4 branches covered.">                    if (jsonField != null &amp;&amp; !&quot;&quot;.equals(jsonField.defaultValue())) {</span>
+<span class="fc" id="L320">                        propertyValue = jsonField.defaultValue();</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">                    } else if (fieldClass == Boolean.class) {</span>
+<span class="fc" id="L322">                        int defaultMask = SerializerFeature.WriteNullBooleanAsFalse.mask;</span>
+<span class="fc" id="L323">                        final int mask = defaultMask | SerializerFeature.WriteMapNullValue.mask;</span>
+<span class="fc bfc" id="L324" title="All 6 branches covered.">                        if ((!writeAsArray) &amp;&amp; (serialzeFeatures &amp; mask) == 0 &amp;&amp; (out.features &amp; mask) == 0) {</span>
+<span class="fc" id="L325">                            continue;</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">                        } else if ((serialzeFeatures &amp; defaultMask) != 0) {</span>
+<span class="fc" id="L327">                            propertyValue = false;</span>
+<span class="fc bfc" id="L328" title="All 4 branches covered.">                        } else if ((out.features &amp; defaultMask) != 0</span>
+                                &amp;&amp; (serialzeFeatures &amp; SerializerFeature.WriteMapNullValue.mask) == 0) {
+<span class="fc" id="L330">                            propertyValue = false;</span>
+                        }
+<span class="fc bfc" id="L332" title="All 2 branches covered.">                    } else if (fieldClass == String.class) {</span>
+<span class="fc" id="L333">                        int defaultMask = SerializerFeature.WriteNullStringAsEmpty.mask;</span>
+<span class="fc" id="L334">                        final int mask = defaultMask | SerializerFeature.WriteMapNullValue.mask;</span>
+<span class="fc bfc" id="L335" title="All 6 branches covered.">                        if ((!writeAsArray) &amp;&amp; (serialzeFeatures &amp; mask) == 0 &amp;&amp; (out.features &amp; mask) == 0) {</span>
+<span class="fc" id="L336">                            continue;</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">                        } else if ((serialzeFeatures &amp; defaultMask) != 0) {</span>
+<span class="fc" id="L338">                            propertyValue = &quot;&quot;;</span>
+<span class="fc bfc" id="L339" title="All 4 branches covered.">                        } else if ((out.features &amp; defaultMask) != 0</span>
+                                &amp;&amp; (serialzeFeatures &amp; SerializerFeature.WriteMapNullValue.mask) == 0) {
+<span class="fc" id="L341">                            propertyValue = &quot;&quot;;</span>
+                        }
+<span class="fc bfc" id="L343" title="All 2 branches covered.">                    } else if (Number.class.isAssignableFrom(fieldClass)) {</span>
+<span class="fc" id="L344">                        int defaultMask = SerializerFeature.WriteNullNumberAsZero.mask;</span>
+<span class="fc" id="L345">                        final int mask = defaultMask | SerializerFeature.WriteMapNullValue.mask;</span>
+<span class="fc bfc" id="L346" title="All 6 branches covered.">                        if ((!writeAsArray) &amp;&amp; (serialzeFeatures &amp; mask) == 0 &amp;&amp; (out.features &amp; mask) == 0) {</span>
+<span class="fc" id="L347">                            continue;</span>
+<span class="fc bfc" id="L348" title="All 2 branches covered.">                        } else if ((serialzeFeatures &amp; defaultMask) != 0) {</span>
+<span class="fc" id="L349">                            propertyValue = 0;</span>
+<span class="fc bfc" id="L350" title="All 4 branches covered.">                        } else if ((out.features &amp; defaultMask) != 0</span>
+                                &amp;&amp; (serialzeFeatures &amp; SerializerFeature.WriteMapNullValue.mask) == 0) {
+<span class="fc" id="L352">                            propertyValue = 0;</span>
+                        }
+<span class="fc bfc" id="L354" title="All 2 branches covered.">                    } else if (Collection.class.isAssignableFrom(fieldClass)) {</span>
+<span class="fc" id="L355">                        int defaultMask = SerializerFeature.WriteNullListAsEmpty.mask;</span>
+<span class="fc" id="L356">                        final int mask = defaultMask | SerializerFeature.WriteMapNullValue.mask;</span>
+<span class="fc bfc" id="L357" title="All 6 branches covered.">                        if ((!writeAsArray) &amp;&amp; (serialzeFeatures &amp; mask) == 0 &amp;&amp; (out.features &amp; mask) == 0) {</span>
+<span class="fc" id="L358">                            continue;</span>
+<span class="fc bfc" id="L359" title="All 2 branches covered.">                        } else if ((serialzeFeatures &amp; defaultMask) != 0) {</span>
+<span class="fc" id="L360">                            propertyValue = Collections.emptyList();</span>
+<span class="pc bpc" id="L361" title="1 of 4 branches missed.">                        } else if ((out.features &amp; defaultMask) != 0</span>
+                                &amp;&amp; (serialzeFeatures &amp; SerializerFeature.WriteMapNullValue.mask) == 0) {
+<span class="fc" id="L363">                            propertyValue = Collections.emptyList();</span>
+                        }
+<span class="pc bpc" id="L365" title="1 of 4 branches missed.">                    } else if ((!writeAsArray) &amp;&amp; (!fieldSerializer.writeNull)</span>
+<span class="fc bfc" id="L366" title="All 4 branches covered.">                            &amp;&amp; !out.isEnabled(SerializerFeature.WriteMapNullValue.mask)</span>
+                            &amp;&amp; (serialzeFeatures &amp; SerializerFeature.WriteMapNullValue.mask) == 0) { 
+<span class="fc" id="L368">                        continue;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L372" title="All 8 branches covered.">                if (propertyValue != null  //</span>
+                        &amp;&amp; (out.notWriteDefaultValue //
+                        || (fieldInfo.serialzeFeatures &amp; SerializerFeature.NotWriteDefaultValue.mask) != 0 //
+                        || (beanInfo.features &amp; SerializerFeature.NotWriteDefaultValue.mask) != 0 //
+                        )) {
+<span class="fc" id="L377">                    Class&lt;?&gt; fieldCLass = fieldInfo.fieldClass;</span>
+<span class="pc bpc" id="L378" title="1 of 4 branches missed.">                    if (fieldCLass == byte.class &amp;&amp; propertyValue instanceof Byte</span>
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">                        &amp;&amp; ((Byte) propertyValue).byteValue() == 0) {</span>
+<span class="fc" id="L380">                        continue;</span>
+<span class="pc bpc" id="L381" title="1 of 4 branches missed.">                    } else if (fieldCLass == short.class &amp;&amp; propertyValue instanceof Short</span>
+<span class="pc bpc" id="L382" title="1 of 2 branches missed.">                               &amp;&amp; ((Short) propertyValue).shortValue() == 0) {</span>
+<span class="fc" id="L383">                        continue;</span>
+<span class="pc bpc" id="L384" title="1 of 4 branches missed.">                    } else if (fieldCLass == int.class &amp;&amp; propertyValue instanceof Integer</span>
+<span class="fc bfc" id="L385" title="All 2 branches covered.">                               &amp;&amp; ((Integer) propertyValue).intValue() == 0) {</span>
+<span class="fc" id="L386">                        continue;</span>
+<span class="pc bpc" id="L387" title="1 of 4 branches missed.">                    } else if (fieldCLass == long.class &amp;&amp; propertyValue instanceof Long</span>
+<span class="pc bpc" id="L388" title="1 of 2 branches missed.">                               &amp;&amp; ((Long) propertyValue).longValue() == 0L) {</span>
+<span class="fc" id="L389">                        continue;</span>
+<span class="pc bpc" id="L390" title="1 of 4 branches missed.">                    } else if (fieldCLass == float.class &amp;&amp; propertyValue instanceof Float</span>
+<span class="pc bpc" id="L391" title="1 of 2 branches missed.">                               &amp;&amp; ((Float) propertyValue).floatValue() == 0F) {</span>
+<span class="fc" id="L392">                        continue;</span>
+<span class="pc bpc" id="L393" title="1 of 4 branches missed.">                    } else if (fieldCLass == double.class &amp;&amp; propertyValue instanceof Double</span>
+<span class="pc bpc" id="L394" title="1 of 2 branches missed.">                               &amp;&amp; ((Double) propertyValue).doubleValue() == 0D) {</span>
+<span class="fc" id="L395">                        continue;</span>
+<span class="pc bpc" id="L396" title="1 of 4 branches missed.">                    } else if (fieldCLass == boolean.class &amp;&amp; propertyValue instanceof Boolean</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">                               &amp;&amp; !((Boolean) propertyValue).booleanValue()) {</span>
+<span class="fc" id="L398">                        continue;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L402" title="All 2 branches covered.">                if (commaFlag) {</span>
+<span class="fc bfc" id="L403" title="All 4 branches covered.">                    if (fieldInfo.unwrapped</span>
+                            &amp;&amp; propertyValue instanceof Map
+<span class="fc bfc" id="L405" title="All 2 branches covered.">                            &amp;&amp; ((Map) propertyValue).size() == 0) {</span>
+<span class="fc" id="L406">                        continue;</span>
+                    }
+
+<span class="fc" id="L409">                    out.write(',');</span>
+<span class="fc bfc" id="L410" title="All 2 branches covered.">                    if (out.isEnabled(SerializerFeature.PrettyFormat)) {</span>
+<span class="fc" id="L411">                        serializer.println();</span>
+                    }
+                }
+
+<span class="fc bfc" id="L415" title="All 2 branches covered.">                if (key != fieldInfoName) {</span>
+<span class="fc bfc" id="L416" title="All 2 branches covered.">                    if (!writeAsArray) {</span>
+<span class="fc" id="L417">                        out.writeFieldName(key, true);</span>
+                    }
+
+<span class="fc" id="L420">                    serializer.write(propertyValue);</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">                } else if (originalValue != propertyValue) {</span>
+<span class="pc bpc" id="L422" title="1 of 2 branches missed.">                    if (!writeAsArray) {</span>
+<span class="fc" id="L423">                        fieldSerializer.writePrefix(serializer);</span>
+                    }
+<span class="fc" id="L425">                    serializer.write(propertyValue);</span>
+                } else {
+<span class="fc bfc" id="L427" title="All 2 branches covered.">                    if (!writeAsArray) {</span>
+<span class="fc" id="L428">                        boolean isMap = Map.class.isAssignableFrom(fieldClass);</span>
+<span class="fc bfc" id="L429" title="All 6 branches covered.">                        boolean isJavaBean = !fieldClass.isPrimitive() &amp;&amp; !fieldClass.getName().startsWith(&quot;java.&quot;) || fieldClass == Object.class;</span>
+<span class="fc bfc" id="L430" title="All 8 branches covered.">                        if (writeClassName || !fieldInfo.unwrapped || !(isMap || isJavaBean)) {</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">                            if (directWritePrefix) {</span>
+<span class="fc" id="L432">                                out.write(fieldInfo.name_chars, 0, fieldInfo.name_chars.length);</span>
+                            } else {
+<span class="fc" id="L434">                                fieldSerializer.writePrefix(serializer);</span>
+                            }
+                        }
+                    }
+
+<span class="fc bfc" id="L439" title="All 2 branches covered.">                    if (!writeAsArray) {</span>
+<span class="fc" id="L440">                        JSONField fieldAnnotation = fieldInfo.getAnnotation();</span>
+<span class="fc bfc" id="L441" title="All 6 branches covered.">                        if (fieldClass == String.class &amp;&amp; (fieldAnnotation == null || fieldAnnotation.serializeUsing() == Void.class)) {</span>
+<span class="fc bfc" id="L442" title="All 2 branches covered.">                            if (propertyValue == null) {</span>
+<span class="fc" id="L443">                                int serialzeFeatures = fieldSerializer.features;</span>
+<span class="fc bfc" id="L444" title="All 2 branches covered.">                                if (beanInfo.jsonType != null) {</span>
+<span class="fc" id="L445">                                    serialzeFeatures |= SerializerFeature.of(beanInfo.jsonType.serialzeFeatures());</span>
+                                }
+<span class="pc bpc" id="L447" title="1 of 4 branches missed.">                                if ((out.features &amp; SerializerFeature.WriteNullStringAsEmpty.mask) != 0</span>
+                                        &amp;&amp; (serialzeFeatures &amp; SerializerFeature.WriteMapNullValue.mask) == 0) {
+<span class="nc" id="L449">                                    out.writeString(&quot;&quot;);</span>
+<span class="pc bpc" id="L450" title="1 of 2 branches missed.">                                } else if ((serialzeFeatures &amp; SerializerFeature.WriteNullStringAsEmpty.mask) != 0) {</span>
+<span class="nc" id="L451">                                    out.writeString(&quot;&quot;);</span>
+                                } else {
+<span class="fc" id="L453">                                    out.writeNull();</span>
+                                }
+<span class="fc" id="L455">                            } else {</span>
+<span class="fc" id="L456">                                String propertyValueString = (String) propertyValue;</span>
+
+<span class="fc bfc" id="L458" title="All 2 branches covered.">                                if (fieldUseSingleQuotes) {</span>
+<span class="fc" id="L459">                                    out.writeStringWithSingleQuote(propertyValueString);</span>
+                                } else {
+<span class="fc" id="L461">                                    out.writeStringWithDoubleQuote(propertyValueString, (char) 0);</span>
+                                }
+<span class="fc" id="L463">                            }</span>
+                        } else {
+<span class="fc bfc" id="L465" title="All 4 branches covered.">                            if (fieldInfo.unwrapped</span>
+                                    &amp;&amp; propertyValue instanceof Map
+<span class="fc bfc" id="L467" title="All 2 branches covered.">                                    &amp;&amp; ((Map) propertyValue).size() == 0) {</span>
+<span class="fc" id="L468">                                commaFlag = false;</span>
+<span class="fc" id="L469">                                continue;</span>
+                            }
+
+<span class="fc" id="L472">                            fieldSerializer.writeValue(serializer, propertyValue);</span>
+                        }
+<span class="fc" id="L474">                    } else {</span>
+<span class="fc" id="L475">                        fieldSerializer.writeValue(serializer, propertyValue);</span>
+                    }
+                }
+
+<span class="fc" id="L479">                boolean fieldUnwrappedNull = false;</span>
+<span class="fc bfc" id="L480" title="All 4 branches covered.">                if (fieldInfo.unwrapped</span>
+                        &amp;&amp; propertyValue instanceof Map) {
+<span class="fc" id="L482">                    Map map = ((Map) propertyValue);</span>
+<span class="pc bpc" id="L483" title="1 of 2 branches missed.">                    if (map.size() == 0) {</span>
+<span class="nc" id="L484">                        fieldUnwrappedNull = true;</span>
+<span class="pc bpc" id="L485" title="1 of 2 branches missed.">                    } else if (!serializer.isEnabled(SerializerFeature.WriteMapNullValue)){</span>
+<span class="fc" id="L486">                        boolean hasNotNull = false;</span>
+<span class="fc bfc" id="L487" title="All 2 branches covered.">                        for (Object value : map.values()) {</span>
+<span class="fc bfc" id="L488" title="All 2 branches covered.">                            if (value != null) {</span>
+<span class="fc" id="L489">                                hasNotNull = true;</span>
+<span class="fc" id="L490">                                break;</span>
+                            }
+<span class="fc" id="L492">                        }</span>
+<span class="fc bfc" id="L493" title="All 2 branches covered.">                        if (!hasNotNull) {</span>
+<span class="fc" id="L494">                            fieldUnwrappedNull = true;</span>
+                        }
+                    }
+                }
+
+<span class="fc bfc" id="L499" title="All 2 branches covered.">                if (!fieldUnwrappedNull) {</span>
+<span class="fc" id="L500">                    commaFlag = true;</span>
+                }
+            }
+
+<span class="fc bfc" id="L504" title="All 2 branches covered.">            this.writeAfter(serializer, object, commaFlag ? ',' : '\0');</span>
+
+<span class="fc bfc" id="L506" title="All 4 branches covered.">            if (getters.length &gt; 0 &amp;&amp; out.isEnabled(SerializerFeature.PrettyFormat)) {</span>
+<span class="fc" id="L507">                serializer.decrementIdent();</span>
+<span class="fc" id="L508">                serializer.println();</span>
+            }
+
+<span class="fc bfc" id="L511" title="All 2 branches covered.">            if (!unwrapped) {</span>
+<span class="fc" id="L512">                out.append(endSeperator);</span>
+            }
+<span class="fc" id="L514">        } catch (Exception e) {</span>
+<span class="fc" id="L515">            String errorMessage = &quot;write javaBean error, fastjson version &quot; + JSON.VERSION;</span>
+<span class="pc bpc" id="L516" title="1 of 2 branches missed.">            if (object != null) {</span>
+<span class="fc" id="L517">                errorMessage += &quot;, class &quot; + object.getClass().getName();</span>
+            }
+<span class="pc bpc" id="L519" title="1 of 2 branches missed.">            if (fieldName != null) {</span>
+<span class="nc" id="L520">                errorMessage += &quot;, fieldName : &quot; + fieldName;</span>
+<span class="pc bpc" id="L521" title="2 of 4 branches missed.">            } else if (errorFieldSerializer != null &amp;&amp; errorFieldSerializer.fieldInfo != null) {</span>
+<span class="fc" id="L522">                FieldInfo fieldInfo = errorFieldSerializer.fieldInfo;</span>
+<span class="pc bpc" id="L523" title="1 of 2 branches missed.">                if (fieldInfo.method != null) {</span>
+<span class="fc" id="L524">                    errorMessage += &quot;, method : &quot; + fieldInfo.method.getName();</span>
+                } else {
+<span class="nc" id="L526">                    errorMessage += &quot;, fieldName : &quot; + errorFieldSerializer.fieldInfo.name;</span>
+                }
+            }
+<span class="pc bpc" id="L529" title="1 of 2 branches missed.">            if (e.getMessage() != null) {</span>
+<span class="nc" id="L530">                errorMessage += (&quot;, &quot; + e.getMessage());</span>
+            }
+
+<span class="fc" id="L533">            Throwable cause = null;</span>
+<span class="pc bpc" id="L534" title="1 of 2 branches missed.">            if (e instanceof InvocationTargetException) {</span>
+<span class="fc" id="L535">                cause = e.getCause();</span>
+            }
+<span class="pc bpc" id="L537" title="1 of 2 branches missed.">            if (cause == null) {</span>
+<span class="nc" id="L538">                cause = e;</span>
+            }
+
+<span class="fc" id="L541">            throw new JSONException(errorMessage, cause);</span>
+        } finally {
+<span class="fc" id="L543">            serializer.context = parent;</span>
+        }
+<span class="fc" id="L545">    }</span>
+
+    protected void writeClassName(JSONSerializer serializer, String typeKey, Object object) {
+<span class="fc bfc" id="L548" title="All 2 branches covered.">        if (typeKey == null) {</span>
+<span class="fc" id="L549">            typeKey = serializer.config.typeKey;</span>
+        }
+<span class="fc" id="L551">        serializer.out.writeFieldName(typeKey, false);</span>
+<span class="fc" id="L552">        String typeName = this.beanInfo.typeName;</span>
+<span class="fc bfc" id="L553" title="All 2 branches covered.">        if (typeName == null) {</span>
+<span class="fc" id="L554">            Class&lt;?&gt; clazz = object.getClass();</span>
+
+<span class="pc bpc" id="L556" title="1 of 2 branches missed.">            if (TypeUtils.isProxy(clazz)) {</span>
+<span class="nc" id="L557">                clazz = clazz.getSuperclass();</span>
+            }
+
+<span class="fc" id="L560">            typeName = clazz.getName();</span>
+        }
+<span class="fc" id="L562">        serializer.write(typeName);</span>
+<span class="fc" id="L563">    }</span>
+
+    public boolean writeReference(JSONSerializer serializer, Object object, int fieldFeatures) {
+<span class="fc" id="L566">        SerialContext context = serializer.context;</span>
+<span class="fc" id="L567">        int mask = SerializerFeature.DisableCircularReferenceDetect.mask;</span>
+<span class="fc bfc" id="L568" title="All 6 branches covered.">        if (context == null || (context.features &amp; mask) != 0 || (fieldFeatures &amp; mask) != 0) {</span>
+<span class="fc" id="L569">            return false;</span>
+        }
+
+<span class="pc bpc" id="L572" title="1 of 4 branches missed.">        if (serializer.references != null &amp;&amp; serializer.references.containsKey(object)) {</span>
+<span class="fc" id="L573">            serializer.writeReference(object);</span>
+<span class="fc" id="L574">            return true;</span>
+        } else {
+<span class="fc" id="L576">            return false;</span>
+        }
+    }
+    
+    protected boolean isWriteAsArray(JSONSerializer serializer) {
+<span class="nc" id="L581">        return isWriteAsArray(serializer, 0);   </span>
+    }
+
+    protected boolean isWriteAsArray(JSONSerializer serializer, int fieldFeatrues) {
+<span class="fc" id="L585">        final int mask = SerializerFeature.BeanToArray.mask;</span>
+<span class="fc bfc" id="L586" title="All 6 branches covered.">        return (beanInfo.features &amp; mask) != 0 //</span>
+                || serializer.out.beanToArray //
+                || (fieldFeatrues &amp; mask) != 0;
+    }
+    
+    public Object getFieldValue(Object object, String key) {
+<span class="nc" id="L592">        FieldSerializer fieldDeser = getFieldSerializer(key);</span>
+<span class="nc bnc" id="L593" title="All 2 branches missed.">        if (fieldDeser == null) {</span>
+<span class="nc" id="L594">            throw new JSONException(&quot;field not found. &quot; + key);</span>
+        }
+        
+        try {
+<span class="nc" id="L598">            return fieldDeser.getPropertyValue(object);</span>
+<span class="nc" id="L599">        } catch (InvocationTargetException ex) {</span>
+<span class="nc" id="L600">            throw new JSONException(&quot;getFieldValue error.&quot; + key, ex);</span>
+<span class="nc" id="L601">        } catch (IllegalAccessException ex) {</span>
+<span class="nc" id="L602">            throw new JSONException(&quot;getFieldValue error.&quot; + key, ex);</span>
+        }
+    }
+
+    public Object getFieldValue(Object object, String key, long keyHash, boolean throwFieldNotFoundException) {
+<span class="fc" id="L607">        FieldSerializer fieldDeser = getFieldSerializer(keyHash);</span>
+<span class="fc bfc" id="L608" title="All 2 branches covered.">        if (fieldDeser == null) {</span>
+<span class="pc bpc" id="L609" title="1 of 2 branches missed.">            if (throwFieldNotFoundException) {</span>
+<span class="nc" id="L610">                throw new JSONException(&quot;field not found. &quot; + key);</span>
+            }
+<span class="fc" id="L612">            return null;</span>
+        }
+
+        try {
+<span class="fc" id="L616">            return fieldDeser.getPropertyValue(object);</span>
+<span class="fc" id="L617">        } catch (InvocationTargetException ex) {</span>
+<span class="fc" id="L618">            throw new JSONException(&quot;getFieldValue error.&quot; + key, ex);</span>
+<span class="nc" id="L619">        } catch (IllegalAccessException ex) {</span>
+<span class="nc" id="L620">            throw new JSONException(&quot;getFieldValue error.&quot; + key, ex);</span>
+        }
+    }
+
+    public FieldSerializer getFieldSerializer(String key) {
+<span class="pc bpc" id="L625" title="1 of 2 branches missed.">        if (key == null) {</span>
+<span class="nc" id="L626">            return null;</span>
+        }
+
+<span class="fc" id="L629">        int low = 0;</span>
+<span class="fc" id="L630">        int high = sortedGetters.length - 1;</span>
+
+<span class="fc bfc" id="L632" title="All 2 branches covered.">        while (low &lt;= high) {</span>
+<span class="fc" id="L633">            int mid = (low + high) &gt;&gt;&gt; 1;</span>
+
+<span class="fc" id="L635">            String fieldName = sortedGetters[mid].fieldInfo.name;</span>
+
+<span class="fc" id="L637">            int cmp = fieldName.compareTo(key);</span>
+
+<span class="fc bfc" id="L639" title="All 2 branches covered.">            if (cmp &lt; 0) {</span>
+<span class="fc" id="L640">                low = mid + 1;</span>
+<span class="fc bfc" id="L641" title="All 2 branches covered.">            } else if (cmp &gt; 0) {</span>
+<span class="fc" id="L642">                high = mid - 1;</span>
+            } else {
+<span class="fc" id="L644">                return sortedGetters[mid]; // key found</span>
+            }
+<span class="fc" id="L646">        }</span>
+
+<span class="fc" id="L648">        return null; // key not found.</span>
+    }
+
+    public FieldSerializer getFieldSerializer(long hash) {
+<span class="fc" id="L652">        PropertyNamingStrategy[] namingStrategies = null;</span>
+<span class="fc bfc" id="L653" title="All 2 branches covered.">        if (this.hashArray == null) {</span>
+<span class="fc" id="L654">            namingStrategies = PropertyNamingStrategy.values();</span>
+
+<span class="fc" id="L656">            long[] hashArray = new long[sortedGetters.length * namingStrategies.length];</span>
+<span class="fc" id="L657">            int index = 0;</span>
+<span class="fc bfc" id="L658" title="All 2 branches covered.">            for (int i = 0; i &lt; sortedGetters.length; i++) {</span>
+<span class="fc" id="L659">                String name = sortedGetters[i].fieldInfo.name;</span>
+<span class="fc" id="L660">                hashArray[index++] = TypeUtils.fnv1a_64(name);</span>
+
+<span class="fc bfc" id="L662" title="All 2 branches covered.">                for (int j = 0; j &lt; namingStrategies.length; j++) {</span>
+<span class="fc" id="L663">                    String name_t = namingStrategies[j].translate(name);</span>
+<span class="fc bfc" id="L664" title="All 2 branches covered.">                    if (name.equals(name_t)) {</span>
+<span class="fc" id="L665">                        continue;</span>
+                    }
+<span class="fc" id="L667">                    hashArray[index++] = TypeUtils.fnv1a_64(name_t);</span>
+                }
+            }
+<span class="fc" id="L670">            Arrays.sort(hashArray, 0, index);</span>
+
+<span class="fc" id="L672">            this.hashArray = new long[index];</span>
+<span class="fc" id="L673">            System.arraycopy(hashArray, 0, this.hashArray, 0, index);</span>
+        }
+
+<span class="fc" id="L676">        int pos = Arrays.binarySearch(hashArray, hash);</span>
+<span class="fc bfc" id="L677" title="All 2 branches covered.">        if (pos &lt; 0) {</span>
+<span class="fc" id="L678">            return null;</span>
+        }
+
+<span class="fc bfc" id="L681" title="All 2 branches covered.">        if (hashArrayMapping == null) {</span>
+<span class="fc bfc" id="L682" title="All 2 branches covered.">            if (namingStrategies == null) {</span>
+<span class="fc" id="L683">                namingStrategies = PropertyNamingStrategy.values();</span>
+            }
+
+<span class="fc" id="L686">            short[] mapping = new short[hashArray.length];</span>
+<span class="fc" id="L687">            Arrays.fill(mapping, (short) -1);</span>
+<span class="fc bfc" id="L688" title="All 2 branches covered.">            for (int i = 0; i &lt; sortedGetters.length; i++) {</span>
+<span class="fc" id="L689">                String name = sortedGetters[i].fieldInfo.name;</span>
+
+<span class="fc" id="L691">                int p = Arrays.binarySearch(hashArray</span>
+<span class="fc" id="L692">                        , TypeUtils.fnv1a_64(name));</span>
+<span class="pc bpc" id="L693" title="1 of 2 branches missed.">                if (p &gt;= 0) {</span>
+<span class="fc" id="L694">                    mapping[p] = (short) i;</span>
+                }
+
+<span class="fc bfc" id="L697" title="All 2 branches covered.">                for (int j = 0; j &lt; namingStrategies.length; j++) {</span>
+<span class="fc" id="L698">                    String name_t = namingStrategies[j].translate(name);</span>
+<span class="fc bfc" id="L699" title="All 2 branches covered.">                    if (name.equals(name_t)) {</span>
+<span class="fc" id="L700">                        continue;</span>
+                    }
+
+<span class="fc" id="L703">                    int p_t = Arrays.binarySearch(hashArray</span>
+<span class="fc" id="L704">                            , TypeUtils.fnv1a_64(name_t));</span>
+<span class="pc bpc" id="L705" title="1 of 2 branches missed.">                    if (p_t &gt;= 0) {</span>
+<span class="fc" id="L706">                        mapping[p_t] = (short) i;</span>
+                    }
+                }
+            }
+<span class="fc" id="L710">            hashArrayMapping = mapping;</span>
+        }
+
+<span class="fc" id="L713">        int getterIndex = hashArrayMapping[pos];</span>
+<span class="pc bpc" id="L714" title="1 of 2 branches missed.">        if (getterIndex != -1) {</span>
+<span class="fc" id="L715">            return sortedGetters[getterIndex];</span>
+        }
+
+<span class="nc" id="L718">        return null; // key not found.</span>
+    }
+
+    public List&lt;Object&gt; getFieldValues(Object object) throws Exception {
+<span class="fc" id="L722">        List&lt;Object&gt; fieldValues = new ArrayList&lt;Object&gt;(sortedGetters.length);</span>
+<span class="fc bfc" id="L723" title="All 2 branches covered.">        for (FieldSerializer getter : sortedGetters) {</span>
+<span class="fc" id="L724">            fieldValues.add(getter.getPropertyValue(object));</span>
+        }
+
+<span class="fc" id="L727">        return fieldValues;</span>
+    }
+
+    // for jsonpath deepSet
+    public List&lt;Object&gt; getObjectFieldValues(Object object) throws Exception {
+<span class="fc" id="L732">        List&lt;Object&gt; fieldValues = new ArrayList&lt;Object&gt;(sortedGetters.length);</span>
+<span class="fc bfc" id="L733" title="All 2 branches covered.">        for (FieldSerializer getter : sortedGetters) {</span>
+<span class="fc" id="L734">            Class fieldClass = getter.fieldInfo.fieldClass;</span>
+<span class="pc bpc" id="L735" title="1 of 2 branches missed.">            if (fieldClass.isPrimitive()) {</span>
+<span class="nc" id="L736">                continue;</span>
+            }
+<span class="pc bpc" id="L738" title="1 of 2 branches missed.">            if (fieldClass.getName().startsWith(&quot;java.lang.&quot;)) {</span>
+<span class="nc" id="L739">                continue;</span>
+            }
+<span class="fc" id="L741">            fieldValues.add(getter.getPropertyValue(object));</span>
+        }
+
+<span class="fc" id="L744">        return fieldValues;</span>
+    }
+    
+    public int getSize(Object object) throws Exception {
+<span class="fc" id="L748">        int size = 0;</span>
+<span class="fc bfc" id="L749" title="All 2 branches covered.">        for (FieldSerializer getter : sortedGetters) {</span>
+<span class="fc" id="L750">            Object value = getter.getPropertyValueDirect(object);</span>
+<span class="fc bfc" id="L751" title="All 2 branches covered.">            if (value != null) {</span>
+<span class="fc" id="L752">                size ++;</span>
+            }
+        }
+<span class="fc" id="L755">        return size;</span>
+    }
+    
+    /**
+     * Get field names of not null fields. Keep the same logic as getSize.
+     * 
+     * @param object the object to be checked
+     * @return field name set
+     * @throws Exception
+     * @see #getSize(Object)
+     */
+    public Set&lt;String&gt; getFieldNames(Object object) throws Exception {
+<span class="fc" id="L767">        Set&lt;String&gt; fieldNames = new HashSet&lt;String&gt;();</span>
+<span class="fc bfc" id="L768" title="All 2 branches covered.">        for (FieldSerializer getter : sortedGetters) {</span>
+<span class="fc" id="L769">            Object value = getter.getPropertyValueDirect(object);</span>
+<span class="fc bfc" id="L770" title="All 2 branches covered.">            if (value != null) {</span>
+<span class="fc" id="L771">                fieldNames.add(getter.fieldInfo.name);</span>
+            }
+        }
+<span class="fc" id="L774">        return fieldNames;</span>
+    }
+
+    public Map&lt;String, Object&gt; getFieldValuesMap(Object object) throws Exception {
+<span class="fc" id="L778">        Map&lt;String, Object&gt; map = new LinkedHashMap&lt;String, Object&gt;(sortedGetters.length);</span>
+<span class="fc" id="L779">        boolean skipTransient = true;</span>
+<span class="fc" id="L780">        FieldInfo fieldInfo = null;</span>
+
+<span class="fc bfc" id="L782" title="All 2 branches covered.">        for (FieldSerializer getter : sortedGetters) {</span>
+<span class="fc" id="L783">            skipTransient = SerializerFeature.isEnabled(getter.features, SerializerFeature.SkipTransientField);</span>
+<span class="fc" id="L784">            fieldInfo = getter.fieldInfo;</span>
+
+<span class="pc bpc" id="L786" title="2 of 6 branches missed.">            if (skipTransient &amp;&amp; fieldInfo != null &amp;&amp; fieldInfo.fieldTransient) {</span>
+<span class="fc" id="L787">                continue;</span>
+            }
+
+<span class="fc bfc" id="L790" title="All 2 branches covered.">            if (getter.fieldInfo.unwrapped) {</span>
+<span class="fc" id="L791">                Object unwrappedValue = getter.getPropertyValue(object);</span>
+<span class="fc" id="L792">                Object map1 = JSON.toJSON(unwrappedValue);</span>
+<span class="pc bpc" id="L793" title="1 of 2 branches missed.">                if (map1 instanceof Map) {</span>
+<span class="fc" id="L794">                    map.putAll((Map) map1);</span>
+                } else {
+<span class="nc" id="L796">                    map.put(getter.fieldInfo.name, getter.getPropertyValue(object));</span>
+                }
+<span class="fc" id="L798">            } else {</span>
+<span class="fc" id="L799">                map.put(getter.fieldInfo.name, getter.getPropertyValue(object));</span>
+            }
+        }
+
+<span class="fc" id="L803">        return map;</span>
+    }
+
+    protected BeanContext getBeanContext(int orinal) {
+<span class="fc" id="L807">        return sortedGetters[orinal].fieldContext;</span>
+    }
+    
+    protected Type getFieldType(int ordinal) {
+<span class="fc" id="L811">        return sortedGetters[ordinal].fieldInfo.fieldType;</span>
+    }
+    
+    protected char writeBefore(JSONSerializer jsonBeanDeser, //
+                            Object object, char seperator) {
+        
+<span class="fc bfc" id="L817" title="All 2 branches covered.">        if (jsonBeanDeser.beforeFilters != null) {</span>
+<span class="fc bfc" id="L818" title="All 2 branches covered.">            for (BeforeFilter beforeFilter : jsonBeanDeser.beforeFilters) {</span>
+<span class="fc" id="L819">                seperator = beforeFilter.writeBefore(jsonBeanDeser, object, seperator);</span>
+<span class="fc" id="L820">            }</span>
+        }
+        
+<span class="fc bfc" id="L823" title="All 2 branches covered.">        if (this.beforeFilters != null) {</span>
+<span class="fc bfc" id="L824" title="All 2 branches covered.">            for (BeforeFilter beforeFilter : this.beforeFilters) {</span>
+<span class="fc" id="L825">                seperator = beforeFilter.writeBefore(jsonBeanDeser, object, seperator);</span>
+<span class="fc" id="L826">            }</span>
+        }
+        
+<span class="fc" id="L829">        return seperator;</span>
+    }
+    
+    protected char writeAfter(JSONSerializer jsonBeanDeser, // 
+                           Object object, char seperator) {
+<span class="fc bfc" id="L834" title="All 2 branches covered.">        if (jsonBeanDeser.afterFilters != null) {</span>
+<span class="fc bfc" id="L835" title="All 2 branches covered.">            for (AfterFilter afterFilter : jsonBeanDeser.afterFilters) {</span>
+<span class="fc" id="L836">                seperator = afterFilter.writeAfter(jsonBeanDeser, object, seperator);</span>
+<span class="fc" id="L837">            }</span>
+        }
+        
+<span class="fc bfc" id="L840" title="All 2 branches covered.">        if (this.afterFilters != null) {</span>
+<span class="fc bfc" id="L841" title="All 2 branches covered.">            for (AfterFilter afterFilter : this.afterFilters) {</span>
+<span class="fc" id="L842">                seperator = afterFilter.writeAfter(jsonBeanDeser, object, seperator);</span>
+<span class="fc" id="L843">            }</span>
+        }
+        
+<span class="fc" id="L846">        return seperator;</span>
+    }
+    
+    protected boolean applyLabel(JSONSerializer jsonBeanDeser, String label) {
+<span class="fc bfc" id="L850" title="All 2 branches covered.">        if (jsonBeanDeser.labelFilters != null) {</span>
+<span class="fc bfc" id="L851" title="All 2 branches covered.">            for (LabelFilter propertyFilter : jsonBeanDeser.labelFilters) {</span>
+<span class="fc bfc" id="L852" title="All 2 branches covered.">                if (!propertyFilter.apply(label)) {</span>
+<span class="fc" id="L853">                    return false;</span>
+                }
+<span class="fc" id="L855">            }</span>
+        }
+        
+<span class="pc bpc" id="L858" title="1 of 2 branches missed.">        if (this.labelFilters != null) {</span>
+<span class="nc bnc" id="L859" title="All 2 branches missed.">            for (LabelFilter propertyFilter : this.labelFilters) {</span>
+<span class="nc bnc" id="L860" title="All 2 branches missed.">                if (!propertyFilter.apply(label)) {</span>
+<span class="nc" id="L861">                    return false;</span>
+                }
+<span class="nc" id="L863">            }</span>
+        }
+        
+<span class="fc" id="L866">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

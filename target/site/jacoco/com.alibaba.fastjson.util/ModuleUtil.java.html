@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ModuleUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.util</a> &gt; <span class="el_source">ModuleUtil.java</span></div><h1>ModuleUtil.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.util;
+
+import java.util.concurrent.Callable;
+
+<span class="nc" id="L5">public class ModuleUtil {</span>
+<span class="fc" id="L6">    private static boolean hasJavaSql = false;</span>
+
+    static {
+        try {
+<span class="fc" id="L10">            Class.forName(&quot;java.sql.Time&quot;);</span>
+<span class="fc" id="L11">            hasJavaSql = true;</span>
+<span class="nc" id="L12">        } catch (Throwable e) {</span>
+<span class="nc" id="L13">            hasJavaSql = false;</span>
+<span class="fc" id="L14">        }</span>
+<span class="fc" id="L15">    }</span>
+
+    public static &lt;T&gt; T callWhenHasJavaSql(Callable&lt;T&gt; callable) {
+<span class="pc bpc" id="L18" title="1 of 2 branches missed.">        if (hasJavaSql) {</span>
+            try {
+<span class="fc" id="L20">                return callable.call();</span>
+<span class="nc" id="L21">            } catch (Exception e) {</span>
+<span class="nc" id="L22">                throw new RuntimeException(e);</span>
+            }
+        }
+<span class="nc" id="L25">        return null;</span>
+    }
+
+    public static &lt;ARG, T&gt; T callWhenHasJavaSql(Function&lt;ARG, T&gt; callable, ARG arg) {
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">        if (hasJavaSql) {</span>
+<span class="fc" id="L30">            return callable.apply(arg);</span>
+        }
+<span class="nc" id="L32">        return null;</span>
+    }
+
+    public static &lt;T, U, R&gt; R callWhenHasJavaSql(BiFunction&lt;T, U, R&gt; callable, T t, U u) {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (hasJavaSql) {</span>
+<span class="fc" id="L37">            return callable.apply(t, u);</span>
+        }
+<span class="nc" id="L39">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

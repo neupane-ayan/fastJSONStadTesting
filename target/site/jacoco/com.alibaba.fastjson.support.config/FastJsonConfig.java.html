@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastJsonConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.config</a> &gt; <span class="el_source">FastJsonConfig.java</span></div><h1>FastJsonConfig.java</h1><pre class="source lang-java linenums">
+package com.alibaba.fastjson.support.config;
+
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.parser.deserializer.ParseProcess;
+import com.alibaba.fastjson.serializer.SerializeConfig;
+import com.alibaba.fastjson.serializer.SerializeFilter;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson.util.IOUtils;
+
+import java.nio.charset.Charset;
+import java.util.Map;
+import java.util.Map.Entry;
+
+/**
+ * Config for FastJson.
+ *
+ * @author VictorZeng
+ * @see SerializeConfig
+ * @see ParserConfig
+ * @see ParseProcess
+ * @see SerializerFeature
+ * @see SerializeFilter
+ * @see Feature
+ * @since 1.2.11
+ */
+
+public class FastJsonConfig {
+
+    /**
+     * default charset
+     */
+    private Charset charset;
+
+    /**
+     * serializeConfig
+     */
+    private SerializeConfig serializeConfig;
+
+    /**
+     * parserConfig
+     */
+    private ParserConfig parserConfig;
+
+    /**
+     * parseProcess
+     */
+    private ParseProcess parseProcess;
+
+    /**
+     * serializerFeatures
+     */
+    private SerializerFeature[] serializerFeatures;
+
+    /**
+     * serializeFilters
+     */
+    private SerializeFilter[] serializeFilters;
+
+    /**
+     * features
+     */
+    private Feature[] features;
+
+    /**
+     * class level serializeFilter
+     */
+    private Map&lt;Class&lt;?&gt;, SerializeFilter&gt; classSerializeFilters;
+
+    /**
+     * format date type
+     */
+    private String dateFormat;
+
+    /**
+     * The Write content length.
+     */
+    private boolean writeContentLength;
+
+    /**
+     * init param.
+     */
+<span class="fc" id="L84">    public FastJsonConfig() {</span>
+
+<span class="fc" id="L86">        this.charset = IOUtils.UTF8;</span>
+
+<span class="fc" id="L88">        this.serializeConfig = SerializeConfig.getGlobalInstance();</span>
+<span class="fc" id="L89">        this.parserConfig = ParserConfig.getGlobalInstance();</span>
+
+<span class="fc" id="L91">        this.serializerFeatures = new SerializerFeature[] {</span>
+                SerializerFeature.BrowserSecure
+        };
+
+<span class="fc" id="L95">        this.serializeFilters = new SerializeFilter[0];</span>
+<span class="fc" id="L96">        this.features = new Feature[0];</span>
+
+<span class="fc" id="L98">        this.writeContentLength = true;</span>
+<span class="fc" id="L99">    }</span>
+
+    /**
+     * @return the serializeConfig
+     */
+    public SerializeConfig getSerializeConfig() {
+<span class="fc" id="L105">        return serializeConfig;</span>
+    }
+
+    /**
+     * @param serializeConfig the serializeConfig to set
+     */
+    public void setSerializeConfig(SerializeConfig serializeConfig) {
+<span class="fc" id="L112">        this.serializeConfig = serializeConfig;</span>
+<span class="fc" id="L113">    }</span>
+
+    /**
+     * @return the parserConfig
+     */
+    public ParserConfig getParserConfig() {
+<span class="fc" id="L119">        return parserConfig;</span>
+    }
+
+    /**
+     * @param parserConfig the parserConfig to set
+     */
+    public void setParserConfig(ParserConfig parserConfig) {
+<span class="fc" id="L126">        this.parserConfig = parserConfig;</span>
+<span class="fc" id="L127">    }</span>
+
+    /**
+     * @return the serializerFeatures
+     */
+    public SerializerFeature[] getSerializerFeatures() {
+<span class="fc" id="L133">        return serializerFeatures;</span>
+    }
+
+    /**
+     * @param serializerFeatures the serializerFeatures to set
+     */
+    public void setSerializerFeatures(SerializerFeature... serializerFeatures) {
+<span class="fc" id="L140">        this.serializerFeatures = serializerFeatures;</span>
+<span class="fc" id="L141">    }</span>
+
+    /**
+     * @return the serializeFilters
+     */
+    public SerializeFilter[] getSerializeFilters() {
+<span class="fc" id="L147">        return serializeFilters;</span>
+    }
+
+    /**
+     * @param serializeFilters the serializeFilters to set
+     */
+    public void setSerializeFilters(SerializeFilter... serializeFilters) {
+<span class="fc" id="L154">        this.serializeFilters = serializeFilters;</span>
+<span class="fc" id="L155">    }</span>
+
+    /**
+     * @return the features
+     */
+    public Feature[] getFeatures() {
+<span class="fc" id="L161">        return features;</span>
+    }
+
+    /**
+     * @param features the features to set
+     */
+    public void setFeatures(Feature... features) {
+<span class="fc" id="L168">        this.features = features;</span>
+<span class="fc" id="L169">    }</span>
+
+    /**
+     * @return the classSerializeFilters
+     */
+    public Map&lt;Class&lt;?&gt;, SerializeFilter&gt; getClassSerializeFilters() {
+<span class="fc" id="L175">        return classSerializeFilters;</span>
+    }
+
+    /**
+     * @param classSerializeFilters the classSerializeFilters to set
+     */
+    public void setClassSerializeFilters(
+            Map&lt;Class&lt;?&gt;, SerializeFilter&gt; classSerializeFilters) {
+
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (classSerializeFilters == null)</span>
+<span class="fc" id="L185">            return;</span>
+
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        for (Entry&lt;Class&lt;?&gt;, SerializeFilter&gt; entry : classSerializeFilters.entrySet())</span>
+
+<span class="fc" id="L189">            this.serializeConfig.addFilter(entry.getKey(), entry.getValue());</span>
+
+<span class="fc" id="L191">        this.classSerializeFilters = classSerializeFilters;</span>
+<span class="fc" id="L192">    }</span>
+
+    /**
+     * @return the dateFormat
+     */
+    public String getDateFormat() {
+<span class="fc" id="L198">        return dateFormat;</span>
+    }
+
+    /**
+     * @param dateFormat the dateFormat to set
+     */
+    public void setDateFormat(String dateFormat) {
+<span class="fc" id="L205">        this.dateFormat = dateFormat;</span>
+<span class="fc" id="L206">    }</span>
+
+    /**
+     * @return the charset
+     */
+    public Charset getCharset() {
+<span class="fc" id="L212">        return charset;</span>
+    }
+
+    /**
+     * @param charset the charset to set
+     */
+    public void setCharset(Charset charset) {
+<span class="fc" id="L219">        this.charset = charset;</span>
+<span class="fc" id="L220">    }</span>
+
+    /**
+     * Is write content length boolean.
+     *
+     * @return the boolean
+     */
+    public boolean isWriteContentLength() {
+<span class="fc" id="L228">        return writeContentLength;</span>
+    }
+
+    /**
+     * Sets write content length.
+     *
+     * @param writeContentLength the write content length
+     */
+    public void setWriteContentLength(boolean writeContentLength) {
+<span class="fc" id="L237">        this.writeContentLength = writeContentLength;</span>
+<span class="fc" id="L238">    }</span>
+
+    /**
+     * Gets parse process.
+     *
+     * @return the parse process
+     */
+    public ParseProcess getParseProcess() {
+<span class="fc" id="L246">        return parseProcess;</span>
+    }
+
+    /**
+     * Sets parse process.
+     *
+     * @param parseProcess the parse process
+     */
+    public void setParseProcess(ParseProcess parseProcess) {
+<span class="nc" id="L255">        this.parseProcess = parseProcess;</span>
+<span class="nc" id="L256">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

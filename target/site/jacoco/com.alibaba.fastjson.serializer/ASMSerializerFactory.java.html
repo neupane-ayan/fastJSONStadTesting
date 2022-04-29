@@ -1,0 +1,2116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ASMSerializerFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">ASMSerializerFactory.java</span></div><h1>ASMSerializerFactory.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
+import com.alibaba.fastjson.asm.*;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.util.ASMClassLoader;
+import com.alibaba.fastjson.util.ASMUtils;
+import com.alibaba.fastjson.util.FieldInfo;
+import com.alibaba.fastjson.util.TypeUtils;
+
+import java.io.Serializable;
+import java.lang.reflect.*;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.alibaba.fastjson.util.ASMUtils.desc;
+import static com.alibaba.fastjson.util.ASMUtils.type;
+
+<span class="fc" id="L26">public class ASMSerializerFactory implements Opcodes {</span>
+
+<span class="fc" id="L28">    protected final ASMClassLoader classLoader             = new ASMClassLoader();</span>
+
+<span class="fc" id="L30">    private final AtomicLong       seed                    = new AtomicLong();</span>
+
+<span class="fc" id="L32">    static final String            JSONSerializer           = type(JSONSerializer.class);</span>
+<span class="fc" id="L33">    static final String            ObjectSerializer         = type(ObjectSerializer.class);</span>
+<span class="fc" id="L34">    static final String            ObjectSerializer_desc    = &quot;L&quot; + ObjectSerializer + &quot;;&quot;;</span>
+<span class="fc" id="L35">    static final String            SerializeWriter          = type(SerializeWriter.class);</span>
+<span class="fc" id="L36">    static final String            SerializeWriter_desc     = &quot;L&quot; + SerializeWriter + &quot;;&quot;;</span>
+<span class="fc" id="L37">    static final String            JavaBeanSerializer       = type(JavaBeanSerializer.class);</span>
+<span class="fc" id="L38">    static final String            JavaBeanSerializer_desc  = &quot;L&quot; + type(JavaBeanSerializer.class) + &quot;;&quot;;</span>
+<span class="fc" id="L39">    static final String            SerialContext_desc       = desc(SerialContext.class);</span>
+<span class="fc" id="L40">    static final String            SerializeFilterable_desc = desc(SerializeFilterable.class);</span>
+
+    static class Context {
+
+        static final int              serializer     = 1;
+        static final int              obj            = 2;
+        static final int              paramFieldName = 3;
+        static final int              paramFieldType = 4;
+        static final int              features       = 5;
+<span class="fc" id="L49">        static int                    fieldName      = 6;</span>
+<span class="fc" id="L50">        static int                    original       = 7;</span>
+<span class="fc" id="L51">        static int                    processValue   = 8;</span>
+
+        private final FieldInfo[]       getters;
+        private final String            className;
+        private final SerializeBeanInfo beanInfo;
+        private final boolean           writeDirect;
+
+<span class="fc" id="L58">        private Map&lt;String, Integer&gt;    variants       = new HashMap&lt;String, Integer&gt;();</span>
+<span class="fc" id="L59">        private int                     variantIndex   = 9;</span>
+        private final boolean           nonContext;
+
+        public Context(FieldInfo[] getters, //
+                       SerializeBeanInfo beanInfo, //
+                       String className, //
+                       boolean writeDirect, //
+<span class="fc" id="L66">                       boolean nonContext){</span>
+<span class="fc" id="L67">            this.getters = getters;</span>
+<span class="fc" id="L68">            this.className = className;</span>
+<span class="fc" id="L69">            this.beanInfo = beanInfo;</span>
+<span class="fc" id="L70">            this.writeDirect = writeDirect;</span>
+<span class="fc bfc" id="L71" title="All 4 branches covered.">            this.nonContext = nonContext || beanInfo.beanType.isEnum();</span>
+<span class="fc" id="L72">        }</span>
+
+        public int var(String name) {
+<span class="fc" id="L75">            Integer i = variants.get(name);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            if (i == null) {</span>
+<span class="fc" id="L77">                variants.put(name, variantIndex++);</span>
+            }
+<span class="fc" id="L79">            i = variants.get(name);</span>
+<span class="fc" id="L80">            return i.intValue();</span>
+        }
+
+        public int var(String name, int increment) {
+<span class="fc" id="L84">            Integer i = variants.get(name);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            if (i == null) {</span>
+<span class="fc" id="L86">                variants.put(name, variantIndex);</span>
+<span class="fc" id="L87">                variantIndex += increment;</span>
+            }
+<span class="fc" id="L89">            i = variants.get(name);</span>
+<span class="fc" id="L90">            return i.intValue();</span>
+        }
+        
+        public int getFieldOrinal(String name) {
+<span class="fc" id="L94">            int fieldIndex = -1;</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            for (int i = 0, size = getters.length; i &lt; size; ++i) {</span>
+<span class="fc" id="L96">                FieldInfo item = getters[i];</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                if (item.name.equals(name)) {</span>
+<span class="fc" id="L98">                    fieldIndex = i;</span>
+<span class="fc" id="L99">                    break;</span>
+                }
+            }
+<span class="fc" id="L102">            return fieldIndex;</span>
+        }
+    }
+
+    public JavaBeanSerializer createJavaBeanSerializer(SerializeBeanInfo beanInfo) throws Exception {
+<span class="fc" id="L107">        Class&lt;?&gt; clazz = beanInfo.beanType;</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (clazz.isPrimitive()) {</span>
+<span class="fc" id="L109">            throw new JSONException(&quot;unsupportd class &quot; + clazz.getName());</span>
+        }
+
+<span class="fc" id="L112">        JSONType jsonType = TypeUtils.getAnnotation(clazz, JSONType.class);</span>
+
+<span class="fc" id="L114">        FieldInfo[] unsortedGetters = beanInfo.fields;</span>
+
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        for (FieldInfo fieldInfo : unsortedGetters) {</span>
+<span class="pc bpc" id="L117" title="1 of 4 branches missed.">            if (fieldInfo.field == null //</span>
+                &amp;&amp; fieldInfo.method != null //
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                &amp;&amp; fieldInfo.method.getDeclaringClass().isInterface()) {</span>
+<span class="fc" id="L120">                return new JavaBeanSerializer(beanInfo);</span>
+            }
+        }
+
+<span class="fc" id="L124">        FieldInfo[] getters = beanInfo.sortedFields;</span>
+
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        boolean nativeSorted = beanInfo.sortedFields == beanInfo.fields;</span>
+
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (getters.length &gt; 256) {</span>
+<span class="fc" id="L129">            return new JavaBeanSerializer(beanInfo);</span>
+        }
+
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        for (FieldInfo getter : getters) {</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">            if (!ASMUtils.checkName(getter.getMember().getName())) {</span>
+<span class="fc" id="L134">                return new JavaBeanSerializer(beanInfo);</span>
+            }
+        }
+
+<span class="fc" id="L138">        String className = &quot;ASMSerializer_&quot; + seed.incrementAndGet() + &quot;_&quot; + clazz.getSimpleName();</span>
+        String classNameType;
+        String classNameFull;
+<span class="fc" id="L141">        Package pkg = ASMSerializerFactory.class.getPackage();</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        if (pkg != null) {</span>
+<span class="fc" id="L143">            String packageName = pkg.getName();</span>
+<span class="fc" id="L144">            classNameType = packageName.replace('.', '/') + &quot;/&quot; + className;</span>
+<span class="fc" id="L145">            classNameFull = packageName + &quot;.&quot; + className;</span>
+<span class="fc" id="L146">        } else {</span>
+<span class="nc" id="L147">            classNameType = className;</span>
+<span class="nc" id="L148">            classNameFull = className;</span>
+        }
+
+<span class="fc" id="L151">        ClassWriter cw = new ClassWriter();</span>
+<span class="fc" id="L152">        cw.visit(V1_5 //</span>
+                 , ACC_PUBLIC + ACC_SUPER //
+                 , classNameType //
+                 , JavaBeanSerializer //
+                 , new String[] { ObjectSerializer } //
+        );
+
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        for (FieldInfo fieldInfo : getters) {</span>
+<span class="fc bfc" id="L160" title="All 4 branches covered.">            if (fieldInfo.fieldClass.isPrimitive() //</span>
+                //|| fieldInfo.fieldClass.isEnum() //
+                || fieldInfo.fieldClass == String.class) {
+<span class="fc" id="L163">                continue;</span>
+            }
+
+<span class="fc" id="L166">            new FieldWriter(cw, ACC_PUBLIC, fieldInfo.name + &quot;_asm_fieldType&quot;, &quot;Ljava/lang/reflect/Type;&quot;) //</span>
+<span class="fc" id="L167">                                                                                                           .visitEnd();</span>
+
+<span class="fc bfc" id="L169" title="All 2 branches covered.">            if (List.class.isAssignableFrom(fieldInfo.fieldClass)) {</span>
+<span class="fc" id="L170">                new FieldWriter(cw, ACC_PUBLIC, fieldInfo.name + &quot;_asm_list_item_ser_&quot;,</span>
+                                ObjectSerializer_desc) //
+<span class="fc" id="L172">                                                       .visitEnd();</span>
+            }
+
+<span class="fc" id="L175">            new FieldWriter(cw, ACC_PUBLIC, fieldInfo.name + &quot;_asm_ser_&quot;, ObjectSerializer_desc) //</span>
+<span class="fc" id="L176">                                                                                                        .visitEnd();</span>
+        }
+
+<span class="fc" id="L179">        MethodVisitor mw = new MethodWriter(cw, ACC_PUBLIC, &quot;&lt;init&gt;&quot;, &quot;(&quot; + desc(SerializeBeanInfo.class) + &quot;)V&quot;, null, null);</span>
+<span class="fc" id="L180">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L181">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L182">        mw.visitMethodInsn(INVOKESPECIAL, JavaBeanSerializer, &quot;&lt;init&gt;&quot;, &quot;(&quot; + desc(SerializeBeanInfo.class) + &quot;)V&quot;);</span>
+
+        // init _asm_fieldType
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        for (int i = 0; i &lt; getters.length; ++i) {</span>
+<span class="fc" id="L186">            FieldInfo fieldInfo = getters[i];</span>
+<span class="fc bfc" id="L187" title="All 4 branches covered.">            if (fieldInfo.fieldClass.isPrimitive() //</span>
+//                || fieldInfo.fieldClass.isEnum() //
+                || fieldInfo.fieldClass == String.class) {
+<span class="fc" id="L190">                continue;</span>
+            }
+
+<span class="fc" id="L193">            mw.visitVarInsn(ALOAD, 0);</span>
+
+<span class="fc bfc" id="L195" title="All 2 branches covered.">            if (fieldInfo.method != null) {</span>
+<span class="fc" id="L196">                mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldInfo.declaringClass)));</span>
+<span class="fc" id="L197">                mw.visitLdcInsn(fieldInfo.method.getName());</span>
+<span class="fc" id="L198">                mw.visitMethodInsn(INVOKESTATIC, type(ASMUtils.class), &quot;getMethodType&quot;,</span>
+                                   &quot;(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/reflect/Type;&quot;);
+
+            } else {
+<span class="fc" id="L202">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L203">                mw.visitLdcInsn(i);</span>
+<span class="fc" id="L204">                mw.visitMethodInsn(INVOKESPECIAL, JavaBeanSerializer, &quot;getFieldType&quot;, &quot;(I)Ljava/lang/reflect/Type;&quot;);</span>
+            }
+
+<span class="fc" id="L207">            mw.visitFieldInsn(PUTFIELD, classNameType, fieldInfo.name + &quot;_asm_fieldType&quot;, &quot;Ljava/lang/reflect/Type;&quot;);</span>
+        }
+
+<span class="fc" id="L210">        mw.visitInsn(RETURN);</span>
+<span class="fc" id="L211">        mw.visitMaxs(4, 4);</span>
+<span class="fc" id="L212">        mw.visitEnd();</span>
+
+<span class="fc" id="L214">        boolean DisableCircularReferenceDetect = false;</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        if (jsonType != null) {</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">            for (SerializerFeature featrues : jsonType.serialzeFeatures()) {</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">                if (featrues == SerializerFeature.DisableCircularReferenceDetect) {</span>
+<span class="fc" id="L218">                    DisableCircularReferenceDetect = true;</span>
+<span class="fc" id="L219">                    break;</span>
+                }
+            }
+        }
+
+        // 0 write
+        // 1 writeNormal
+        // 2 writeNonContext
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        for (int i = 0; i &lt; 3; ++i) {</span>
+            String methodName;
+<span class="fc" id="L229">            boolean nonContext = DisableCircularReferenceDetect;</span>
+<span class="fc" id="L230">            boolean writeDirect = false;</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">            if (i == 0) {</span>
+<span class="fc" id="L232">                methodName = &quot;write&quot;;</span>
+<span class="fc" id="L233">                writeDirect = true;</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">            } else if (i == 1) {</span>
+<span class="fc" id="L235">                methodName = &quot;writeNormal&quot;;</span>
+            } else {
+<span class="fc" id="L237">                writeDirect = true;</span>
+<span class="fc" id="L238">                nonContext = true;</span>
+<span class="fc" id="L239">                methodName = &quot;writeDirectNonContext&quot;;</span>
+            }
+
+<span class="fc" id="L242">            Context context = new Context(getters, beanInfo, classNameType, writeDirect,</span>
+                                          nonContext);
+
+<span class="fc" id="L245">            mw = new MethodWriter(cw, //</span>
+                                  ACC_PUBLIC, //
+                                  methodName, //
+                                  &quot;(L&quot; + JSONSerializer
+                                              + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;, //
+                                  null, //
+                                  new String[] { &quot;java/io/IOException&quot; } //
+            );
+
+            {
+<span class="fc" id="L255">                Label endIf_ = new Label();</span>
+<span class="fc" id="L256">                mw.visitVarInsn(ALOAD, Context.obj);</span>
+                //serializer.writeNull();
+<span class="fc" id="L258">                mw.visitJumpInsn(IFNONNULL, endIf_);</span>
+<span class="fc" id="L259">                mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L260">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer,</span>
+                        &quot;writeNull&quot;, &quot;()V&quot;);
+
+<span class="fc" id="L263">                mw.visitInsn(RETURN);</span>
+<span class="fc" id="L264">                mw.visitLabel(endIf_);</span>
+            }
+
+<span class="fc" id="L267">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L268">            mw.visitFieldInsn(GETFIELD, JSONSerializer, &quot;out&quot;, SerializeWriter_desc);</span>
+<span class="fc" id="L269">            mw.visitVarInsn(ASTORE, context.var(&quot;out&quot;));</span>
+
+<span class="fc bfc" id="L271" title="All 2 branches covered.">            if ((!nativeSorted) //</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">                &amp;&amp; !context.writeDirect) {</span>
+
+<span class="pc bpc" id="L274" title="1 of 4 branches missed.">                if (jsonType == null || jsonType.alphabetic()) {</span>
+<span class="fc" id="L275">                    Label _else = new Label();</span>
+
+<span class="fc" id="L277">                    mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L278">                    mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;isSortField&quot;, &quot;()Z&quot;);</span>
+
+<span class="fc" id="L280">                    mw.visitJumpInsn(IFNE, _else);</span>
+<span class="fc" id="L281">                    mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L282">                    mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L283">                    mw.visitVarInsn(ALOAD, 2);</span>
+<span class="fc" id="L284">                    mw.visitVarInsn(ALOAD, 3);</span>
+<span class="fc" id="L285">                    mw.visitVarInsn(ALOAD, 4);</span>
+<span class="fc" id="L286">                    mw.visitVarInsn(ILOAD, 5);</span>
+<span class="fc" id="L287">                    mw.visitMethodInsn(INVOKEVIRTUAL, classNameType,</span>
+                                       &quot;writeUnsorted&quot;, &quot;(L&quot; + JSONSerializer
+                                                        + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L290">                    mw.visitInsn(RETURN);</span>
+
+<span class="fc" id="L292">                    mw.visitLabel(_else);</span>
+                }
+            }
+
+            // isWriteDoubleQuoteDirect
+<span class="fc bfc" id="L297" title="All 4 branches covered.">            if (context.writeDirect &amp;&amp; !nonContext) {</span>
+<span class="fc" id="L298">                Label _direct = new Label();</span>
+<span class="fc" id="L299">                Label _directElse = new Label();</span>
+
+<span class="fc" id="L301">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L302">                mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L303">                mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;writeDirect&quot;, &quot;(L&quot; + JSONSerializer + &quot;;)Z&quot;);</span>
+<span class="fc" id="L304">                mw.visitJumpInsn(IFNE, _directElse);</span>
+
+<span class="fc" id="L306">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L307">                mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L308">                mw.visitVarInsn(ALOAD, 2);</span>
+<span class="fc" id="L309">                mw.visitVarInsn(ALOAD, 3);</span>
+<span class="fc" id="L310">                mw.visitVarInsn(ALOAD, 4);</span>
+<span class="fc" id="L311">                mw.visitVarInsn(ILOAD, 5);</span>
+<span class="fc" id="L312">                mw.visitMethodInsn(INVOKEVIRTUAL, classNameType,</span>
+                                   &quot;writeNormal&quot;, &quot;(L&quot; + JSONSerializer
+                                                  + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L315">                mw.visitInsn(RETURN);</span>
+
+<span class="fc" id="L317">                mw.visitLabel(_directElse);</span>
+<span class="fc" id="L318">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L319">                mw.visitLdcInsn(SerializerFeature.DisableCircularReferenceDetect.mask);</span>
+<span class="fc" id="L320">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;isEnabled&quot;, &quot;(I)Z&quot;);</span>
+<span class="fc" id="L321">                mw.visitJumpInsn(IFEQ, _direct);</span>
+
+<span class="fc" id="L323">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L324">                mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L325">                mw.visitVarInsn(ALOAD, 2);</span>
+<span class="fc" id="L326">                mw.visitVarInsn(ALOAD, 3);</span>
+<span class="fc" id="L327">                mw.visitVarInsn(ALOAD, 4);</span>
+<span class="fc" id="L328">                mw.visitVarInsn(ILOAD, 5);</span>
+<span class="fc" id="L329">                mw.visitMethodInsn(INVOKEVIRTUAL, classNameType, &quot;writeDirectNonContext&quot;,</span>
+                                   &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L331">                mw.visitInsn(RETURN);</span>
+
+<span class="fc" id="L333">                mw.visitLabel(_direct);</span>
+            }
+
+<span class="fc" id="L336">            mw.visitVarInsn(ALOAD, Context.obj); // obj</span>
+<span class="fc" id="L337">            mw.visitTypeInsn(CHECKCAST, type(clazz)); // serializer</span>
+<span class="fc" id="L338">            mw.visitVarInsn(ASTORE, context.var(&quot;entity&quot;)); // obj</span>
+<span class="fc" id="L339">            generateWriteMethod(clazz, mw, getters, context);</span>
+<span class="fc" id="L340">            mw.visitInsn(RETURN);</span>
+<span class="fc" id="L341">            mw.visitMaxs(7, context.variantIndex + 2);</span>
+<span class="fc" id="L342">            mw.visitEnd();</span>
+        }
+
+<span class="fc bfc" id="L345" title="All 2 branches covered.">        if (!nativeSorted) {</span>
+            // sortField support
+<span class="fc" id="L347">            Context context = new Context(getters, beanInfo, classNameType, false,</span>
+                                          DisableCircularReferenceDetect);
+
+<span class="fc" id="L350">            mw = new MethodWriter(cw, ACC_PUBLIC, &quot;writeUnsorted&quot;,</span>
+                                  &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;,
+                                  null, new String[] { &quot;java/io/IOException&quot; });
+
+<span class="fc" id="L354">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L355">            mw.visitFieldInsn(GETFIELD, JSONSerializer, &quot;out&quot;, SerializeWriter_desc);</span>
+<span class="fc" id="L356">            mw.visitVarInsn(ASTORE, context.var(&quot;out&quot;));</span>
+
+<span class="fc" id="L358">            mw.visitVarInsn(ALOAD, Context.obj); // obj</span>
+<span class="fc" id="L359">            mw.visitTypeInsn(CHECKCAST, type(clazz)); // serializer</span>
+<span class="fc" id="L360">            mw.visitVarInsn(ASTORE, context.var(&quot;entity&quot;)); // obj</span>
+
+<span class="fc" id="L362">            generateWriteMethod(clazz, mw, unsortedGetters, context);</span>
+
+<span class="fc" id="L364">            mw.visitInsn(RETURN);</span>
+<span class="fc" id="L365">            mw.visitMaxs(7, context.variantIndex + 2);</span>
+<span class="fc" id="L366">            mw.visitEnd();</span>
+        }
+
+        // 0 writeAsArray
+        // 1 writeAsArrayNormal
+        // 2 writeAsArrayNonContext
+<span class="fc bfc" id="L372" title="All 2 branches covered.">        for (int i = 0; i &lt; 3; ++i) {</span>
+            String methodName;
+<span class="fc" id="L374">            boolean nonContext = DisableCircularReferenceDetect;</span>
+<span class="fc" id="L375">            boolean writeDirect = false;</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">            if (i == 0) {</span>
+<span class="fc" id="L377">                methodName = &quot;writeAsArray&quot;;</span>
+<span class="fc" id="L378">                writeDirect = true;</span>
+<span class="fc bfc" id="L379" title="All 2 branches covered.">            } else if (i == 1) {</span>
+<span class="fc" id="L380">                methodName = &quot;writeAsArrayNormal&quot;;</span>
+            } else {
+<span class="fc" id="L382">                writeDirect = true;</span>
+<span class="fc" id="L383">                nonContext = true;</span>
+<span class="fc" id="L384">                methodName = &quot;writeAsArrayNonContext&quot;;</span>
+            }
+
+<span class="fc" id="L387">            Context context = new Context(getters, beanInfo, classNameType, writeDirect,</span>
+                                          nonContext);
+
+<span class="fc" id="L390">            mw = new MethodWriter(cw, ACC_PUBLIC, methodName,</span>
+                                  &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;,
+                                  null, new String[] { &quot;java/io/IOException&quot; });
+
+<span class="fc" id="L394">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L395">            mw.visitFieldInsn(GETFIELD, JSONSerializer, &quot;out&quot;, SerializeWriter_desc);</span>
+<span class="fc" id="L396">            mw.visitVarInsn(ASTORE, context.var(&quot;out&quot;));</span>
+
+<span class="fc" id="L398">            mw.visitVarInsn(ALOAD, Context.obj); // obj</span>
+<span class="fc" id="L399">            mw.visitTypeInsn(CHECKCAST, type(clazz)); // serializer</span>
+<span class="fc" id="L400">            mw.visitVarInsn(ASTORE, context.var(&quot;entity&quot;)); // obj</span>
+<span class="fc" id="L401">            generateWriteAsArray(clazz, mw, getters, context);</span>
+<span class="fc" id="L402">            mw.visitInsn(RETURN);</span>
+<span class="fc" id="L403">            mw.visitMaxs(7, context.variantIndex + 2);</span>
+<span class="fc" id="L404">            mw.visitEnd();</span>
+        }
+
+<span class="fc" id="L407">        byte[] code = cw.toByteArray();</span>
+
+<span class="fc" id="L409">        Class&lt;?&gt; serializerClass = classLoader.defineClassPublic(classNameFull, code, 0, code.length);</span>
+<span class="fc" id="L410">        Constructor&lt;?&gt; constructor = serializerClass.getConstructor(SerializeBeanInfo.class);</span>
+<span class="fc" id="L411">        Object instance = constructor.newInstance(beanInfo);</span>
+
+<span class="fc" id="L413">        return (JavaBeanSerializer) instance;</span>
+    }
+
+    private void generateWriteAsArray(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo[] getters,
+                                      Context context) throws Exception {
+
+<span class="fc" id="L419">        Label nonPropertyFilters_ = new Label();</span>
+<span class="fc" id="L420">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L421">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L422">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;hasPropertyFilters&quot;, &quot;(&quot; + SerializeFilterable_desc + &quot;)Z&quot;);</span>
+<span class="fc" id="L423">        mw.visitJumpInsn(IFNE, nonPropertyFilters_);</span>
+<span class="fc" id="L424">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L425">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L426">        mw.visitVarInsn(ALOAD, 2);</span>
+<span class="fc" id="L427">        mw.visitVarInsn(ALOAD, 3);</span>
+<span class="fc" id="L428">        mw.visitVarInsn(ALOAD, 4);</span>
+<span class="fc" id="L429">        mw.visitVarInsn(ILOAD, 5);</span>
+<span class="fc" id="L430">        mw.visitMethodInsn(INVOKESPECIAL, JavaBeanSerializer,</span>
+                &quot;writeNoneASM&quot;, &quot;(L&quot; + JSONSerializer
+                        + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L433">        mw.visitInsn(RETURN);</span>
+
+<span class="fc" id="L435">        mw.visitLabel(nonPropertyFilters_);</span>
+<span class="fc" id="L436">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L437">        mw.visitVarInsn(BIPUSH, '[');</span>
+<span class="fc" id="L438">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L440">        int size = getters.length;</span>
+
+<span class="fc bfc" id="L442" title="All 2 branches covered.">        if (size == 0) {</span>
+<span class="fc" id="L443">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L444">            mw.visitVarInsn(BIPUSH, ']');</span>
+<span class="fc" id="L445">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L446">            return;</span>
+        }
+
+<span class="fc bfc" id="L449" title="All 2 branches covered.">        for (int i = 0; i &lt; size; ++i) {</span>
+<span class="fc bfc" id="L450" title="All 2 branches covered.">            final char seperator = (i == size - 1) ? ']' : ',';</span>
+
+<span class="fc" id="L452">            FieldInfo fieldInfo = getters[i];</span>
+<span class="fc" id="L453">            Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+
+<span class="fc" id="L455">            mw.visitLdcInsn(fieldInfo.name);</span>
+<span class="fc" id="L456">            mw.visitVarInsn(ASTORE, Context.fieldName);</span>
+
+<span class="fc bfc" id="L458" title="All 6 branches covered.">            if (fieldClass == byte.class //</span>
+                || fieldClass == short.class //
+                || fieldClass == int.class) {
+
+<span class="fc" id="L462">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L463">                mw.visitInsn(DUP);</span>
+<span class="fc" id="L464">                _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L465">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeInt&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L466">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L467">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">            } else if (fieldClass == long.class) {</span>
+<span class="fc" id="L469">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L470">                mw.visitInsn(DUP);</span>
+<span class="fc" id="L471">                _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L472">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeLong&quot;, &quot;(J)V&quot;);</span>
+<span class="fc" id="L473">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L474">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+<span class="fc bfc" id="L475" title="All 2 branches covered.">            } else if (fieldClass == float.class) {</span>
+<span class="fc" id="L476">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L477">                mw.visitInsn(DUP);</span>
+<span class="fc" id="L478">                _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L479">                mw.visitInsn(ICONST_1);</span>
+<span class="fc" id="L480">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFloat&quot;, &quot;(FZ)V&quot;);</span>
+<span class="fc" id="L481">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L482">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+<span class="fc bfc" id="L483" title="All 2 branches covered.">            } else if (fieldClass == double.class) {</span>
+<span class="fc" id="L484">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L485">                mw.visitInsn(DUP);</span>
+<span class="fc" id="L486">                _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L487">                mw.visitInsn(ICONST_1);</span>
+<span class="fc" id="L488">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeDouble&quot;, &quot;(DZ)V&quot;);</span>
+<span class="fc" id="L489">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L490">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+<span class="fc bfc" id="L491" title="All 2 branches covered.">            } else if (fieldClass == boolean.class) {</span>
+<span class="fc" id="L492">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L493">                mw.visitInsn(DUP);</span>
+<span class="fc" id="L494">                _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L495">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(Z)V&quot;);</span>
+<span class="fc" id="L496">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L497">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+<span class="fc bfc" id="L498" title="All 2 branches covered.">            } else if (fieldClass == char.class) {</span>
+<span class="fc" id="L499">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L500">                _get(mw, context, fieldInfo); // Character.toString(value)</span>
+<span class="fc" id="L501">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Character&quot;, &quot;toString&quot;, &quot;(C)Ljava/lang/String;&quot;);</span>
+<span class="fc" id="L502">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L503">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeString&quot;, &quot;(Ljava/lang/String;C)V&quot;);</span>
+
+<span class="fc bfc" id="L505" title="All 2 branches covered.">            } else if (fieldClass == String.class) {</span>
+<span class="fc" id="L506">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L507">                _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L508">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L509">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeString&quot;, &quot;(Ljava/lang/String;C)V&quot;);</span>
+<span class="fc bfc" id="L510" title="All 2 branches covered.">            } else if (fieldClass.isEnum()) {</span>
+<span class="fc" id="L511">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L512">                mw.visitInsn(DUP);</span>
+<span class="fc" id="L513">                _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L514">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeEnum&quot;, &quot;(Ljava/lang/Enum;)V&quot;);</span>
+<span class="fc" id="L515">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L516">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+<span class="fc bfc" id="L517" title="All 2 branches covered.">            } else if (List.class.isAssignableFrom(fieldClass)) {</span>
+<span class="fc" id="L518">                Type fieldType = fieldInfo.fieldType;</span>
+
+                Type elementType;
+<span class="fc bfc" id="L521" title="All 2 branches covered.">                if (fieldType instanceof Class) {</span>
+<span class="fc" id="L522">                    elementType = Object.class;</span>
+                } else {
+<span class="fc" id="L524">                    elementType = ((ParameterizedType) fieldType).getActualTypeArguments()[0];</span>
+                }
+
+<span class="fc" id="L527">                Class&lt;?&gt; elementClass = null;</span>
+<span class="fc bfc" id="L528" title="All 2 branches covered.">                if (elementType instanceof Class&lt;?&gt;) {</span>
+<span class="fc" id="L529">                    elementClass = (Class&lt;?&gt;) elementType;</span>
+
+<span class="fc bfc" id="L531" title="All 2 branches covered.">                    if (elementClass == Object.class) {</span>
+<span class="fc" id="L532">                        elementClass = null;</span>
+                    }
+                }
+                
+<span class="fc" id="L536">                _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L537">                mw.visitTypeInsn(CHECKCAST, &quot;java/util/List&quot;); // cast</span>
+<span class="fc" id="L538">                mw.visitVarInsn(ASTORE, context.var(&quot;list&quot;));</span>
+
+<span class="fc bfc" id="L540" title="All 2 branches covered.">                if (elementClass == String.class //</span>
+<span class="fc bfc" id="L541" title="All 2 branches covered.">                    &amp;&amp; context.writeDirect) {</span>
+<span class="fc" id="L542">                    mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L543">                    mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L544">                    mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(Ljava/util/List;)V&quot;);</span>
+                } else {
+<span class="fc" id="L546">                    Label nullEnd_ = new Label(), nullElse_ = new Label();</span>
+
+<span class="fc" id="L548">                    mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L549">                    mw.visitJumpInsn(IFNONNULL, nullElse_);</span>
+
+<span class="fc" id="L551">                    mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L552">                    mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeNull&quot;, &quot;()V&quot;);</span>
+<span class="fc" id="L553">                    mw.visitJumpInsn(GOTO, nullEnd_);</span>
+
+<span class="fc" id="L555">                    mw.visitLabel(nullElse_);</span>
+
+<span class="fc" id="L557">                    mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L558">                    mw.visitMethodInsn(INVOKEINTERFACE, &quot;java/util/List&quot;, &quot;size&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L559">                    mw.visitVarInsn(ISTORE, context.var(&quot;size&quot;));</span>
+
+<span class="fc" id="L561">                    mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L562">                    mw.visitVarInsn(BIPUSH, '[');</span>
+<span class="fc" id="L563">                    mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L565">                    Label for_ = new Label(), forFirst_ = new Label(), forEnd_ = new Label();</span>
+
+<span class="fc" id="L567">                    mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L568">                    mw.visitVarInsn(ISTORE, context.var(&quot;i&quot;));</span>
+
+                    // for (; i &lt; list.size() -1; ++i) {
+<span class="fc" id="L571">                    mw.visitLabel(for_);</span>
+<span class="fc" id="L572">                    mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L573">                    mw.visitVarInsn(ILOAD, context.var(&quot;size&quot;));</span>
+<span class="fc" id="L574">                    mw.visitJumpInsn(IF_ICMPGE, forEnd_); // i &lt; list.size - 1</span>
+
+<span class="fc" id="L576">                    mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L577">                    mw.visitJumpInsn(IFEQ, forFirst_); // i &lt; list.size - 1</span>
+
+<span class="fc" id="L579">                    mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L580">                    mw.visitVarInsn(BIPUSH, ',');</span>
+<span class="fc" id="L581">                    mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L583">                    mw.visitLabel(forFirst_);</span>
+
+<span class="fc" id="L585">                    mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L586">                    mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L587">                    mw.visitMethodInsn(INVOKEINTERFACE, &quot;java/util/List&quot;, &quot;get&quot;, &quot;(I)Ljava/lang/Object;&quot;);</span>
+<span class="fc" id="L588">                    mw.visitVarInsn(ASTORE, context.var(&quot;list_item&quot;));</span>
+
+<span class="fc" id="L590">                    Label forItemNullEnd_ = new Label(), forItemNullElse_ = new Label();</span>
+
+<span class="fc" id="L592">                    mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;));</span>
+<span class="fc" id="L593">                    mw.visitJumpInsn(IFNONNULL, forItemNullElse_);</span>
+
+<span class="fc" id="L595">                    mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L596">                    mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeNull&quot;, &quot;()V&quot;);</span>
+<span class="fc" id="L597">                    mw.visitJumpInsn(GOTO, forItemNullEnd_);</span>
+
+<span class="fc" id="L599">                    mw.visitLabel(forItemNullElse_);</span>
+
+<span class="fc" id="L601">                    Label forItemClassIfEnd_ = new Label(), forItemClassIfElse_ = new Label();</span>
+<span class="fc bfc" id="L602" title="All 4 branches covered.">                    if (elementClass != null &amp;&amp; Modifier.isPublic(elementClass.getModifiers())) {</span>
+<span class="fc" id="L603">                        mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;));</span>
+<span class="fc" id="L604">                        mw.visitMethodInsn(INVOKEVIRTUAL, &quot;java/lang/Object&quot;, &quot;getClass&quot;, &quot;()Ljava/lang/Class;&quot;);</span>
+<span class="fc" id="L605">                        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(elementClass)));</span>
+<span class="fc" id="L606">                        mw.visitJumpInsn(IF_ACMPNE, forItemClassIfElse_);</span>
+
+<span class="fc" id="L608">                        _getListFieldItemSer(context, mw, fieldInfo, elementClass);</span>
+<span class="fc" id="L609">                        mw.visitVarInsn(ASTORE, context.var(&quot;list_item_desc&quot;));</span>
+
+<span class="fc" id="L611">                        Label instanceOfElse_ = new Label(), instanceOfEnd_ = new Label();</span>
+
+<span class="fc bfc" id="L613" title="All 2 branches covered.">                        if (context.writeDirect) {</span>
+<span class="fc" id="L614">                            mw.visitVarInsn(ALOAD, context.var(&quot;list_item_desc&quot;));</span>
+<span class="fc" id="L615">                            mw.visitTypeInsn(INSTANCEOF, JavaBeanSerializer);</span>
+<span class="fc" id="L616">                            mw.visitJumpInsn(IFEQ, instanceOfElse_);</span>
+
+<span class="fc" id="L618">                            mw.visitVarInsn(ALOAD, context.var(&quot;list_item_desc&quot;));</span>
+<span class="fc" id="L619">                            mw.visitTypeInsn(CHECKCAST, JavaBeanSerializer); // cast</span>
+<span class="fc" id="L620">                            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L621">                            mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;)); // object</span>
+<span class="fc bfc" id="L622" title="All 2 branches covered.">                            if (context.nonContext) { // fieldName</span>
+<span class="fc" id="L623">                                mw.visitInsn(ACONST_NULL);</span>
+                            } else {
+<span class="fc" id="L625">                                mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L626">                                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;,</span>
+                                                   &quot;(I)Ljava/lang/Integer;&quot;);
+                            }
+<span class="fc" id="L629">                            mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(elementClass))); // fieldType</span>
+<span class="fc" id="L630">                            mw.visitLdcInsn(fieldInfo.serialzeFeatures); // features</span>
+<span class="fc" id="L631">                            mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;writeAsArrayNonContext&quot;, //</span>
+                                               &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L633">                            mw.visitJumpInsn(GOTO, instanceOfEnd_);</span>
+
+<span class="fc" id="L635">                            mw.visitLabel(instanceOfElse_);</span>
+                        }
+
+<span class="fc" id="L638">                        mw.visitVarInsn(ALOAD, context.var(&quot;list_item_desc&quot;));</span>
+<span class="fc" id="L639">                        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L640">                        mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;)); // object</span>
+<span class="fc bfc" id="L641" title="All 2 branches covered.">                        if (context.nonContext) { // fieldName</span>
+<span class="fc" id="L642">                            mw.visitInsn(ACONST_NULL);</span>
+                        } else {
+<span class="fc" id="L644">                            mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L645">                            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+                        }
+<span class="fc" id="L647">                        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(elementClass))); // fieldType</span>
+<span class="fc" id="L648">                        mw.visitLdcInsn(fieldInfo.serialzeFeatures); // features</span>
+<span class="fc" id="L649">                        mw.visitMethodInsn(INVOKEINTERFACE, ObjectSerializer, &quot;write&quot;, //</span>
+                                           &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L651">                        mw.visitLabel(instanceOfEnd_);</span>
+<span class="fc" id="L652">                        mw.visitJumpInsn(GOTO, forItemClassIfEnd_);</span>
+                    }
+
+<span class="fc" id="L655">                    mw.visitLabel(forItemClassIfElse_);</span>
+<span class="fc" id="L656">                    mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L657">                    mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;));</span>
+<span class="fc bfc" id="L658" title="All 2 branches covered.">                    if (context.nonContext) {</span>
+<span class="fc" id="L659">                        mw.visitInsn(ACONST_NULL);</span>
+                    } else {
+<span class="fc" id="L661">                        mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L662">                        mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+                    }
+<span class="fc bfc" id="L664" title="All 4 branches covered.">                    if (elementClass != null &amp;&amp; Modifier.isPublic(elementClass.getModifiers())) {</span>
+<span class="fc" id="L665">                        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc((Class&lt;?&gt;) elementType)));</span>
+<span class="fc" id="L666">                        mw.visitLdcInsn(fieldInfo.serialzeFeatures);</span>
+<span class="fc" id="L667">                        mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFieldName&quot;,</span>
+                                           &quot;(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+                    } else {
+<span class="fc" id="L670">                        mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFieldName&quot;,</span>
+                                           &quot;(Ljava/lang/Object;Ljava/lang/Object;)V&quot;);
+                    }
+<span class="fc" id="L673">                    mw.visitLabel(forItemClassIfEnd_);</span>
+<span class="fc" id="L674">                    mw.visitLabel(forItemNullEnd_);</span>
+
+<span class="fc" id="L676">                    mw.visitIincInsn(context.var(&quot;i&quot;), 1);</span>
+<span class="fc" id="L677">                    mw.visitJumpInsn(GOTO, for_);</span>
+
+<span class="fc" id="L679">                    mw.visitLabel(forEnd_);</span>
+
+<span class="fc" id="L681">                    mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L682">                    mw.visitVarInsn(BIPUSH, ']');</span>
+<span class="fc" id="L683">                    mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L685">                    mw.visitLabel(nullEnd_);</span>
+                }
+
+<span class="fc" id="L688">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L689">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L690">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L691">            } else {</span>
+<span class="fc" id="L692">                Label notNullEnd_ = new Label(), notNullElse_ = new Label();</span>
+
+<span class="fc" id="L694">                _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L695">                mw.visitInsn(DUP);</span>
+<span class="fc" id="L696">                mw.visitVarInsn(ASTORE, context.var(&quot;field_&quot; + fieldInfo.fieldClass.getName()));</span>
+<span class="fc" id="L697">                mw.visitJumpInsn(IFNONNULL, notNullElse_);</span>
+
+<span class="fc" id="L699">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L700">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeNull&quot;, &quot;()V&quot;);</span>
+<span class="fc" id="L701">                mw.visitJumpInsn(GOTO, notNullEnd_);</span>
+
+<span class="fc" id="L703">                mw.visitLabel(notNullElse_);</span>
+
+<span class="fc" id="L705">                Label classIfEnd_ = new Label(), classIfElse_ = new Label();</span>
+<span class="fc" id="L706">                mw.visitVarInsn(ALOAD, context.var(&quot;field_&quot; + fieldInfo.fieldClass.getName()));</span>
+<span class="fc" id="L707">                mw.visitMethodInsn(INVOKEVIRTUAL, &quot;java/lang/Object&quot;, &quot;getClass&quot;, &quot;()Ljava/lang/Class;&quot;);</span>
+<span class="fc" id="L708">                mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldClass)));</span>
+<span class="fc" id="L709">                mw.visitJumpInsn(IF_ACMPNE, classIfElse_);</span>
+
+<span class="fc" id="L711">                _getFieldSer(context, mw, fieldInfo);</span>
+<span class="fc" id="L712">                mw.visitVarInsn(ASTORE, context.var(&quot;fied_ser&quot;));</span>
+
+<span class="fc" id="L714">                Label instanceOfElse_ = new Label(), instanceOfEnd_ = new Label();</span>
+<span class="fc bfc" id="L715" title="All 4 branches covered.">                if (context.writeDirect &amp;&amp; Modifier.isPublic(fieldClass.getModifiers())) {</span>
+<span class="fc" id="L716">                    mw.visitVarInsn(ALOAD, context.var(&quot;fied_ser&quot;));</span>
+<span class="fc" id="L717">                    mw.visitTypeInsn(INSTANCEOF, JavaBeanSerializer);</span>
+<span class="fc" id="L718">                    mw.visitJumpInsn(IFEQ, instanceOfElse_);</span>
+
+<span class="fc" id="L720">                    mw.visitVarInsn(ALOAD, context.var(&quot;fied_ser&quot;));</span>
+<span class="fc" id="L721">                    mw.visitTypeInsn(CHECKCAST, JavaBeanSerializer); // cast</span>
+<span class="fc" id="L722">                    mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L723">                    mw.visitVarInsn(ALOAD, context.var(&quot;field_&quot; + fieldInfo.fieldClass.getName()));</span>
+<span class="fc" id="L724">                    mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L725">                    mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldClass))); // fieldType</span>
+<span class="fc" id="L726">                    mw.visitLdcInsn(fieldInfo.serialzeFeatures); // features</span>
+<span class="fc" id="L727">                    mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;writeAsArrayNonContext&quot;, //</span>
+                                       &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L729">                    mw.visitJumpInsn(GOTO, instanceOfEnd_);</span>
+
+<span class="fc" id="L731">                    mw.visitLabel(instanceOfElse_);</span>
+                }
+<span class="fc" id="L733">                mw.visitVarInsn(ALOAD, context.var(&quot;fied_ser&quot;));</span>
+<span class="fc" id="L734">                mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L735">                mw.visitVarInsn(ALOAD, context.var(&quot;field_&quot; + fieldInfo.fieldClass.getName()));</span>
+<span class="fc" id="L736">                mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L737">                mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldClass))); // fieldType</span>
+<span class="fc" id="L738">                mw.visitLdcInsn(fieldInfo.serialzeFeatures); // features</span>
+<span class="fc" id="L739">                mw.visitMethodInsn(INVOKEINTERFACE, ObjectSerializer, &quot;write&quot;, //</span>
+                                   &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L741">                mw.visitLabel(instanceOfEnd_);</span>
+<span class="fc" id="L742">                mw.visitJumpInsn(GOTO, classIfEnd_);</span>
+
+<span class="fc" id="L744">                mw.visitLabel(classIfElse_);</span>
+<span class="fc" id="L745">                String format = fieldInfo.getFormat();</span>
+
+<span class="fc" id="L747">                mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L748">                mw.visitVarInsn(ALOAD, context.var(&quot;field_&quot; + fieldInfo.fieldClass.getName()));</span>
+<span class="pc bpc" id="L749" title="1 of 2 branches missed.">                if (format != null) {</span>
+<span class="nc" id="L750">                    mw.visitLdcInsn(format);</span>
+<span class="nc" id="L751">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFormat&quot;,</span>
+                                       &quot;(Ljava/lang/Object;Ljava/lang/String;)V&quot;);
+                } else {
+<span class="fc" id="L754">                    mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc bfc" id="L755" title="All 2 branches covered.">                    if (fieldInfo.fieldType instanceof Class&lt;?&gt; //</span>
+<span class="pc bpc" id="L756" title="1 of 2 branches missed.">                        &amp;&amp; ((Class&lt;?&gt;) fieldInfo.fieldType).isPrimitive()) {</span>
+<span class="nc" id="L757">                        mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFieldName&quot;,</span>
+                                           &quot;(Ljava/lang/Object;Ljava/lang/Object;)V&quot;);
+                    } else {
+<span class="fc" id="L760">                        mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L761">                        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_fieldType&quot;,</span>
+                                          &quot;Ljava/lang/reflect/Type;&quot;);
+<span class="fc" id="L763">                        mw.visitLdcInsn(fieldInfo.serialzeFeatures);</span>
+
+<span class="fc" id="L765">                        mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFieldName&quot;,</span>
+                                           &quot;(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+                    }
+                }
+<span class="fc" id="L769">                mw.visitLabel(classIfEnd_);</span>
+<span class="fc" id="L770">                mw.visitLabel(notNullEnd_);</span>
+                
+
+<span class="fc" id="L773">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L774">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L775">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+            }
+        }
+<span class="fc" id="L778">    }</span>
+
+    private void generateWriteMethod(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo[] getters,
+                                     Context context) throws Exception {
+
+        // if (serializer.containsReference(object)) {
+<span class="fc" id="L784">        Label end = new Label();</span>
+
+<span class="fc" id="L786">        int size = getters.length;</span>
+
+<span class="fc bfc" id="L788" title="All 2 branches covered.">        if (!context.writeDirect) {</span>
+            // pretty format not byte code optimized
+<span class="fc" id="L790">            Label endSupper_ = new Label();</span>
+<span class="fc" id="L791">            Label supper_ = new Label();</span>
+<span class="fc" id="L792">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L793">            mw.visitLdcInsn(SerializerFeature.PrettyFormat.mask);</span>
+<span class="fc" id="L794">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;isEnabled&quot;, &quot;(I)Z&quot;);</span>
+<span class="fc" id="L795">            mw.visitJumpInsn(IFNE, supper_);</span>
+
+<span class="fc" id="L797">            boolean hasMethod = false;</span>
+<span class="fc bfc" id="L798" title="All 2 branches covered.">            for (FieldInfo getter : getters) {</span>
+<span class="fc bfc" id="L799" title="All 2 branches covered.">                if (getter.method != null) {</span>
+<span class="fc" id="L800">                    hasMethod = true;</span>
+<span class="fc" id="L801">                    break;</span>
+                }
+            }
+
+<span class="fc bfc" id="L805" title="All 2 branches covered.">            if (hasMethod) {</span>
+<span class="fc" id="L806">                mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L807">                mw.visitLdcInsn(SerializerFeature.IgnoreErrorGetter.mask);</span>
+<span class="fc" id="L808">                mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;isEnabled&quot;, &quot;(I)Z&quot;);</span>
+<span class="fc" id="L809">                mw.visitJumpInsn(IFEQ, endSupper_);</span>
+            } else {
+<span class="fc" id="L811">                mw.visitJumpInsn(GOTO, endSupper_);</span>
+            }
+
+<span class="fc" id="L814">            mw.visitLabel(supper_);</span>
+<span class="fc" id="L815">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L816">            mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L817">            mw.visitVarInsn(ALOAD, 2);</span>
+<span class="fc" id="L818">            mw.visitVarInsn(ALOAD, 3);</span>
+<span class="fc" id="L819">            mw.visitVarInsn(ALOAD, 4);</span>
+<span class="fc" id="L820">            mw.visitVarInsn(ILOAD, 5);</span>
+<span class="fc" id="L821">            mw.visitMethodInsn(INVOKESPECIAL, JavaBeanSerializer,</span>
+                               &quot;write&quot;, &quot;(L&quot; + JSONSerializer
+                                        + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L824">            mw.visitInsn(RETURN);</span>
+
+<span class="fc" id="L826">            mw.visitLabel(endSupper_);</span>
+        }
+
+<span class="fc bfc" id="L829" title="All 2 branches covered.">        if (!context.nonContext) {</span>
+<span class="fc" id="L830">            Label endRef_ = new Label();</span>
+
+            // /////
+<span class="fc" id="L833">            mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L834">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L835">            mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L836">            mw.visitVarInsn(ILOAD, Context.features);</span>
+<span class="fc" id="L837">            mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;writeReference&quot;,</span>
+                               &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;I)Z&quot;);
+
+<span class="fc" id="L840">            mw.visitJumpInsn(IFEQ, endRef_);</span>
+
+<span class="fc" id="L842">            mw.visitInsn(RETURN);</span>
+
+<span class="fc" id="L844">            mw.visitLabel(endRef_);</span>
+        }
+
+        final String writeAsArrayMethodName;
+
+<span class="fc bfc" id="L849" title="All 2 branches covered.">        if (context.writeDirect) {</span>
+<span class="fc bfc" id="L850" title="All 2 branches covered.">            if (context.nonContext) {</span>
+<span class="fc" id="L851">                writeAsArrayMethodName = &quot;writeAsArrayNonContext&quot;;</span>
+            } else {
+<span class="fc" id="L853">                writeAsArrayMethodName = &quot;writeAsArray&quot;;</span>
+            }
+        } else {
+<span class="fc" id="L856">            writeAsArrayMethodName = &quot;writeAsArrayNormal&quot;;</span>
+        }
+
+<span class="fc bfc" id="L859" title="All 2 branches covered.">        if ((context.beanInfo.features &amp; SerializerFeature.BeanToArray.mask) == 0) {</span>
+<span class="fc" id="L860">            Label endWriteAsArray_ = new Label();</span>
+
+<span class="fc" id="L862">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L863">            mw.visitLdcInsn(SerializerFeature.BeanToArray.mask);</span>
+<span class="fc" id="L864">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;isEnabled&quot;, &quot;(I)Z&quot;);</span>
+<span class="fc" id="L865">            mw.visitJumpInsn(IFEQ, endWriteAsArray_);</span>
+
+            // /////
+<span class="fc" id="L868">            mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L869">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L870">            mw.visitVarInsn(ALOAD, 2); // obj</span>
+<span class="fc" id="L871">            mw.visitVarInsn(ALOAD, 3); // fieldObj</span>
+<span class="fc" id="L872">            mw.visitVarInsn(ALOAD, 4); // fieldType</span>
+<span class="fc" id="L873">            mw.visitVarInsn(ILOAD, 5); // features</span>
+<span class="fc" id="L874">            mw.visitMethodInsn(INVOKEVIRTUAL, //</span>
+<span class="fc" id="L875">                               context.className, //</span>
+                               writeAsArrayMethodName, //
+                               &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+
+<span class="fc" id="L879">            mw.visitInsn(RETURN);</span>
+
+<span class="fc" id="L881">            mw.visitLabel(endWriteAsArray_);</span>
+<span class="fc" id="L882">        } else {</span>
+<span class="fc" id="L883">            mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L884">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L885">            mw.visitVarInsn(ALOAD, 2); // obj</span>
+<span class="fc" id="L886">            mw.visitVarInsn(ALOAD, 3); // fieldObj</span>
+<span class="fc" id="L887">            mw.visitVarInsn(ALOAD, 4); // fieldType</span>
+<span class="fc" id="L888">            mw.visitVarInsn(ILOAD, 5); // features</span>
+<span class="fc" id="L889">            mw.visitMethodInsn(INVOKEVIRTUAL, //</span>
+<span class="fc" id="L890">                               context.className, //</span>
+                               writeAsArrayMethodName, //
+                               &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L893">            mw.visitInsn(RETURN);</span>
+        }
+
+<span class="fc bfc" id="L896" title="All 2 branches covered.">        if (!context.nonContext) {</span>
+<span class="fc" id="L897">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L898">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;getContext&quot;, &quot;()&quot; + SerialContext_desc);</span>
+<span class="fc" id="L899">            mw.visitVarInsn(ASTORE, context.var(&quot;parent&quot;));</span>
+
+<span class="fc" id="L901">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L902">            mw.visitVarInsn(ALOAD, context.var(&quot;parent&quot;));</span>
+<span class="fc" id="L903">            mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L904">            mw.visitVarInsn(ALOAD, Context.paramFieldName);</span>
+<span class="fc" id="L905">            mw.visitLdcInsn(context.beanInfo.features);</span>
+<span class="fc" id="L906">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;setContext&quot;,</span>
+                               &quot;(&quot; + SerialContext_desc + &quot;Ljava/lang/Object;Ljava/lang/Object;I)V&quot;);
+        }
+
+<span class="fc bfc" id="L910" title="All 2 branches covered.">        boolean writeClasName = (context.beanInfo.features &amp; SerializerFeature.WriteClassName.mask) != 0;</span>
+
+        // SEPERATO
+<span class="fc bfc" id="L913" title="All 4 branches covered.">        if (writeClasName || !context.writeDirect) {</span>
+<span class="fc" id="L914">            Label end_ = new Label();</span>
+<span class="fc" id="L915">            Label else_ = new Label();</span>
+<span class="fc" id="L916">            Label writeClass_ = new Label();</span>
+
+<span class="fc bfc" id="L918" title="All 2 branches covered.">            if (!writeClasName) {</span>
+<span class="fc" id="L919">                mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L920">                mw.visitVarInsn(ALOAD, Context.paramFieldType);</span>
+<span class="fc" id="L921">                mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L922">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;isWriteClassName&quot;,</span>
+                        &quot;(Ljava/lang/reflect/Type;Ljava/lang/Object;)Z&quot;);
+<span class="fc" id="L924">                mw.visitJumpInsn(IFEQ, else_);</span>
+            }
+
+            // IFNULL
+<span class="fc" id="L928">            mw.visitVarInsn(ALOAD, Context.paramFieldType);</span>
+<span class="fc" id="L929">            mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L930">            mw.visitMethodInsn(INVOKEVIRTUAL, &quot;java/lang/Object&quot;, &quot;getClass&quot;, &quot;()Ljava/lang/Class;&quot;);</span>
+<span class="fc" id="L931">            mw.visitJumpInsn(IF_ACMPEQ, else_);</span>
+
+<span class="fc" id="L933">            mw.visitLabel(writeClass_);</span>
+<span class="fc" id="L934">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L935">            mw.visitVarInsn(BIPUSH, '{');</span>
+<span class="fc" id="L936">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+            
+<span class="fc" id="L938">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L939">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc bfc" id="L940" title="All 2 branches covered.">            if (context.beanInfo.typeKey != null) {</span>
+<span class="fc" id="L941">                mw.visitLdcInsn(context.beanInfo.typeKey);</span>
+            } else {
+<span class="fc" id="L943">                mw.visitInsn(ACONST_NULL);</span>
+            }
+<span class="fc" id="L945">            mw.visitVarInsn(ALOAD, Context.obj);</span>
+
+<span class="fc" id="L947">            mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;writeClassName&quot;, &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/String;Ljava/lang/Object;)V&quot;);</span>
+<span class="fc" id="L948">            mw.visitVarInsn(BIPUSH, ',');</span>
+<span class="fc" id="L949">            mw.visitJumpInsn(GOTO, end_);</span>
+
+<span class="fc" id="L951">            mw.visitLabel(else_);</span>
+<span class="fc" id="L952">            mw.visitVarInsn(BIPUSH, '{');</span>
+
+<span class="fc" id="L954">            mw.visitLabel(end_);</span>
+<span class="fc" id="L955">        } else {</span>
+<span class="fc" id="L956">            mw.visitVarInsn(BIPUSH, '{');</span>
+        }
+
+<span class="fc" id="L959">        mw.visitVarInsn(ISTORE, context.var(&quot;seperator&quot;));</span>
+
+<span class="fc bfc" id="L961" title="All 2 branches covered.">        if (!context.writeDirect) {</span>
+<span class="fc" id="L962">            _before(mw, context);</span>
+        }
+
+<span class="fc bfc" id="L965" title="All 2 branches covered.">        if (!context.writeDirect) {</span>
+<span class="fc" id="L966">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L967">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;isNotWriteDefaultValue&quot;, &quot;()Z&quot;);</span>
+<span class="fc" id="L968">            mw.visitVarInsn(ISTORE, context.var(&quot;notWriteDefaultValue&quot;));</span>
+
+<span class="fc" id="L970">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L971">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L972">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;checkValue&quot;, &quot;(&quot; + SerializeFilterable_desc + &quot;)Z&quot;);</span>
+<span class="fc" id="L973">            mw.visitVarInsn(ISTORE, context.var(&quot;checkValue&quot;));</span>
+
+<span class="fc" id="L975">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L976">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L977">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;hasNameFilters&quot;, &quot;(&quot; + SerializeFilterable_desc + &quot;)Z&quot;);</span>
+<span class="fc" id="L978">            mw.visitVarInsn(ISTORE, context.var(&quot;hasNameFilters&quot;));</span>
+        }
+
+<span class="fc bfc" id="L981" title="All 2 branches covered.">        for (int i = 0; i &lt; size; ++i) {</span>
+<span class="fc" id="L982">            FieldInfo property = getters[i];</span>
+<span class="fc" id="L983">            Class&lt;?&gt; propertyClass = property.fieldClass;</span>
+
+<span class="fc" id="L985">            mw.visitLdcInsn(property.name);</span>
+<span class="fc" id="L986">            mw.visitVarInsn(ASTORE, Context.fieldName);</span>
+
+<span class="fc bfc" id="L988" title="All 6 branches covered.">            if (propertyClass == byte.class //</span>
+                || propertyClass == short.class //
+                || propertyClass == int.class) {
+<span class="fc" id="L991">                _int(clazz, mw, property, context, context.var(propertyClass.getName()), 'I');</span>
+<span class="fc bfc" id="L992" title="All 2 branches covered.">            } else if (propertyClass == long.class) {</span>
+<span class="fc" id="L993">                _long(clazz, mw, property, context);</span>
+<span class="fc bfc" id="L994" title="All 2 branches covered.">            } else if (propertyClass == float.class) {</span>
+<span class="fc" id="L995">                _float(clazz, mw, property, context);</span>
+<span class="fc bfc" id="L996" title="All 2 branches covered.">            } else if (propertyClass == double.class) {</span>
+<span class="fc" id="L997">                _double(clazz, mw, property, context);</span>
+<span class="fc bfc" id="L998" title="All 2 branches covered.">            } else if (propertyClass == boolean.class) {</span>
+<span class="fc" id="L999">                _int(clazz, mw, property, context, context.var(&quot;boolean&quot;), 'Z');</span>
+<span class="fc bfc" id="L1000" title="All 2 branches covered.">            } else if (propertyClass == char.class) {</span>
+<span class="fc" id="L1001">                _int(clazz, mw, property, context, context.var(&quot;char&quot;), 'C');</span>
+<span class="fc bfc" id="L1002" title="All 2 branches covered.">            } else if (propertyClass == String.class) {</span>
+<span class="fc" id="L1003">                _string(clazz, mw, property, context);</span>
+<span class="fc bfc" id="L1004" title="All 2 branches covered.">            } else if (propertyClass == BigDecimal.class) {</span>
+<span class="fc" id="L1005">                _decimal(clazz, mw, property, context);</span>
+<span class="fc bfc" id="L1006" title="All 2 branches covered.">            } else if (List.class.isAssignableFrom(propertyClass)) {</span>
+<span class="fc" id="L1007">                _list(clazz, mw, property, context);</span>
+<span class="fc bfc" id="L1008" title="All 2 branches covered.">            } else if (propertyClass.isEnum()) {</span>
+<span class="fc" id="L1009">                _enum(clazz, mw, property, context);</span>
+            } else {
+<span class="fc" id="L1011">                _object(clazz, mw, property, context);</span>
+            }
+        }
+
+<span class="fc bfc" id="L1015" title="All 2 branches covered.">        if (!context.writeDirect) {</span>
+<span class="fc" id="L1016">            _after(mw, context);</span>
+        }
+
+<span class="fc" id="L1019">        Label _else = new Label();</span>
+<span class="fc" id="L1020">        Label _end_if = new Label();</span>
+
+<span class="fc" id="L1022">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1023">        mw.visitIntInsn(BIPUSH, '{');</span>
+<span class="fc" id="L1024">        mw.visitJumpInsn(IF_ICMPNE, _else);</span>
+
+<span class="fc" id="L1026">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1027">        mw.visitVarInsn(BIPUSH, '{');</span>
+<span class="fc" id="L1028">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L1030">        mw.visitLabel(_else);</span>
+
+<span class="fc" id="L1032">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1033">        mw.visitVarInsn(BIPUSH, '}');</span>
+<span class="fc" id="L1034">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L1036">        mw.visitLabel(_end_if);</span>
+<span class="fc" id="L1037">        mw.visitLabel(end);</span>
+
+<span class="fc bfc" id="L1039" title="All 2 branches covered.">        if (!context.nonContext) {</span>
+<span class="fc" id="L1040">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1041">            mw.visitVarInsn(ALOAD, context.var(&quot;parent&quot;));</span>
+<span class="fc" id="L1042">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;setContext&quot;, &quot;(&quot; + SerialContext_desc + &quot;)V&quot;);</span>
+        }
+
+<span class="fc" id="L1045">    }</span>
+
+    private void _object(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo property, Context context) {
+<span class="fc" id="L1048">        Label _end = new Label();</span>
+
+<span class="fc" id="L1050">        _nameApply(mw, property, context, _end);</span>
+<span class="fc" id="L1051">        _get(mw, context, property);</span>
+<span class="fc" id="L1052">        mw.visitVarInsn(ASTORE, context.var(&quot;object&quot;));</span>
+
+<span class="fc" id="L1054">        _filters(mw, property, context, _end);</span>
+
+<span class="fc" id="L1056">        _writeObject(mw, property, context, _end);</span>
+
+<span class="fc" id="L1058">        mw.visitLabel(_end);</span>
+<span class="fc" id="L1059">    }</span>
+
+    private void _enum(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo fieldInfo, Context context) {
+<span class="fc" id="L1062">        Label _not_null = new Label();</span>
+<span class="fc" id="L1063">        Label _end_if = new Label();</span>
+<span class="fc" id="L1064">        Label _end = new Label();</span>
+
+<span class="fc" id="L1066">        _nameApply(mw, fieldInfo, context, _end);</span>
+<span class="fc" id="L1067">        _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L1068">        mw.visitTypeInsn(CHECKCAST, &quot;java/lang/Enum&quot;); // cast</span>
+<span class="fc" id="L1069">        mw.visitVarInsn(ASTORE, context.var(&quot;enum&quot;));</span>
+
+<span class="fc" id="L1071">        _filters(mw, fieldInfo, context, _end);</span>
+
+<span class="fc" id="L1073">        mw.visitVarInsn(ALOAD, context.var(&quot;enum&quot;));</span>
+<span class="fc" id="L1074">        mw.visitJumpInsn(IFNONNULL, _not_null);</span>
+<span class="fc" id="L1075">        _if_write_null(mw, fieldInfo, context);</span>
+<span class="fc" id="L1076">        mw.visitJumpInsn(GOTO, _end_if);</span>
+
+<span class="fc" id="L1078">        mw.visitLabel(_not_null);</span>
+
+<span class="fc bfc" id="L1080" title="All 2 branches covered.">       if (context.writeDirect) {</span>
+<span class="fc" id="L1081">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1082">            mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1083">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1084">            mw.visitVarInsn(ALOAD, context.var(&quot;enum&quot;));</span>
+<span class="fc" id="L1085">            mw.visitMethodInsn(INVOKEVIRTUAL, &quot;java/lang/Enum&quot;, &quot;name&quot;, &quot;()Ljava/lang/String;&quot;);</span>
+<span class="fc" id="L1086">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldValueStringWithDoubleQuote&quot;,</span>
+                               &quot;(CLjava/lang/String;Ljava/lang/String;)V&quot;);
+        } else {
+<span class="fc" id="L1089">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1090">            mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1091">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+            
+<span class="fc" id="L1093">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1094">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1095">            mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L1096">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldName&quot;, &quot;(Ljava/lang/String;Z)V&quot;);</span>
+            
+<span class="fc" id="L1098">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1099">            mw.visitVarInsn(ALOAD, context.var(&quot;enum&quot;));</span>
+<span class="fc" id="L1100">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1101">            mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc((Class&lt;?&gt;) fieldInfo.fieldClass)));</span>
+<span class="fc" id="L1102">            mw.visitLdcInsn(fieldInfo.serialzeFeatures);</span>
+<span class="fc" id="L1103">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFieldName&quot;,</span>
+                    &quot;(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+        }
+
+<span class="fc" id="L1107">        _seperator(mw, context);</span>
+
+<span class="fc" id="L1109">        mw.visitLabel(_end_if);</span>
+<span class="fc" id="L1110">        mw.visitLabel(_end);</span>
+<span class="fc" id="L1111">    }</span>
+    
+    private void _int(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo property, Context context, int var, char type) {
+<span class="fc" id="L1114">        Label end_ = new Label();</span>
+
+<span class="fc" id="L1116">        _nameApply(mw, property, context, end_);</span>
+<span class="fc" id="L1117">        _get(mw, context, property);</span>
+<span class="fc" id="L1118">        mw.visitVarInsn(ISTORE, var);</span>
+
+<span class="fc" id="L1120">        _filters(mw, property, context, end_);</span>
+
+<span class="fc" id="L1122">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1123">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1124">        mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1125">        mw.visitVarInsn(ILOAD, var);</span>
+
+<span class="fc" id="L1127">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldValue&quot;, &quot;(CLjava/lang/String;&quot; + type + &quot;)V&quot;);</span>
+
+<span class="fc" id="L1129">        _seperator(mw, context);</span>
+
+<span class="fc" id="L1131">        mw.visitLabel(end_);</span>
+<span class="fc" id="L1132">    }</span>
+
+    private void _long(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo property, Context context) {
+<span class="fc" id="L1135">        Label end_ = new Label();</span>
+
+<span class="fc" id="L1137">        _nameApply(mw, property, context, end_);</span>
+<span class="fc" id="L1138">        _get(mw, context, property);</span>
+<span class="fc" id="L1139">        mw.visitVarInsn(LSTORE, context.var(&quot;long&quot;, 2));</span>
+
+<span class="fc" id="L1141">        _filters(mw, property, context, end_);</span>
+
+<span class="fc" id="L1143">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1144">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1145">        mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1146">        mw.visitVarInsn(LLOAD, context.var(&quot;long&quot;, 2));</span>
+<span class="fc" id="L1147">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldValue&quot;, &quot;(CLjava/lang/String;J)V&quot;);</span>
+
+<span class="fc" id="L1149">        _seperator(mw, context);</span>
+
+<span class="fc" id="L1151">        mw.visitLabel(end_);</span>
+<span class="fc" id="L1152">    }</span>
+    
+    private void _float(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo property, Context context) {
+<span class="fc" id="L1155">        Label end_ = new Label();</span>
+
+<span class="fc" id="L1157">        _nameApply(mw, property, context, end_);</span>
+<span class="fc" id="L1158">        _get(mw, context, property);</span>
+<span class="fc" id="L1159">        mw.visitVarInsn(FSTORE, context.var(&quot;float&quot;));</span>
+
+<span class="fc" id="L1161">        _filters(mw, property, context, end_);</span>
+
+<span class="fc" id="L1163">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1164">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1165">        mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1166">        mw.visitVarInsn(FLOAD, context.var(&quot;float&quot;));</span>
+<span class="fc" id="L1167">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldValue&quot;, &quot;(CLjava/lang/String;F)V&quot;);</span>
+
+<span class="fc" id="L1169">        _seperator(mw, context);</span>
+
+<span class="fc" id="L1171">        mw.visitLabel(end_);</span>
+<span class="fc" id="L1172">    }</span>
+
+    private void _double(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo property, Context context) {
+<span class="fc" id="L1175">        Label end_ = new Label();</span>
+
+<span class="fc" id="L1177">        _nameApply(mw, property, context, end_);</span>
+<span class="fc" id="L1178">        _get(mw, context, property);</span>
+<span class="fc" id="L1179">        mw.visitVarInsn(DSTORE, context.var(&quot;double&quot;, 2));</span>
+
+<span class="fc" id="L1181">        _filters(mw, property, context, end_);</span>
+
+<span class="fc" id="L1183">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1184">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1185">        mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1186">        mw.visitVarInsn(DLOAD, context.var(&quot;double&quot;, 2));</span>
+<span class="fc" id="L1187">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldValue&quot;, &quot;(CLjava/lang/String;D)V&quot;);</span>
+
+<span class="fc" id="L1189">        _seperator(mw, context);</span>
+
+<span class="fc" id="L1191">        mw.visitLabel(end_);</span>
+<span class="fc" id="L1192">    }</span>
+    
+    private void _get(MethodVisitor mw, Context context, FieldInfo fieldInfo) {
+<span class="fc" id="L1195">        Method method = fieldInfo.method;</span>
+<span class="fc bfc" id="L1196" title="All 2 branches covered.">        if (method != null) {</span>
+<span class="fc" id="L1197">            mw.visitVarInsn(ALOAD, context.var(&quot;entity&quot;));</span>
+<span class="fc" id="L1198">            Class&lt;?&gt; declaringClass = method.getDeclaringClass();</span>
+<span class="pc bpc" id="L1199" title="1 of 2 branches missed.">            mw.visitMethodInsn(declaringClass.isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL, type(declaringClass), method.getName(), desc(method));</span>
+<span class="pc bpc" id="L1200" title="1 of 2 branches missed.">            if (!method.getReturnType().equals(fieldInfo.fieldClass)) {</span>
+<span class="nc" id="L1201">                mw.visitTypeInsn(CHECKCAST, type(fieldInfo.fieldClass)); // cast</span>
+            }
+<span class="fc" id="L1203">        } else {</span>
+<span class="fc" id="L1204">            mw.visitVarInsn(ALOAD, context.var(&quot;entity&quot;));</span>
+<span class="fc" id="L1205">            Field field = fieldInfo.field;</span>
+<span class="fc" id="L1206">            mw.visitFieldInsn(GETFIELD, type(fieldInfo.declaringClass), field.getName(),</span>
+<span class="fc" id="L1207">                              desc(field.getType()));</span>
+<span class="pc bpc" id="L1208" title="1 of 2 branches missed.">            if (!field.getType().equals(fieldInfo.fieldClass)) {</span>
+<span class="nc" id="L1209">                mw.visitTypeInsn(CHECKCAST, type(fieldInfo.fieldClass)); // cast</span>
+            }
+        }
+<span class="fc" id="L1212">    }</span>
+
+    private void _decimal(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo property, Context context) {
+<span class="fc" id="L1215">        Label end_ = new Label();</span>
+
+<span class="fc" id="L1217">        _nameApply(mw, property, context, end_);</span>
+<span class="fc" id="L1218">        _get(mw, context, property);</span>
+<span class="fc" id="L1219">        mw.visitVarInsn(ASTORE, context.var(&quot;decimal&quot;));</span>
+
+<span class="fc" id="L1221">        _filters(mw, property, context, end_);</span>
+
+<span class="fc" id="L1223">        Label if_ = new Label();</span>
+<span class="fc" id="L1224">        Label else_ = new Label();</span>
+<span class="fc" id="L1225">        Label endIf_ = new Label();</span>
+
+<span class="fc" id="L1227">        mw.visitLabel(if_);</span>
+
+        // if (decimalValue == null) {
+<span class="fc" id="L1230">        mw.visitVarInsn(ALOAD, context.var(&quot;decimal&quot;));</span>
+<span class="fc" id="L1231">        mw.visitJumpInsn(IFNONNULL, else_);</span>
+<span class="fc" id="L1232">        _if_write_null(mw, property, context);</span>
+<span class="fc" id="L1233">        mw.visitJumpInsn(GOTO, endIf_);</span>
+
+<span class="fc" id="L1235">        mw.visitLabel(else_); // else { out.writeFieldValue(seperator, fieldName, fieldValue)</span>
+
+<span class="fc" id="L1237">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1238">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1239">        mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1240">        mw.visitVarInsn(ALOAD, context.var(&quot;decimal&quot;));</span>
+<span class="fc" id="L1241">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldValue&quot;,</span>
+                           &quot;(CLjava/lang/String;Ljava/math/BigDecimal;)V&quot;);
+
+<span class="fc" id="L1244">        _seperator(mw, context);</span>
+<span class="fc" id="L1245">        mw.visitJumpInsn(GOTO, endIf_);</span>
+
+<span class="fc" id="L1247">        mw.visitLabel(endIf_);</span>
+
+<span class="fc" id="L1249">        mw.visitLabel(end_);</span>
+<span class="fc" id="L1250">    }</span>
+
+    private void _string(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo property, Context context) {
+<span class="fc" id="L1253">        Label end_ = new Label();</span>
+
+<span class="fc bfc" id="L1255" title="All 2 branches covered.">        if (property.name.equals(context.beanInfo.typeKey)) {</span>
+<span class="fc" id="L1256">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1257">            mw.visitVarInsn(ALOAD, Context.paramFieldType);</span>
+<span class="fc" id="L1258">            mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L1259">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;isWriteClassName&quot;,</span>
+                    &quot;(Ljava/lang/reflect/Type;Ljava/lang/Object;)Z&quot;);
+<span class="fc" id="L1261">            mw.visitJumpInsn(IFNE, end_);</span>
+        }
+
+<span class="fc" id="L1264">        _nameApply(mw, property, context, end_);</span>
+<span class="fc" id="L1265">        _get(mw, context, property);</span>
+<span class="fc" id="L1266">        mw.visitVarInsn(ASTORE, context.var(&quot;string&quot;));</span>
+
+<span class="fc" id="L1268">        _filters(mw, property, context, end_);</span>
+
+<span class="fc" id="L1270">        Label else_ = new Label();</span>
+<span class="fc" id="L1271">        Label endIf_ = new Label();</span>
+
+        // if (value == null) {
+<span class="fc" id="L1274">        mw.visitVarInsn(ALOAD, context.var(&quot;string&quot;));</span>
+<span class="fc" id="L1275">        mw.visitJumpInsn(IFNONNULL, else_);</span>
+
+<span class="fc" id="L1277">        _if_write_null(mw, property, context);</span>
+
+<span class="fc" id="L1279">        mw.visitJumpInsn(GOTO, endIf_);</span>
+
+<span class="fc" id="L1281">        mw.visitLabel(else_); // else { out.writeFieldValue(seperator, fieldName, fieldValue)</span>
+
+
+<span class="fc bfc" id="L1284" title="All 2 branches covered.">        if (&quot;trim&quot;.equals(property.format)) {</span>
+<span class="fc" id="L1285">            mw.visitVarInsn(ALOAD, context.var(&quot;string&quot;));</span>
+<span class="fc" id="L1286">            mw.visitMethodInsn(INVOKEVIRTUAL, &quot;java/lang/String&quot;, &quot;trim&quot;, &quot;()Ljava/lang/String;&quot;);</span>
+<span class="fc" id="L1287">            mw.visitVarInsn(ASTORE, context.var(&quot;string&quot;));</span>
+        }
+
+<span class="fc bfc" id="L1290" title="All 2 branches covered.">        if (context.writeDirect) {</span>
+<span class="fc" id="L1291">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1292">            mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1293">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1294">            mw.visitVarInsn(ALOAD, context.var(&quot;string&quot;));</span>
+<span class="fc" id="L1295">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldValueStringWithDoubleQuoteCheck&quot;,</span>
+                               &quot;(CLjava/lang/String;Ljava/lang/String;)V&quot;);
+        } else {
+<span class="fc" id="L1298">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1299">            mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1300">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1301">            mw.visitVarInsn(ALOAD, context.var(&quot;string&quot;));</span>
+<span class="fc" id="L1302">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldValue&quot;,</span>
+                               &quot;(CLjava/lang/String;Ljava/lang/String;)V&quot;);
+        }
+<span class="fc" id="L1305">        _seperator(mw, context);</span>
+
+<span class="fc" id="L1307">        mw.visitLabel(endIf_);</span>
+
+<span class="fc" id="L1309">        mw.visitLabel(end_);</span>
+<span class="fc" id="L1310">    }</span>
+
+    private void _list(Class&lt;?&gt; clazz, MethodVisitor mw, FieldInfo fieldInfo, Context context) {
+<span class="fc" id="L1313">        Type propertyType = fieldInfo.fieldType;</span>
+
+<span class="fc" id="L1315">        Type elementType = TypeUtils.getCollectionItemType(propertyType);</span>
+
+<span class="fc" id="L1317">        Class&lt;?&gt; elementClass = null;</span>
+<span class="fc bfc" id="L1318" title="All 2 branches covered.">        if (elementType instanceof Class&lt;?&gt;) {</span>
+<span class="fc" id="L1319">            elementClass = (Class&lt;?&gt;) elementType;</span>
+        }
+        
+<span class="fc bfc" id="L1322" title="All 4 branches covered.">        if (elementClass == Object.class //</span>
+            || elementClass == Serializable.class) {
+<span class="fc" id="L1324">            elementClass = null;</span>
+        }
+
+<span class="fc" id="L1327">        Label end_ = new Label(), else_ = new Label(), endIf_ = new Label();</span>
+
+<span class="fc" id="L1329">        _nameApply(mw, fieldInfo, context, end_);</span>
+<span class="fc" id="L1330">        _get(mw, context, fieldInfo);</span>
+<span class="fc" id="L1331">        mw.visitTypeInsn(CHECKCAST, &quot;java/util/List&quot;); // cast</span>
+<span class="fc" id="L1332">        mw.visitVarInsn(ASTORE, context.var(&quot;list&quot;));</span>
+
+<span class="fc" id="L1334">        _filters(mw, fieldInfo, context, end_);</span>
+
+<span class="fc" id="L1336">        mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L1337">        mw.visitJumpInsn(IFNONNULL, else_);</span>
+<span class="fc" id="L1338">        _if_write_null(mw, fieldInfo, context);</span>
+<span class="fc" id="L1339">        mw.visitJumpInsn(GOTO, endIf_);</span>
+
+<span class="fc" id="L1341">        mw.visitLabel(else_); // else {</span>
+
+<span class="fc" id="L1343">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1344">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1345">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L1347">        _writeFieldName(mw, context);</span>
+
+        //
+<span class="fc" id="L1350">        mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L1351">        mw.visitMethodInsn(INVOKEINTERFACE, &quot;java/util/List&quot;, &quot;size&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1352">        mw.visitVarInsn(ISTORE, context.var(&quot;size&quot;));</span>
+
+<span class="fc" id="L1354">        Label _else_3 = new Label();</span>
+<span class="fc" id="L1355">        Label _end_if_3 = new Label();</span>
+
+<span class="fc" id="L1357">        mw.visitVarInsn(ILOAD, context.var(&quot;size&quot;));</span>
+<span class="fc" id="L1358">        mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L1359">        mw.visitJumpInsn(IF_ICMPNE, _else_3);</span>
+
+<span class="fc" id="L1361">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1362">        mw.visitLdcInsn(&quot;[]&quot;);</span>
+<span class="fc" id="L1363">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(Ljava/lang/String;)V&quot;);</span>
+
+<span class="fc" id="L1365">        mw.visitJumpInsn(GOTO, _end_if_3);</span>
+
+<span class="fc" id="L1367">        mw.visitLabel(_else_3);</span>
+
+<span class="fc bfc" id="L1369" title="All 2 branches covered.">        if (!context.nonContext) {</span>
+<span class="fc" id="L1370">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1371">            mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L1372">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1373">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;setContext&quot;, &quot;(Ljava/lang/Object;Ljava/lang/Object;)V&quot;);</span>
+        }
+
+<span class="fc bfc" id="L1376" title="All 2 branches covered.">        if (elementType == String.class //</span>
+<span class="fc bfc" id="L1377" title="All 2 branches covered.">            &amp;&amp; context.writeDirect) {</span>
+<span class="fc" id="L1378">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1379">            mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L1380">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(Ljava/util/List;)V&quot;);</span>
+        } else {
+<span class="fc" id="L1382">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1383">            mw.visitVarInsn(BIPUSH, '[');</span>
+<span class="fc" id="L1384">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L1386">            Label for_ = new Label(), forFirst_ = new Label(), forEnd_ = new Label();</span>
+
+<span class="fc" id="L1388">            mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L1389">            mw.visitVarInsn(ISTORE, context.var(&quot;i&quot;));</span>
+
+            // for (; i &lt; list.size() -1; ++i) {
+<span class="fc" id="L1392">            mw.visitLabel(for_);</span>
+<span class="fc" id="L1393">            mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L1394">            mw.visitVarInsn(ILOAD, context.var(&quot;size&quot;));</span>
+<span class="fc" id="L1395">            mw.visitJumpInsn(IF_ICMPGE, forEnd_); // i &lt; list.size - 1</span>
+
+<span class="fc" id="L1397">            mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L1398">            mw.visitJumpInsn(IFEQ, forFirst_); // i &lt; list.size - 1</span>
+
+<span class="fc" id="L1400">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1401">            mw.visitVarInsn(BIPUSH, ',');</span>
+<span class="fc" id="L1402">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L1404">            mw.visitLabel(forFirst_);</span>
+
+<span class="fc" id="L1406">            mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L1407">            mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L1408">            mw.visitMethodInsn(INVOKEINTERFACE, &quot;java/util/List&quot;, &quot;get&quot;, &quot;(I)Ljava/lang/Object;&quot;);</span>
+<span class="fc" id="L1409">            mw.visitVarInsn(ASTORE, context.var(&quot;list_item&quot;));</span>
+
+<span class="fc" id="L1411">            Label forItemNullEnd_ = new Label(), forItemNullElse_ = new Label();</span>
+
+<span class="fc" id="L1413">            mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;));</span>
+<span class="fc" id="L1414">            mw.visitJumpInsn(IFNONNULL, forItemNullElse_);</span>
+
+<span class="fc" id="L1416">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1417">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeNull&quot;, &quot;()V&quot;);</span>
+<span class="fc" id="L1418">            mw.visitJumpInsn(GOTO, forItemNullEnd_);</span>
+
+<span class="fc" id="L1420">            mw.visitLabel(forItemNullElse_);</span>
+
+<span class="fc" id="L1422">            Label forItemClassIfEnd_ = new Label(), forItemClassIfElse_ = new Label();</span>
+<span class="fc bfc" id="L1423" title="All 4 branches covered.">            if (elementClass != null &amp;&amp; Modifier.isPublic(elementClass.getModifiers())) {</span>
+<span class="fc" id="L1424">                mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;));</span>
+<span class="fc" id="L1425">                mw.visitMethodInsn(INVOKEVIRTUAL, &quot;java/lang/Object&quot;, &quot;getClass&quot;, &quot;()Ljava/lang/Class;&quot;);</span>
+<span class="fc" id="L1426">                mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(elementClass)));</span>
+<span class="fc" id="L1427">                mw.visitJumpInsn(IF_ACMPNE, forItemClassIfElse_);</span>
+
+<span class="fc" id="L1429">                _getListFieldItemSer(context, mw, fieldInfo, elementClass);</span>
+                // mw.visitInsn(DUP);
+<span class="fc" id="L1431">                mw.visitVarInsn(ASTORE, context.var(&quot;list_item_desc&quot;));</span>
+
+<span class="fc" id="L1433">                Label instanceOfElse_ = new Label(), instanceOfEnd_ = new Label();</span>
+
+<span class="fc bfc" id="L1435" title="All 2 branches covered.">                if (context.writeDirect) {</span>
+<span class="pc bpc" id="L1436" title="1 of 4 branches missed.">                    String writeMethodName = context.nonContext &amp;&amp; context.writeDirect ? //</span>
+                        &quot;writeDirectNonContext&quot; //
+                        : &quot;write&quot;;
+<span class="fc" id="L1439">                    mw.visitVarInsn(ALOAD, context.var(&quot;list_item_desc&quot;));</span>
+<span class="fc" id="L1440">                    mw.visitTypeInsn(INSTANCEOF, JavaBeanSerializer);</span>
+<span class="fc" id="L1441">                    mw.visitJumpInsn(IFEQ, instanceOfElse_);</span>
+
+<span class="fc" id="L1443">                    mw.visitVarInsn(ALOAD, context.var(&quot;list_item_desc&quot;));</span>
+<span class="fc" id="L1444">                    mw.visitTypeInsn(CHECKCAST, JavaBeanSerializer); // cast</span>
+<span class="fc" id="L1445">                    mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1446">                    mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;)); // object</span>
+<span class="fc bfc" id="L1447" title="All 2 branches covered.">                    if (context.nonContext) { // fieldName</span>
+<span class="fc" id="L1448">                        mw.visitInsn(ACONST_NULL);</span>
+                    } else {
+<span class="fc" id="L1450">                        mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L1451">                        mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+                    }
+<span class="fc" id="L1453">                    mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(elementClass))); // fieldType</span>
+<span class="fc" id="L1454">                    mw.visitLdcInsn(fieldInfo.serialzeFeatures); // features</span>
+<span class="fc" id="L1455">                    mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, writeMethodName, //</span>
+                                       &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L1457">                    mw.visitJumpInsn(GOTO, instanceOfEnd_);</span>
+
+<span class="fc" id="L1459">                    mw.visitLabel(instanceOfElse_);</span>
+                }
+<span class="fc" id="L1461">                mw.visitVarInsn(ALOAD, context.var(&quot;list_item_desc&quot;));</span>
+<span class="fc" id="L1462">                mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1463">                mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;)); // object</span>
+<span class="fc bfc" id="L1464" title="All 2 branches covered.">                if (context.nonContext) { // fieldName</span>
+<span class="fc" id="L1465">                    mw.visitInsn(ACONST_NULL);</span>
+                } else {
+<span class="fc" id="L1467">                    mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L1468">                    mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+                }
+<span class="fc" id="L1470">                mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(elementClass))); // fieldType</span>
+<span class="fc" id="L1471">                mw.visitLdcInsn(fieldInfo.serialzeFeatures); // features</span>
+<span class="fc" id="L1472">                mw.visitMethodInsn(INVOKEINTERFACE, ObjectSerializer, &quot;write&quot;, //</span>
+                                   &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+
+<span class="fc" id="L1475">                mw.visitLabel(instanceOfEnd_);</span>
+<span class="fc" id="L1476">                mw.visitJumpInsn(GOTO, forItemClassIfEnd_);</span>
+            }
+
+<span class="fc" id="L1479">            mw.visitLabel(forItemClassIfElse_);</span>
+
+<span class="fc" id="L1481">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1482">            mw.visitVarInsn(ALOAD, context.var(&quot;list_item&quot;));</span>
+<span class="fc bfc" id="L1483" title="All 2 branches covered.">            if (context.nonContext) {</span>
+<span class="fc" id="L1484">                mw.visitInsn(ACONST_NULL);</span>
+            } else {
+<span class="fc" id="L1486">                mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L1487">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+            }
+
+<span class="fc bfc" id="L1490" title="All 4 branches covered.">            if (elementClass != null &amp;&amp; Modifier.isPublic(elementClass.getModifiers())) {</span>
+<span class="fc" id="L1491">                mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc((Class&lt;?&gt;) elementType)));</span>
+<span class="fc" id="L1492">                mw.visitLdcInsn(fieldInfo.serialzeFeatures);</span>
+<span class="fc" id="L1493">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFieldName&quot;,</span>
+                                   &quot;(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+            } else {
+<span class="fc" id="L1496">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFieldName&quot;,</span>
+                                   &quot;(Ljava/lang/Object;Ljava/lang/Object;)V&quot;);
+            }
+
+<span class="fc" id="L1500">            mw.visitLabel(forItemClassIfEnd_);</span>
+<span class="fc" id="L1501">            mw.visitLabel(forItemNullEnd_);</span>
+
+<span class="fc" id="L1503">            mw.visitIincInsn(context.var(&quot;i&quot;), 1);</span>
+<span class="fc" id="L1504">            mw.visitJumpInsn(GOTO, for_);</span>
+
+<span class="fc" id="L1506">            mw.visitLabel(forEnd_);</span>
+
+<span class="fc" id="L1508">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1509">            mw.visitVarInsn(BIPUSH, ']');</span>
+<span class="fc" id="L1510">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+        }
+
+        {
+<span class="fc" id="L1514">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1515">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;popContext&quot;, &quot;()V&quot;);</span>
+        }
+
+<span class="fc" id="L1518">        mw.visitLabel(_end_if_3);</span>
+
+<span class="fc" id="L1520">        _seperator(mw, context);</span>
+
+<span class="fc" id="L1522">        mw.visitLabel(endIf_);</span>
+
+<span class="fc" id="L1524">        mw.visitLabel(end_);</span>
+<span class="fc" id="L1525">    }</span>
+
+    private void _filters(MethodVisitor mw, FieldInfo property, Context context, Label _end) {
+<span class="fc bfc" id="L1528" title="All 2 branches covered.">        if (property.fieldTransient) {</span>
+<span class="fc" id="L1529">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1530">            mw.visitLdcInsn(SerializerFeature.SkipTransientField.mask);</span>
+<span class="fc" id="L1531">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;isEnabled&quot;, &quot;(I)Z&quot;);</span>
+<span class="fc" id="L1532">            mw.visitJumpInsn(IFNE, _end);</span>
+        }
+
+<span class="fc" id="L1535">        _notWriteDefault(mw, property, context, _end);</span>
+
+<span class="fc bfc" id="L1537" title="All 2 branches covered.">        if (context.writeDirect) {</span>
+<span class="fc" id="L1538">            return;</span>
+        }
+
+<span class="fc" id="L1541">        _apply(mw, property, context);</span>
+<span class="fc" id="L1542">        mw.visitJumpInsn(IFEQ, _end);</span>
+
+<span class="fc" id="L1544">        _processKey(mw, property, context);</span>
+
+<span class="fc" id="L1546">        _processValue(mw, property, context, _end);</span>
+<span class="fc" id="L1547">    }</span>
+
+    private void _nameApply(MethodVisitor mw, FieldInfo property, Context context, Label _end) {
+<span class="fc bfc" id="L1550" title="All 2 branches covered.">        if (!context.writeDirect) {</span>
+<span class="fc" id="L1551">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1552">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1553">            mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L1554">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1555">            mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;applyName&quot;,</span>
+                               &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/String;)Z&quot;);
+<span class="fc" id="L1557">            mw.visitJumpInsn(IFEQ, _end);</span>
+
+<span class="fc" id="L1559">            _labelApply(mw, property, context, _end);</span>
+        }
+
+<span class="fc bfc" id="L1562" title="All 2 branches covered.">        if (property.field == null) {</span>
+<span class="fc" id="L1563">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1564">            mw.visitLdcInsn(SerializerFeature.IgnoreNonFieldGetter.mask);</span>
+<span class="fc" id="L1565">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;isEnabled&quot;, &quot;(I)Z&quot;);</span>
+
+            // if true
+<span class="fc" id="L1568">            mw.visitJumpInsn(IFNE, _end);</span>
+        }
+<span class="fc" id="L1570">    }</span>
+
+    private void _labelApply(MethodVisitor mw, FieldInfo property, Context context, Label _end) {
+<span class="fc" id="L1573">        mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L1574">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1575">        mw.visitLdcInsn(property.label);</span>
+<span class="fc" id="L1576">        mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;applyLabel&quot;,</span>
+                           &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/String;)Z&quot;);
+<span class="fc" id="L1578">        mw.visitJumpInsn(IFEQ, _end);</span>
+<span class="fc" id="L1579">    }</span>
+
+    private void _writeObject(MethodVisitor mw, FieldInfo fieldInfo, Context context, Label _end) {
+<span class="fc" id="L1582">        String format = fieldInfo.getFormat();</span>
+<span class="fc" id="L1583">        Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+
+<span class="fc" id="L1585">        Label notNull_ = new Label();</span>
+
+        // if (obj == null)
+<span class="fc bfc" id="L1588" title="All 2 branches covered.">        if (context.writeDirect) {</span>
+<span class="fc" id="L1589">            mw.visitVarInsn(ALOAD, context.var(&quot;object&quot;));</span>
+        } else {
+<span class="fc" id="L1591">            mw.visitVarInsn(ALOAD, Context.processValue);</span>
+        }
+<span class="fc" id="L1593">        mw.visitInsn(DUP);</span>
+<span class="fc" id="L1594">        mw.visitVarInsn(ASTORE, context.var(&quot;object&quot;));</span>
+<span class="fc" id="L1595">        mw.visitJumpInsn(IFNONNULL, notNull_);</span>
+<span class="fc" id="L1596">        _if_write_null(mw, fieldInfo, context);</span>
+<span class="fc" id="L1597">        mw.visitJumpInsn(GOTO, _end);</span>
+
+<span class="fc" id="L1599">        mw.visitLabel(notNull_);</span>
+
+<span class="fc" id="L1601">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L1602">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1603">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L1605">        _writeFieldName(mw, context);</span>
+
+<span class="fc" id="L1607">        Label classIfEnd_ = new Label(), classIfElse_ = new Label();</span>
+<span class="fc bfc" id="L1608" title="All 2 branches covered.">        if (Modifier.isPublic(fieldClass.getModifiers()) //</span>
+<span class="fc bfc" id="L1609" title="All 2 branches covered.">            &amp;&amp; !ParserConfig.isPrimitive2(fieldClass) //</span>
+        ) {
+<span class="fc" id="L1611">            mw.visitVarInsn(ALOAD, context.var(&quot;object&quot;));</span>
+<span class="fc" id="L1612">            mw.visitMethodInsn(INVOKEVIRTUAL, &quot;java/lang/Object&quot;, &quot;getClass&quot;, &quot;()Ljava/lang/Class;&quot;);</span>
+<span class="fc" id="L1613">            mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldClass)));</span>
+<span class="fc" id="L1614">            mw.visitJumpInsn(IF_ACMPNE, classIfElse_);</span>
+
+<span class="fc" id="L1616">            _getFieldSer(context, mw, fieldInfo);</span>
+<span class="fc" id="L1617">            mw.visitVarInsn(ASTORE, context.var(&quot;fied_ser&quot;));</span>
+
+<span class="fc" id="L1619">            Label instanceOfElse_ = new Label(), instanceOfEnd_ = new Label();</span>
+<span class="fc" id="L1620">            mw.visitVarInsn(ALOAD, context.var(&quot;fied_ser&quot;));</span>
+<span class="fc" id="L1621">            mw.visitTypeInsn(INSTANCEOF, JavaBeanSerializer);</span>
+<span class="fc" id="L1622">            mw.visitJumpInsn(IFEQ, instanceOfElse_);</span>
+
+<span class="fc bfc" id="L1624" title="All 2 branches covered.">            boolean disableCircularReferenceDetect = (fieldInfo.serialzeFeatures &amp; SerializerFeature.DisableCircularReferenceDetect.mask) != 0;</span>
+<span class="pc bpc" id="L1625" title="1 of 2 branches missed.">            boolean fieldBeanToArray = (fieldInfo.serialzeFeatures &amp; SerializerFeature.BeanToArray.mask) != 0;</span>
+            String writeMethodName;
+<span class="fc bfc" id="L1627" title="All 6 branches covered.">            if (disableCircularReferenceDetect || (context.nonContext &amp;&amp; context.writeDirect)) {</span>
+<span class="pc bpc" id="L1628" title="1 of 2 branches missed.">                writeMethodName = fieldBeanToArray ? &quot;writeAsArrayNonContext&quot; : &quot;writeDirectNonContext&quot;;</span>
+            } else {
+<span class="pc bpc" id="L1630" title="1 of 2 branches missed.">                writeMethodName = fieldBeanToArray ? &quot;writeAsArray&quot; : &quot;write&quot;;</span>
+            }
+            
+<span class="fc" id="L1633">            mw.visitVarInsn(ALOAD, context.var(&quot;fied_ser&quot;));</span>
+<span class="fc" id="L1634">            mw.visitTypeInsn(CHECKCAST, JavaBeanSerializer); // cast</span>
+<span class="fc" id="L1635">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1636">            mw.visitVarInsn(ALOAD, context.var(&quot;object&quot;));</span>
+<span class="fc" id="L1637">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1638">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1639">            mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_fieldType&quot;,</span>
+                              &quot;Ljava/lang/reflect/Type;&quot;);
+<span class="fc" id="L1641">            mw.visitLdcInsn(fieldInfo.serialzeFeatures); // features</span>
+<span class="fc" id="L1642">            mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, writeMethodName, //</span>
+                               &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+<span class="fc" id="L1644">            mw.visitJumpInsn(GOTO, instanceOfEnd_);</span>
+
+<span class="fc" id="L1646">            mw.visitLabel(instanceOfElse_);</span>
+
+<span class="fc" id="L1648">            mw.visitVarInsn(ALOAD, context.var(&quot;fied_ser&quot;));</span>
+<span class="fc" id="L1649">            mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1650">            mw.visitVarInsn(ALOAD, context.var(&quot;object&quot;));</span>
+<span class="fc" id="L1651">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L1652">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1653">            mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_fieldType&quot;,</span>
+                              &quot;Ljava/lang/reflect/Type;&quot;);
+<span class="fc" id="L1655">            mw.visitLdcInsn(fieldInfo.serialzeFeatures); // features</span>
+<span class="fc" id="L1656">            mw.visitMethodInsn(INVOKEINTERFACE, ObjectSerializer, &quot;write&quot;, //</span>
+                               &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+
+<span class="fc" id="L1659">            mw.visitLabel(instanceOfEnd_);</span>
+<span class="fc" id="L1660">            mw.visitJumpInsn(GOTO, classIfEnd_);</span>
+        }
+
+<span class="fc" id="L1663">        mw.visitLabel(classIfElse_);</span>
+
+<span class="fc" id="L1665">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc bfc" id="L1666" title="All 2 branches covered.">        if (context.writeDirect) {</span>
+<span class="fc" id="L1667">            mw.visitVarInsn(ALOAD, context.var(&quot;object&quot;));</span>
+        } else {
+<span class="fc" id="L1669">            mw.visitVarInsn(ALOAD, Context.processValue);</span>
+        }
+<span class="fc bfc" id="L1671" title="All 2 branches covered.">        if (format != null) {</span>
+<span class="fc" id="L1672">            mw.visitLdcInsn(format);</span>
+<span class="fc" id="L1673">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFormat&quot;,</span>
+                               &quot;(Ljava/lang/Object;Ljava/lang/String;)V&quot;);
+        } else {
+<span class="fc" id="L1676">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc bfc" id="L1677" title="All 2 branches covered.">            if (fieldInfo.fieldType instanceof Class&lt;?&gt; //</span>
+<span class="fc bfc" id="L1678" title="All 2 branches covered.">                &amp;&amp; ((Class&lt;?&gt;) fieldInfo.fieldType).isPrimitive()) {</span>
+<span class="fc" id="L1679">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFieldName&quot;,</span>
+                                   &quot;(Ljava/lang/Object;Ljava/lang/Object;)V&quot;);
+            } else {
+<span class="fc bfc" id="L1682" title="All 2 branches covered.">                if (fieldInfo.fieldClass == String.class) {</span>
+<span class="fc" id="L1683">                    mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(String.class)));</span>
+                } else {
+<span class="fc" id="L1685">                    mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1686">                    mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_fieldType&quot;,</span>
+                                      &quot;Ljava/lang/reflect/Type;&quot;);
+                }
+<span class="fc" id="L1689">                mw.visitLdcInsn(fieldInfo.serialzeFeatures);</span>
+
+<span class="fc" id="L1691">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;writeWithFieldName&quot;,</span>
+                                   &quot;(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/reflect/Type;I)V&quot;);
+            }
+        }
+<span class="fc" id="L1695">        mw.visitLabel(classIfEnd_);</span>
+
+<span class="fc" id="L1697">        _seperator(mw, context);</span>
+<span class="fc" id="L1698">    }</span>
+
+    private void _before(MethodVisitor mw, Context context) {
+<span class="fc" id="L1701">        mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L1702">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1703">        mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L1704">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1705">        mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;writeBefore&quot;,</span>
+                           &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;C)C&quot;);
+<span class="fc" id="L1707">        mw.visitVarInsn(ISTORE, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1708">    }</span>
+
+    private void _after(MethodVisitor mw, Context context) {
+<span class="fc" id="L1711">        mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L1712">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1713">        mw.visitVarInsn(ALOAD, 2); // obj</span>
+<span class="fc" id="L1714">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1715">        mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;writeAfter&quot;,</span>
+                           &quot;(L&quot; + JSONSerializer + &quot;;Ljava/lang/Object;C)C&quot;);
+<span class="fc" id="L1717">        mw.visitVarInsn(ISTORE, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L1718">    }</span>
+
+    private void _notWriteDefault(MethodVisitor mw, FieldInfo property, Context context, Label _end) {
+<span class="fc bfc" id="L1721" title="All 2 branches covered.">        if (context.writeDirect) {</span>
+<span class="fc" id="L1722">            return;</span>
+        }
+
+<span class="fc" id="L1725">        Label elseLabel = new Label();</span>
+
+<span class="fc" id="L1727">        mw.visitVarInsn(ILOAD, context.var(&quot;notWriteDefaultValue&quot;));</span>
+<span class="fc" id="L1728">        mw.visitJumpInsn(IFEQ, elseLabel);</span>
+
+<span class="fc" id="L1730">        Class&lt;?&gt; propertyClass = property.fieldClass;</span>
+<span class="fc bfc" id="L1731" title="All 2 branches covered.">        if (propertyClass == boolean.class) {</span>
+<span class="fc" id="L1732">            mw.visitVarInsn(ILOAD, context.var(&quot;boolean&quot;));</span>
+<span class="fc" id="L1733">            mw.visitJumpInsn(IFEQ, _end);</span>
+<span class="fc bfc" id="L1734" title="All 2 branches covered.">        } else if (propertyClass == byte.class) {</span>
+<span class="fc" id="L1735">            mw.visitVarInsn(ILOAD, context.var(&quot;byte&quot;));</span>
+<span class="fc" id="L1736">            mw.visitJumpInsn(IFEQ, _end);</span>
+<span class="fc bfc" id="L1737" title="All 2 branches covered.">        } else if (propertyClass == short.class) {</span>
+<span class="fc" id="L1738">            mw.visitVarInsn(ILOAD, context.var(&quot;short&quot;));</span>
+<span class="fc" id="L1739">            mw.visitJumpInsn(IFEQ, _end);</span>
+<span class="fc bfc" id="L1740" title="All 2 branches covered.">        } else if (propertyClass == int.class) {</span>
+<span class="fc" id="L1741">            mw.visitVarInsn(ILOAD, context.var(&quot;int&quot;));</span>
+<span class="fc" id="L1742">            mw.visitJumpInsn(IFEQ, _end);</span>
+<span class="fc bfc" id="L1743" title="All 2 branches covered.">        } else if (propertyClass == long.class) {</span>
+<span class="fc" id="L1744">            mw.visitVarInsn(LLOAD, context.var(&quot;long&quot;));</span>
+<span class="fc" id="L1745">            mw.visitInsn(LCONST_0);</span>
+<span class="fc" id="L1746">            mw.visitInsn(LCMP);</span>
+<span class="fc" id="L1747">            mw.visitJumpInsn(IFEQ, _end);</span>
+<span class="fc bfc" id="L1748" title="All 2 branches covered.">        } else if (propertyClass == float.class) {</span>
+<span class="fc" id="L1749">            mw.visitVarInsn(FLOAD, context.var(&quot;float&quot;));</span>
+<span class="fc" id="L1750">            mw.visitInsn(FCONST_0);</span>
+<span class="fc" id="L1751">            mw.visitInsn(FCMPL);</span>
+<span class="fc" id="L1752">            mw.visitJumpInsn(IFEQ, _end);</span>
+<span class="fc bfc" id="L1753" title="All 2 branches covered.">        } else if (propertyClass == double.class) {</span>
+<span class="fc" id="L1754">            mw.visitVarInsn(DLOAD, context.var(&quot;double&quot;));</span>
+<span class="fc" id="L1755">            mw.visitInsn(DCONST_0);</span>
+<span class="fc" id="L1756">            mw.visitInsn(DCMPL);</span>
+<span class="fc" id="L1757">            mw.visitJumpInsn(IFEQ, _end);</span>
+        }
+
+<span class="fc" id="L1760">        mw.visitLabel(elseLabel);</span>
+<span class="fc" id="L1761">    }</span>
+
+    private void _apply(MethodVisitor mw, FieldInfo property, Context context) {
+<span class="fc" id="L1764">        Class&lt;?&gt; propertyClass = property.fieldClass;</span>
+
+<span class="fc" id="L1766">        mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L1767">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1768">        mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L1769">        mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+
+<span class="fc bfc" id="L1771" title="All 2 branches covered.">        if (propertyClass == byte.class) {</span>
+<span class="fc" id="L1772">            mw.visitVarInsn(ILOAD, context.var(&quot;byte&quot;));</span>
+<span class="fc" id="L1773">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Byte&quot;, &quot;valueOf&quot;, &quot;(B)Ljava/lang/Byte;&quot;);</span>
+<span class="fc bfc" id="L1774" title="All 2 branches covered.">        } else if (propertyClass == short.class) {</span>
+<span class="fc" id="L1775">            mw.visitVarInsn(ILOAD, context.var(&quot;short&quot;));</span>
+<span class="fc" id="L1776">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Short&quot;, &quot;valueOf&quot;, &quot;(S)Ljava/lang/Short;&quot;);</span>
+<span class="fc bfc" id="L1777" title="All 2 branches covered.">        } else if (propertyClass == int.class) {</span>
+<span class="fc" id="L1778">            mw.visitVarInsn(ILOAD, context.var(&quot;int&quot;));</span>
+<span class="fc" id="L1779">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+<span class="fc bfc" id="L1780" title="All 2 branches covered.">        } else if (propertyClass == char.class) {</span>
+<span class="fc" id="L1781">            mw.visitVarInsn(ILOAD, context.var(&quot;char&quot;));</span>
+<span class="fc" id="L1782">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Character&quot;, &quot;valueOf&quot;, &quot;(C)Ljava/lang/Character;&quot;);</span>
+<span class="fc bfc" id="L1783" title="All 2 branches covered.">        } else if (propertyClass == long.class) {</span>
+<span class="fc" id="L1784">            mw.visitVarInsn(LLOAD, context.var(&quot;long&quot;, 2));</span>
+<span class="fc" id="L1785">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Long&quot;, &quot;valueOf&quot;, &quot;(J)Ljava/lang/Long;&quot;);</span>
+<span class="fc bfc" id="L1786" title="All 2 branches covered.">        } else if (propertyClass == float.class) {</span>
+<span class="fc" id="L1787">            mw.visitVarInsn(FLOAD, context.var(&quot;float&quot;));</span>
+<span class="fc" id="L1788">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Float&quot;, &quot;valueOf&quot;, &quot;(F)Ljava/lang/Float;&quot;);</span>
+<span class="fc bfc" id="L1789" title="All 2 branches covered.">        } else if (propertyClass == double.class) {</span>
+<span class="fc" id="L1790">            mw.visitVarInsn(DLOAD, context.var(&quot;double&quot;, 2));</span>
+<span class="fc" id="L1791">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Double&quot;, &quot;valueOf&quot;, &quot;(D)Ljava/lang/Double;&quot;);</span>
+<span class="fc bfc" id="L1792" title="All 2 branches covered.">        } else if (propertyClass == boolean.class) {</span>
+<span class="fc" id="L1793">            mw.visitVarInsn(ILOAD, context.var(&quot;boolean&quot;));</span>
+<span class="fc" id="L1794">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Boolean&quot;, &quot;valueOf&quot;, &quot;(Z)Ljava/lang/Boolean;&quot;);</span>
+<span class="fc bfc" id="L1795" title="All 2 branches covered.">        } else if (propertyClass == BigDecimal.class) {</span>
+<span class="fc" id="L1796">            mw.visitVarInsn(ALOAD, context.var(&quot;decimal&quot;));</span>
+<span class="fc bfc" id="L1797" title="All 2 branches covered.">        } else if (propertyClass == String.class) {</span>
+<span class="fc" id="L1798">            mw.visitVarInsn(ALOAD, context.var(&quot;string&quot;));</span>
+<span class="fc bfc" id="L1799" title="All 2 branches covered.">        } else if (propertyClass.isEnum()) {</span>
+<span class="fc" id="L1800">            mw.visitVarInsn(ALOAD, context.var(&quot;enum&quot;));</span>
+<span class="fc bfc" id="L1801" title="All 2 branches covered.">        } else if (List.class.isAssignableFrom(propertyClass)) {</span>
+<span class="fc" id="L1802">            mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+        } else {
+<span class="fc" id="L1804">            mw.visitVarInsn(ALOAD, context.var(&quot;object&quot;));</span>
+        }
+<span class="fc" id="L1806">        mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer,</span>
+                           &quot;apply&quot;, &quot;(L&quot; + JSONSerializer
+                                    + &quot;;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Z&quot;);
+<span class="fc" id="L1809">    }</span>
+
+    private void _processValue(MethodVisitor mw, FieldInfo fieldInfo, Context context, Label _end) {
+<span class="fc" id="L1812">        Label processKeyElse_ = new Label();</span>
+
+<span class="fc" id="L1814">        Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+
+<span class="fc bfc" id="L1816" title="All 2 branches covered.">        if (fieldClass.isPrimitive()) {</span>
+<span class="fc" id="L1817">            Label checkValueEnd_ = new Label();</span>
+<span class="fc" id="L1818">            mw.visitVarInsn(ILOAD, context.var(&quot;checkValue&quot;));</span>
+<span class="fc" id="L1819">            mw.visitJumpInsn(IFNE, checkValueEnd_);</span>
+
+<span class="fc" id="L1821">            mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L1822">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1823">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc" id="L1824">            mw.visitVarInsn(ASTORE, Context.processValue);</span>
+<span class="fc" id="L1825">            mw.visitJumpInsn(GOTO, processKeyElse_);</span>
+
+<span class="fc" id="L1827">            mw.visitLabel(checkValueEnd_);</span>
+        }
+
+<span class="fc" id="L1830">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1831">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1832">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1833">        mw.visitLdcInsn(context.getFieldOrinal(fieldInfo.name));</span>
+<span class="fc" id="L1834">        mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;getBeanContext&quot;, &quot;(I)&quot; + desc(BeanContext.class));</span>
+<span class="fc" id="L1835">        mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L1836">        mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+
+<span class="fc" id="L1838">        String valueDesc = &quot;Ljava/lang/Object;&quot;;</span>
+<span class="fc bfc" id="L1839" title="All 2 branches covered.">        if (fieldClass == byte.class) {</span>
+<span class="fc" id="L1840">            mw.visitVarInsn(ILOAD, context.var(&quot;byte&quot;));</span>
+<span class="fc" id="L1841">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Byte&quot;, &quot;valueOf&quot;, &quot;(B)Ljava/lang/Byte;&quot;);</span>
+<span class="fc" id="L1842">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1843">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc bfc" id="L1844" title="All 2 branches covered.">        } else if (fieldClass == short.class) {</span>
+<span class="fc" id="L1845">            mw.visitVarInsn(ILOAD, context.var(&quot;short&quot;));</span>
+<span class="fc" id="L1846">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Short&quot;, &quot;valueOf&quot;, &quot;(S)Ljava/lang/Short;&quot;);</span>
+<span class="fc" id="L1847">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1848">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc bfc" id="L1849" title="All 2 branches covered.">        } else if (fieldClass == int.class) {</span>
+<span class="fc" id="L1850">            mw.visitVarInsn(ILOAD, context.var(&quot;int&quot;));</span>
+<span class="fc" id="L1851">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+<span class="fc" id="L1852">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1853">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc bfc" id="L1854" title="All 2 branches covered.">        } else if (fieldClass == char.class) {</span>
+<span class="fc" id="L1855">            mw.visitVarInsn(ILOAD, context.var(&quot;char&quot;));</span>
+<span class="fc" id="L1856">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Character&quot;, &quot;valueOf&quot;, &quot;(C)Ljava/lang/Character;&quot;);</span>
+<span class="fc" id="L1857">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1858">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc bfc" id="L1859" title="All 2 branches covered.">        } else if (fieldClass == long.class) {</span>
+<span class="fc" id="L1860">            mw.visitVarInsn(LLOAD, context.var(&quot;long&quot;, 2));</span>
+<span class="fc" id="L1861">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Long&quot;, &quot;valueOf&quot;, &quot;(J)Ljava/lang/Long;&quot;);</span>
+<span class="fc" id="L1862">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1863">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc bfc" id="L1864" title="All 2 branches covered.">        } else if (fieldClass == float.class) {</span>
+<span class="fc" id="L1865">            mw.visitVarInsn(FLOAD, context.var(&quot;float&quot;));</span>
+<span class="fc" id="L1866">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Float&quot;, &quot;valueOf&quot;, &quot;(F)Ljava/lang/Float;&quot;);</span>
+<span class="fc" id="L1867">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1868">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc bfc" id="L1869" title="All 2 branches covered.">        } else if (fieldClass == double.class) {</span>
+<span class="fc" id="L1870">            mw.visitVarInsn(DLOAD, context.var(&quot;double&quot;, 2));</span>
+<span class="fc" id="L1871">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Double&quot;, &quot;valueOf&quot;, &quot;(D)Ljava/lang/Double;&quot;);</span>
+<span class="fc" id="L1872">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1873">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc bfc" id="L1874" title="All 2 branches covered.">        } else if (fieldClass == boolean.class) {</span>
+<span class="fc" id="L1875">            mw.visitVarInsn(ILOAD, context.var(&quot;boolean&quot;));</span>
+<span class="fc" id="L1876">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Boolean&quot;, &quot;valueOf&quot;, &quot;(Z)Ljava/lang/Boolean;&quot;);</span>
+<span class="fc" id="L1877">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1878">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc bfc" id="L1879" title="All 2 branches covered.">        } else if (fieldClass == BigDecimal.class) {</span>
+<span class="fc" id="L1880">            mw.visitVarInsn(ALOAD, context.var(&quot;decimal&quot;));</span>
+<span class="fc" id="L1881">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc" id="L1882">            mw.visitVarInsn(ALOAD, Context.original);</span>
+<span class="fc bfc" id="L1883" title="All 2 branches covered.">        } else if (fieldClass == String.class) {</span>
+<span class="fc" id="L1884">            mw.visitVarInsn(ALOAD, context.var(&quot;string&quot;));</span>
+<span class="fc" id="L1885">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc" id="L1886">            mw.visitVarInsn(ALOAD, Context.original);</span>
+<span class="fc bfc" id="L1887" title="All 2 branches covered.">        } else if (fieldClass.isEnum()) {</span>
+<span class="fc" id="L1888">            mw.visitVarInsn(ALOAD, context.var(&quot;enum&quot;));</span>
+<span class="fc" id="L1889">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc" id="L1890">            mw.visitVarInsn(ALOAD, Context.original);</span>
+<span class="fc bfc" id="L1891" title="All 2 branches covered.">        } else if (List.class.isAssignableFrom(fieldClass)) {</span>
+<span class="fc" id="L1892">            mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+<span class="fc" id="L1893">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc" id="L1894">            mw.visitVarInsn(ALOAD, Context.original);</span>
+        } else {
+<span class="fc" id="L1896">            mw.visitVarInsn(ALOAD, context.var(&quot;object&quot;));</span>
+<span class="fc" id="L1897">            mw.visitVarInsn(ASTORE, Context.original);</span>
+<span class="fc" id="L1898">            mw.visitVarInsn(ALOAD, Context.original);</span>
+        }
+
+<span class="fc" id="L1901">        mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer, &quot;processValue&quot;,</span>
+                           &quot;(L&quot; + JSONSerializer  + &quot;;&quot; //
+<span class="fc" id="L1903">                                                                          + desc(BeanContext.class) //</span>
+                                                                          + &quot;Ljava/lang/Object;Ljava/lang/String;&quot; //
+                                                                          + valueDesc + &quot;)Ljava/lang/Object;&quot;);
+
+<span class="fc" id="L1907">        mw.visitVarInsn(ASTORE, Context.processValue);</span>
+
+<span class="fc" id="L1909">        mw.visitVarInsn(ALOAD, Context.original);</span>
+<span class="fc" id="L1910">        mw.visitVarInsn(ALOAD, Context.processValue);</span>
+<span class="fc" id="L1911">        mw.visitJumpInsn(IF_ACMPEQ, processKeyElse_);</span>
+<span class="fc" id="L1912">        _writeObject(mw, fieldInfo, context, _end);</span>
+<span class="fc" id="L1913">        mw.visitJumpInsn(GOTO, _end);</span>
+
+<span class="fc" id="L1915">        mw.visitLabel(processKeyElse_);</span>
+<span class="fc" id="L1916">    }</span>
+
+    private void _processKey(MethodVisitor mw, FieldInfo property, Context context) {
+<span class="fc" id="L1919">        Label _else_processKey = new Label();</span>
+
+<span class="fc" id="L1921">        mw.visitVarInsn(ILOAD, context.var(&quot;hasNameFilters&quot;));</span>
+<span class="fc" id="L1922">        mw.visitJumpInsn(IFEQ, _else_processKey);</span>
+
+<span class="fc" id="L1924">        Class&lt;?&gt; propertyClass = property.fieldClass;</span>
+
+<span class="fc" id="L1926">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1927">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L1928">        mw.visitVarInsn(ALOAD, Context.obj);</span>
+<span class="fc" id="L1929">        mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+
+<span class="fc bfc" id="L1931" title="All 2 branches covered.">        if (propertyClass == byte.class) {</span>
+<span class="fc" id="L1932">            mw.visitVarInsn(ILOAD, context.var(&quot;byte&quot;));</span>
+<span class="fc" id="L1933">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Byte&quot;, &quot;valueOf&quot;, &quot;(B)Ljava/lang/Byte;&quot;);</span>
+<span class="fc bfc" id="L1934" title="All 2 branches covered.">        } else if (propertyClass == short.class) {</span>
+<span class="fc" id="L1935">            mw.visitVarInsn(ILOAD, context.var(&quot;short&quot;));</span>
+<span class="fc" id="L1936">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Short&quot;, &quot;valueOf&quot;, &quot;(S)Ljava/lang/Short;&quot;);</span>
+<span class="fc bfc" id="L1937" title="All 2 branches covered.">        } else if (propertyClass == int.class) {</span>
+<span class="fc" id="L1938">            mw.visitVarInsn(ILOAD, context.var(&quot;int&quot;));</span>
+<span class="fc" id="L1939">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+<span class="fc bfc" id="L1940" title="All 2 branches covered.">        } else if (propertyClass == char.class) {</span>
+<span class="fc" id="L1941">            mw.visitVarInsn(ILOAD, context.var(&quot;char&quot;));</span>
+<span class="fc" id="L1942">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Character&quot;, &quot;valueOf&quot;, &quot;(C)Ljava/lang/Character;&quot;);</span>
+<span class="fc bfc" id="L1943" title="All 2 branches covered.">        } else if (propertyClass == long.class) {</span>
+<span class="fc" id="L1944">            mw.visitVarInsn(LLOAD, context.var(&quot;long&quot;, 2));</span>
+<span class="fc" id="L1945">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Long&quot;, &quot;valueOf&quot;, &quot;(J)Ljava/lang/Long;&quot;);</span>
+<span class="fc bfc" id="L1946" title="All 2 branches covered.">        } else if (propertyClass == float.class) {</span>
+<span class="fc" id="L1947">            mw.visitVarInsn(FLOAD, context.var(&quot;float&quot;));</span>
+<span class="fc" id="L1948">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Float&quot;, &quot;valueOf&quot;, &quot;(F)Ljava/lang/Float;&quot;);</span>
+<span class="fc bfc" id="L1949" title="All 2 branches covered.">        } else if (propertyClass == double.class) {</span>
+<span class="fc" id="L1950">            mw.visitVarInsn(DLOAD, context.var(&quot;double&quot;, 2));</span>
+<span class="fc" id="L1951">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Double&quot;, &quot;valueOf&quot;, &quot;(D)Ljava/lang/Double;&quot;);</span>
+<span class="fc bfc" id="L1952" title="All 2 branches covered.">        } else if (propertyClass == boolean.class) {</span>
+<span class="fc" id="L1953">            mw.visitVarInsn(ILOAD, context.var(&quot;boolean&quot;));</span>
+<span class="fc" id="L1954">            mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Boolean&quot;, &quot;valueOf&quot;, &quot;(Z)Ljava/lang/Boolean;&quot;);</span>
+<span class="fc bfc" id="L1955" title="All 2 branches covered.">        } else if (propertyClass == BigDecimal.class) {</span>
+<span class="fc" id="L1956">            mw.visitVarInsn(ALOAD, context.var(&quot;decimal&quot;));</span>
+<span class="fc bfc" id="L1957" title="All 2 branches covered.">        } else if (propertyClass == String.class) {</span>
+<span class="fc" id="L1958">            mw.visitVarInsn(ALOAD, context.var(&quot;string&quot;));</span>
+<span class="fc bfc" id="L1959" title="All 2 branches covered.">        } else if (propertyClass.isEnum()) {</span>
+<span class="fc" id="L1960">            mw.visitVarInsn(ALOAD, context.var(&quot;enum&quot;));</span>
+<span class="fc bfc" id="L1961" title="All 2 branches covered.">        } else if (List.class.isAssignableFrom(propertyClass)) {</span>
+<span class="fc" id="L1962">            mw.visitVarInsn(ALOAD, context.var(&quot;list&quot;));</span>
+        } else {
+<span class="fc" id="L1964">            mw.visitVarInsn(ALOAD, context.var(&quot;object&quot;));</span>
+        }
+
+<span class="fc" id="L1967">        mw.visitMethodInsn(INVOKEVIRTUAL, JavaBeanSerializer,</span>
+                           &quot;processKey&quot;, &quot;(L&quot; + JSONSerializer
+                                         + &quot;;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;&quot;);
+
+<span class="fc" id="L1971">        mw.visitVarInsn(ASTORE, Context.fieldName);</span>
+
+<span class="fc" id="L1973">        mw.visitLabel(_else_processKey);</span>
+<span class="fc" id="L1974">    }</span>
+
+    private void _if_write_null(MethodVisitor mw, FieldInfo fieldInfo, Context context) {
+<span class="fc" id="L1977">        Class&lt;?&gt; propertyClass = fieldInfo.fieldClass;</span>
+
+<span class="fc" id="L1979">        Label _if = new Label();</span>
+<span class="fc" id="L1980">        Label _else = new Label();</span>
+<span class="fc" id="L1981">        Label _write_null = new Label();</span>
+<span class="fc" id="L1982">        Label _end_if = new Label();</span>
+
+<span class="fc" id="L1984">        mw.visitLabel(_if);</span>
+
+<span class="fc" id="L1986">        JSONField annotation = fieldInfo.getAnnotation();</span>
+<span class="fc" id="L1987">        int features = 0;</span>
+<span class="fc bfc" id="L1988" title="All 2 branches covered.">        if (annotation != null) {</span>
+<span class="fc" id="L1989">            features = SerializerFeature.of(annotation.serialzeFeatures());</span>
+        }
+<span class="fc" id="L1991">        JSONType jsonType = context.beanInfo.jsonType;</span>
+<span class="fc bfc" id="L1992" title="All 2 branches covered.">        if (jsonType != null) {</span>
+<span class="fc" id="L1993">            features |= SerializerFeature.of(jsonType.serialzeFeatures());</span>
+        }
+
+        int writeNullFeatures;
+<span class="fc bfc" id="L1997" title="All 2 branches covered.">        if (propertyClass == String.class) {</span>
+<span class="fc" id="L1998">            writeNullFeatures = SerializerFeature.WriteMapNullValue.getMask()</span>
+<span class="fc" id="L1999">                    | SerializerFeature.WriteNullStringAsEmpty.getMask();</span>
+<span class="fc bfc" id="L2000" title="All 2 branches covered.">        } else if (Number.class.isAssignableFrom(propertyClass)) {</span>
+<span class="fc" id="L2001">            writeNullFeatures = SerializerFeature.WriteMapNullValue.getMask()</span>
+<span class="fc" id="L2002">                    | SerializerFeature.WriteNullNumberAsZero.getMask();</span>
+<span class="fc bfc" id="L2003" title="All 2 branches covered.">        } else if (Collection.class.isAssignableFrom(propertyClass)) {</span>
+<span class="fc" id="L2004">            writeNullFeatures = SerializerFeature.WriteMapNullValue.getMask()</span>
+<span class="fc" id="L2005">                    | SerializerFeature.WriteNullListAsEmpty.getMask();</span>
+<span class="fc bfc" id="L2006" title="All 2 branches covered.">        } else if (Boolean.class == propertyClass) {</span>
+<span class="fc" id="L2007">            writeNullFeatures = SerializerFeature.WriteMapNullValue.getMask()</span>
+<span class="fc" id="L2008">                    | SerializerFeature.WriteNullBooleanAsFalse.getMask();</span>
+        } else {
+<span class="fc" id="L2010">            writeNullFeatures = SerializerFeature.WRITE_MAP_NULL_FEATURES;</span>
+        }
+
+<span class="fc bfc" id="L2013" title="All 2 branches covered.">        if ((features &amp; writeNullFeatures) == 0) {</span>
+<span class="fc" id="L2014">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L2015">            mw.visitLdcInsn(writeNullFeatures);</span>
+<span class="fc" id="L2016">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;isEnabled&quot;, &quot;(I)Z&quot;);</span>
+<span class="fc" id="L2017">            mw.visitJumpInsn(IFEQ, _else);</span>
+        }
+
+<span class="fc" id="L2020">        mw.visitLabel(_write_null);</span>
+
+<span class="fc" id="L2022">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L2023">        mw.visitVarInsn(ILOAD, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L2024">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;write&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L2026">        _writeFieldName(mw, context);</span>
+
+<span class="fc" id="L2028">        mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L2029">        mw.visitLdcInsn(features);</span>
+        // features
+
+<span class="fc bfc" id="L2032" title="All 4 branches covered.">        if (propertyClass == String.class || propertyClass == Character.class) {</span>
+<span class="fc" id="L2033">            mw.visitLdcInsn(SerializerFeature.WriteNullStringAsEmpty.mask);</span>
+<span class="fc bfc" id="L2034" title="All 2 branches covered.">        } else if (Number.class.isAssignableFrom(propertyClass)) {</span>
+<span class="fc" id="L2035">            mw.visitLdcInsn(SerializerFeature.WriteNullNumberAsZero.mask);</span>
+<span class="fc bfc" id="L2036" title="All 2 branches covered.">        } else if (propertyClass == Boolean.class) {</span>
+<span class="fc" id="L2037">            mw.visitLdcInsn(SerializerFeature.WriteNullBooleanAsFalse.mask);</span>
+<span class="fc bfc" id="L2038" title="All 4 branches covered.">        } else if (Collection.class.isAssignableFrom(propertyClass) || propertyClass.isArray()) {</span>
+<span class="fc" id="L2039">            mw.visitLdcInsn(SerializerFeature.WriteNullListAsEmpty.mask);</span>
+        } else {
+<span class="fc" id="L2041">            mw.visitLdcInsn(0);</span>
+        }
+<span class="fc" id="L2043">        mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeNull&quot;, &quot;(II)V&quot;);</span>
+
+        // seperator = ',';
+<span class="fc" id="L2046">        _seperator(mw, context);</span>
+
+<span class="fc" id="L2048">        mw.visitJumpInsn(GOTO, _end_if);</span>
+
+<span class="fc" id="L2050">        mw.visitLabel(_else);</span>
+
+<span class="fc" id="L2052">        mw.visitLabel(_end_if);</span>
+<span class="fc" id="L2053">    }</span>
+
+    private void _writeFieldName(MethodVisitor mw, Context context) {
+<span class="fc bfc" id="L2056" title="All 2 branches covered.">        if (context.writeDirect) {</span>
+<span class="fc" id="L2057">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L2058">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L2059">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldNameDirect&quot;, &quot;(Ljava/lang/String;)V&quot;);</span>
+        } else {
+<span class="fc" id="L2061">            mw.visitVarInsn(ALOAD, context.var(&quot;out&quot;));</span>
+<span class="fc" id="L2062">            mw.visitVarInsn(ALOAD, Context.fieldName);</span>
+<span class="fc" id="L2063">            mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L2064">            mw.visitMethodInsn(INVOKEVIRTUAL, SerializeWriter, &quot;writeFieldName&quot;, &quot;(Ljava/lang/String;Z)V&quot;);</span>
+        }
+<span class="fc" id="L2066">    }</span>
+
+    private void _seperator(MethodVisitor mw, Context context) {
+<span class="fc" id="L2069">        mw.visitVarInsn(BIPUSH, ',');</span>
+<span class="fc" id="L2070">        mw.visitVarInsn(ISTORE, context.var(&quot;seperator&quot;));</span>
+<span class="fc" id="L2071">    }</span>
+
+    private void _getListFieldItemSer(Context context, MethodVisitor mw, FieldInfo fieldInfo, Class&lt;?&gt; itemType) {
+<span class="fc" id="L2074">        Label notNull_ = new Label();</span>
+<span class="fc" id="L2075">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L2076">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_list_item_ser_&quot;,</span>
+                          ObjectSerializer_desc);
+<span class="fc" id="L2078">        mw.visitJumpInsn(IFNONNULL, notNull_);</span>
+
+<span class="fc" id="L2080">        mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L2081">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L2082">        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(itemType)));</span>
+<span class="fc" id="L2083">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;getObjectWriter&quot;,</span>
+                           &quot;(Ljava/lang/Class;)&quot; + ObjectSerializer_desc);
+
+<span class="fc" id="L2086">        mw.visitFieldInsn(PUTFIELD, context.className, fieldInfo.name + &quot;_asm_list_item_ser_&quot;,</span>
+                          ObjectSerializer_desc);
+
+<span class="fc" id="L2089">        mw.visitLabel(notNull_);</span>
+
+<span class="fc" id="L2091">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L2092">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_list_item_ser_&quot;,</span>
+                          ObjectSerializer_desc);
+<span class="fc" id="L2094">    }</span>
+
+    private void _getFieldSer(Context context, MethodVisitor mw, FieldInfo fieldInfo) {
+<span class="fc" id="L2097">        Label notNull_ = new Label();</span>
+<span class="fc" id="L2098">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L2099">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_ser_&quot;, ObjectSerializer_desc);</span>
+<span class="fc" id="L2100">        mw.visitJumpInsn(IFNONNULL, notNull_);</span>
+
+<span class="fc" id="L2102">        mw.visitVarInsn(ALOAD, 0); // this</span>
+<span class="fc" id="L2103">        mw.visitVarInsn(ALOAD, Context.serializer);</span>
+<span class="fc" id="L2104">        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldInfo.fieldClass)));</span>
+<span class="fc" id="L2105">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONSerializer, &quot;getObjectWriter&quot;,</span>
+                           &quot;(Ljava/lang/Class;)&quot; + ObjectSerializer_desc);
+
+<span class="fc" id="L2108">        mw.visitFieldInsn(PUTFIELD, context.className, fieldInfo.name + &quot;_asm_ser_&quot;, ObjectSerializer_desc);</span>
+
+<span class="fc" id="L2110">        mw.visitLabel(notNull_);</span>
+
+<span class="fc" id="L2112">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L2113">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_ser_&quot;, ObjectSerializer_desc);</span>
+<span class="fc" id="L2114">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

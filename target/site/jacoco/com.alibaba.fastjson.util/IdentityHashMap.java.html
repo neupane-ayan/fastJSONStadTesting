@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IdentityHashMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.util</a> &gt; <span class="el_source">IdentityHashMap.java</span></div><h1>IdentityHashMap.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.util;
+
+import java.util.Arrays;
+
+/**
+ * for concurrent IdentityHashMap
+ * 
+ * @author wenshao[szujobs@hotmail.com]
+ */
+@SuppressWarnings(&quot;unchecked&quot;)
+public class IdentityHashMap&lt;K, V&gt; {
+    private final Entry&lt;K, V&gt;[] buckets;
+    private final int           indexMask;
+    public final static int DEFAULT_SIZE = 8192;
+
+    public IdentityHashMap(){
+<span class="fc" id="L32">        this(DEFAULT_SIZE);</span>
+<span class="fc" id="L33">    }</span>
+
+<span class="fc" id="L35">    public IdentityHashMap(int tableSize){</span>
+<span class="fc" id="L36">        this.indexMask = tableSize - 1;</span>
+<span class="fc" id="L37">        this.buckets = new Entry[tableSize];</span>
+<span class="fc" id="L38">    }</span>
+
+    public final V get(K key) {
+<span class="fc" id="L41">        final int hash = System.identityHashCode(key);</span>
+<span class="fc" id="L42">        final int bucket = hash &amp; indexMask;</span>
+
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (Entry&lt;K, V&gt; entry = buckets[bucket]; entry != null; entry = entry.next) {</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            if (key == entry.key) {</span>
+<span class="fc" id="L46">                return (V) entry.value;</span>
+            }
+        }
+
+<span class="fc" id="L50">        return null;</span>
+    }
+
+    public Class findClass(String keyString) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        for (int i = 0; i &lt; buckets.length; i++) {</span>
+<span class="fc" id="L55">            Entry bucket = buckets[i];</span>
+
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            if (bucket == null) {</span>
+<span class="fc" id="L58">                continue;</span>
+            }
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            for (Entry&lt;K, V&gt; entry = bucket; entry != null; entry = entry.next) {</span>
+<span class="fc" id="L62">                Object key = bucket.key;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                if (key instanceof Class) {</span>
+<span class="fc" id="L64">                    Class clazz = ((Class) key);</span>
+<span class="fc" id="L65">                    String className = clazz.getName();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                    if (className.equals(keyString)) {</span>
+<span class="fc" id="L67">                        return clazz;</span>
+                    }
+                }
+            }
+        }
+
+<span class="fc" id="L73">        return null;</span>
+    }
+
+    public boolean put(K key, V value) {
+<span class="fc" id="L77">        final int hash = System.identityHashCode(key);</span>
+<span class="fc" id="L78">        final int bucket = hash &amp; indexMask;</span>
+
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        for (Entry&lt;K, V&gt; entry = buckets[bucket]; entry != null; entry = entry.next) {</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (key == entry.key) {</span>
+<span class="fc" id="L82">                entry.value = value;</span>
+<span class="fc" id="L83">                return true;</span>
+            }
+        }
+
+<span class="fc" id="L87">        Entry&lt;K, V&gt; entry = new Entry&lt;K, V&gt;(key, value, hash, buckets[bucket]);</span>
+<span class="fc" id="L88">        buckets[bucket] = entry;  // 并发是处理时会可能导致缓存丢失，但不影响正确性</span>
+
+<span class="fc" id="L90">        return false;</span>
+    }
+
+    protected static final class Entry&lt;K, V&gt; {
+
+        public final int   hashCode;
+        public final K     key;
+        public V     value;
+
+        public final Entry&lt;K, V&gt; next;
+
+<span class="fc" id="L101">        public Entry(K key, V value, int hash, Entry&lt;K, V&gt; next){</span>
+<span class="fc" id="L102">            this.key = key;</span>
+<span class="fc" id="L103">            this.value = value;</span>
+<span class="fc" id="L104">            this.next = next;</span>
+<span class="fc" id="L105">            this.hashCode = hash;</span>
+<span class="fc" id="L106">        }</span>
+    }
+
+    public void clear() {
+<span class="fc" id="L110">        Arrays.fill(this.buckets, null);</span>
+<span class="fc" id="L111">    }</span>
+
+    public int size() {
+<span class="fc" id="L114">        int count = 0;</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        for (Entry&lt;K, V&gt; bucket : this.buckets) {</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">            for (; bucket != null; bucket = bucket.next) {</span>
+<span class="fc" id="L117">                count++;</span>
+            }
+        }
+
+<span class="fc" id="L121">        return count;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

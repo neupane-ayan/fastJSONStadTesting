@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuavaCodec.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">GuavaCodec.java</span></div><h1>GuavaCodec.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+
+import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Created by wenshao on 15/01/2017.
+ */
+<span class="fc" id="L19">public class GuavaCodec implements ObjectSerializer, ObjectDeserializer {</span>
+<span class="fc" id="L20">    public static GuavaCodec instance = new GuavaCodec();</span>
+
+    public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType, int features) throws IOException {
+<span class="fc" id="L23">        SerializeWriter out = serializer.out;</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        if (object instanceof Multimap) {</span>
+<span class="fc" id="L25">            Multimap multimap = (Multimap) object;</span>
+<span class="fc" id="L26">            serializer.write(multimap.asMap());</span>
+        }
+<span class="fc" id="L28">    }</span>
+
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+<span class="fc" id="L31">        Type rawType = type;</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (type instanceof ParameterizedType) {</span>
+<span class="fc" id="L33">            rawType = ((ParameterizedType) type).getRawType();</span>
+        }
+
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (rawType == ArrayListMultimap.class) {</span>
+<span class="fc" id="L37">            ArrayListMultimap multimap = ArrayListMultimap.create();</span>
+<span class="fc" id="L38">            JSONObject object = parser.parseObject();</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            for (Map.Entry entry : object.entrySet()) {</span>
+<span class="fc" id="L40">                Object value = entry.getValue();</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">                if (value instanceof Collection) {</span>
+<span class="fc" id="L42">                    multimap.putAll(entry.getKey(), (List) value);</span>
+                } else {
+<span class="nc" id="L44">                    multimap.put(entry.getKey(), value);</span>
+                }
+<span class="fc" id="L46">            }</span>
+
+<span class="fc" id="L48">            return (T) multimap;</span>
+        }
+<span class="nc" id="L50">        return null;</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="nc" id="L54">        return 0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

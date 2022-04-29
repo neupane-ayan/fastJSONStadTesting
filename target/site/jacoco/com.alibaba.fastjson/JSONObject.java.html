@@ -1,0 +1,644 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSONObject.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson</a> &gt; <span class="el_source">JSONObject.java</span></div><h1>JSONObject.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson;
+
+import static com.alibaba.fastjson.util.TypeUtils.castToBigDecimal;
+import static com.alibaba.fastjson.util.TypeUtils.castToBigInteger;
+import static com.alibaba.fastjson.util.TypeUtils.castToBoolean;
+import static com.alibaba.fastjson.util.TypeUtils.castToByte;
+import static com.alibaba.fastjson.util.TypeUtils.castToBytes;
+import static com.alibaba.fastjson.util.TypeUtils.castToDate;
+import static com.alibaba.fastjson.util.TypeUtils.castToDouble;
+import static com.alibaba.fastjson.util.TypeUtils.castToFloat;
+import static com.alibaba.fastjson.util.TypeUtils.castToInt;
+import static com.alibaba.fastjson.util.TypeUtils.castToLong;
+import static com.alibaba.fastjson.util.TypeUtils.castToShort;
+import static com.alibaba.fastjson.util.TypeUtils.castToSqlDate;
+import static com.alibaba.fastjson.util.TypeUtils.castToTimestamp;
+
+import java.io.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
+
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.util.TypeUtils;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public class JSONObject extends JSON implements Map&lt;String, Object&gt;, Cloneable, Serializable, InvocationHandler {
+
+    private static final long         serialVersionUID         = 1L;
+    private static final int          DEFAULT_INITIAL_CAPACITY = 16;
+
+    private final Map&lt;String, Object&gt; map;
+
+    public JSONObject(){
+<span class="fc" id="L57">        this(DEFAULT_INITIAL_CAPACITY, false);</span>
+<span class="fc" id="L58">    }</span>
+
+<span class="fc" id="L60">    public JSONObject(Map&lt;String, Object&gt; map){</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">        if (map == null) {</span>
+<span class="nc" id="L62">            throw new IllegalArgumentException(&quot;map is null.&quot;);</span>
+        }
+<span class="fc" id="L64">        this.map = map;</span>
+<span class="fc" id="L65">    }</span>
+
+    public JSONObject(boolean ordered){
+<span class="fc" id="L68">        this(DEFAULT_INITIAL_CAPACITY, ordered);</span>
+<span class="fc" id="L69">    }</span>
+
+    public JSONObject(int initialCapacity){
+<span class="fc" id="L72">        this(initialCapacity, false);</span>
+<span class="fc" id="L73">    }</span>
+
+<span class="fc" id="L75">    public JSONObject(int initialCapacity, boolean ordered){</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (ordered) {</span>
+<span class="fc" id="L77">            map = new LinkedHashMap&lt;String, Object&gt;(initialCapacity);</span>
+        } else {
+<span class="fc" id="L79">            map = new HashMap&lt;String, Object&gt;(initialCapacity);</span>
+        }
+<span class="fc" id="L81">    }</span>
+
+    public int size() {
+<span class="fc" id="L84">        return map.size();</span>
+    }
+
+    public boolean isEmpty() {
+<span class="fc" id="L88">        return map.isEmpty();</span>
+    }
+
+    public boolean containsKey(Object key) {
+<span class="fc" id="L92">        boolean result = map.containsKey(key);</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (!result) {</span>
+<span class="fc bfc" id="L94" title="All 8 branches covered.">            if (key instanceof Number</span>
+                    || key instanceof Character
+                    || key instanceof Boolean
+                    || key instanceof UUID
+            ) {
+<span class="fc" id="L99">                result = map.containsKey(key.toString());</span>
+            }
+        }
+<span class="fc" id="L102">        return result;</span>
+    }
+
+    public boolean containsValue(Object value) {
+<span class="fc" id="L106">        return map.containsValue(value);</span>
+    }
+
+    public Object get(Object key) {
+<span class="fc" id="L110">        Object val = map.get(key);</span>
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (val == null) {</span>
+<span class="pc bpc" id="L113" title="1 of 8 branches missed.">            if (key instanceof Number</span>
+                    || key instanceof Character
+                    || key instanceof Boolean
+                    || key instanceof UUID
+            ) {
+<span class="fc" id="L118">                val = map.get(key.toString());</span>
+            }
+        }
+
+<span class="fc" id="L122">        return val;</span>
+    }
+
+    public Object getOrDefault(Object key, Object defaultValue) {
+        Object v;
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        return ((v = get(key)) != null) ? v : defaultValue;</span>
+    }
+
+    public JSONObject getJSONObject(String key) {
+<span class="fc" id="L131">        Object value = map.get(key);</span>
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        if (value instanceof JSONObject) {</span>
+<span class="fc" id="L134">            return (JSONObject) value;</span>
+        }
+
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (value instanceof Map) {</span>
+<span class="fc" id="L138">            return new JSONObject((Map) value);</span>
+        }
+
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        if (value instanceof String) {</span>
+<span class="fc" id="L142">            return JSON.parseObject((String) value);</span>
+        }
+
+<span class="fc" id="L145">        return (JSONObject) toJSON(value);</span>
+    }
+
+    public JSONArray getJSONArray(String key) {
+<span class="fc" id="L149">        Object value = map.get(key);</span>
+
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (value instanceof JSONArray) {</span>
+<span class="fc" id="L152">            return (JSONArray) value;</span>
+        }
+
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (value instanceof List) {</span>
+<span class="nc" id="L156">            return new JSONArray((List) value);</span>
+        }
+
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        if (value instanceof String) {</span>
+<span class="fc" id="L160">            return (JSONArray) JSON.parse((String) value);</span>
+        }
+
+<span class="fc" id="L163">        return (JSONArray) toJSON(value);</span>
+    }
+
+    public &lt;T&gt; T getObject(String key, Class&lt;T&gt; clazz) {
+<span class="fc" id="L167">        Object obj = map.get(key);</span>
+<span class="fc" id="L168">        return TypeUtils.castToJavaBean(obj, clazz);</span>
+    }
+
+    public &lt;T&gt; T getObject(String key, Type type) {
+<span class="fc" id="L172">        Object obj = map.get(key);</span>
+<span class="fc" id="L173">        return TypeUtils.cast(obj, type, ParserConfig.getGlobalInstance());</span>
+    }
+
+    public &lt;T&gt; T getObject(String key, TypeReference typeReference) {
+<span class="fc" id="L177">        Object obj = map.get(key);</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        if (typeReference == null) {</span>
+<span class="nc" id="L179">            return (T) obj;</span>
+        }
+<span class="fc" id="L181">        return TypeUtils.cast(obj, typeReference.getType(), ParserConfig.getGlobalInstance());</span>
+    }
+
+    public Boolean getBoolean(String key) {
+<span class="fc" id="L185">        Object value = get(key);</span>
+
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L188">            return null;</span>
+        }
+
+<span class="fc" id="L191">        return castToBoolean(value);</span>
+    }
+
+    public byte[] getBytes(String key) {
+<span class="fc" id="L195">        Object value = get(key);</span>
+
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L198">            return null;</span>
+        }
+
+<span class="fc" id="L201">        return castToBytes(value);</span>
+    }
+
+    public boolean getBooleanValue(String key) {
+<span class="fc" id="L205">        Object value = get(key);</span>
+
+<span class="fc" id="L207">        Boolean booleanVal = castToBoolean(value);</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (booleanVal == null) {</span>
+<span class="fc" id="L209">            return false;</span>
+        }
+
+<span class="fc" id="L212">        return booleanVal.booleanValue();</span>
+    }
+
+    public Byte getByte(String key) {
+<span class="fc" id="L216">        Object value = get(key);</span>
+
+<span class="fc" id="L218">        return castToByte(value);</span>
+    }
+
+    public byte getByteValue(String key) {
+<span class="fc" id="L222">        Object value = get(key);</span>
+
+<span class="fc" id="L224">        Byte byteVal = castToByte(value);</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        if (byteVal == null) {</span>
+<span class="fc" id="L226">            return 0;</span>
+        }
+
+<span class="fc" id="L229">        return byteVal.byteValue();</span>
+    }
+
+    public Short getShort(String key) {
+<span class="fc" id="L233">        Object value = get(key);</span>
+
+<span class="fc" id="L235">        return castToShort(value);</span>
+    }
+
+    public short getShortValue(String key) {
+<span class="fc" id="L239">        Object value = get(key);</span>
+
+<span class="fc" id="L241">        Short shortVal = castToShort(value);</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (shortVal == null) {</span>
+<span class="fc" id="L243">            return 0;</span>
+        }
+
+<span class="fc" id="L246">        return shortVal.shortValue();</span>
+    }
+
+    public Integer getInteger(String key) {
+<span class="fc" id="L250">        Object value = get(key);</span>
+
+<span class="fc" id="L252">        return castToInt(value);</span>
+    }
+
+    public int getIntValue(String key) {
+<span class="fc" id="L256">        Object value = get(key);</span>
+
+<span class="fc" id="L258">        Integer intVal = castToInt(value);</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">        if (intVal == null) {</span>
+<span class="fc" id="L260">            return 0;</span>
+        }
+
+<span class="fc" id="L263">        return intVal.intValue();</span>
+    }
+
+    public Long getLong(String key) {
+<span class="fc" id="L267">        Object value = get(key);</span>
+
+<span class="fc" id="L269">        return castToLong(value);</span>
+    }
+
+    public long getLongValue(String key) {
+<span class="fc" id="L273">        Object value = get(key);</span>
+
+<span class="fc" id="L275">        Long longVal = castToLong(value);</span>
+<span class="fc bfc" id="L276" title="All 2 branches covered.">        if (longVal == null) {</span>
+<span class="fc" id="L277">            return 0L;</span>
+        }
+
+<span class="fc" id="L280">        return longVal.longValue();</span>
+    }
+
+    public Float getFloat(String key) {
+<span class="fc" id="L284">        Object value = get(key);</span>
+
+<span class="fc" id="L286">        return castToFloat(value);</span>
+    }
+
+    public float getFloatValue(String key) {
+<span class="fc" id="L290">        Object value = get(key);</span>
+
+<span class="fc" id="L292">        Float floatValue = castToFloat(value);</span>
+<span class="fc bfc" id="L293" title="All 2 branches covered.">        if (floatValue == null) {</span>
+<span class="fc" id="L294">            return 0F;</span>
+        }
+
+<span class="fc" id="L297">        return floatValue.floatValue();</span>
+    }
+
+    public Double getDouble(String key) {
+<span class="fc" id="L301">        Object value = get(key);</span>
+
+<span class="fc" id="L303">        return castToDouble(value);</span>
+    }
+
+    public double getDoubleValue(String key) {
+<span class="fc" id="L307">        Object value = get(key);</span>
+
+<span class="fc" id="L309">        Double doubleValue = castToDouble(value);</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">        if (doubleValue == null) {</span>
+<span class="fc" id="L311">            return 0D;</span>
+        }
+
+<span class="fc" id="L314">        return doubleValue.doubleValue();</span>
+    }
+
+    public BigDecimal getBigDecimal(String key) {
+<span class="fc" id="L318">        Object value = get(key);</span>
+
+<span class="fc" id="L320">        return castToBigDecimal(value);</span>
+    }
+
+    public BigInteger getBigInteger(String key) {
+<span class="fc" id="L324">        Object value = get(key);</span>
+
+<span class="fc" id="L326">        return castToBigInteger(value);</span>
+    }
+
+    public String getString(String key) {
+<span class="fc" id="L330">        Object value = get(key);</span>
+
+<span class="fc bfc" id="L332" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L333">            return null;</span>
+        }
+
+<span class="fc" id="L336">        return value.toString();</span>
+    }
+
+    public Date getDate(String key) {
+<span class="fc" id="L340">        Object value = get(key);</span>
+
+<span class="fc" id="L342">        return castToDate(value);</span>
+    }
+
+    public Object getSqlDate(String key) {
+<span class="fc" id="L346">        Object value = get(key);</span>
+
+<span class="fc" id="L348">        return castToSqlDate(value);</span>
+    }
+
+    public Object getTimestamp(String key) {
+<span class="fc" id="L352">        Object value = get(key);</span>
+
+<span class="fc" id="L354">        return castToTimestamp(value);</span>
+    }
+
+    public Object put(String key, Object value) {
+<span class="fc" id="L358">        return map.put(key, value);</span>
+    }
+
+    public JSONObject fluentPut(String key, Object value) {
+<span class="fc" id="L362">        map.put(key, value);</span>
+<span class="fc" id="L363">        return this;</span>
+    }
+
+    public void putAll(Map&lt;? extends String, ?&gt; m) {
+<span class="fc" id="L367">        map.putAll(m);</span>
+<span class="fc" id="L368">    }</span>
+
+    public JSONObject fluentPutAll(Map&lt;? extends String, ?&gt; m) {
+<span class="fc" id="L371">        map.putAll(m);</span>
+<span class="fc" id="L372">        return this;</span>
+    }
+
+    public void clear() {
+<span class="fc" id="L376">        map.clear();</span>
+<span class="fc" id="L377">    }</span>
+
+    public JSONObject fluentClear() {
+<span class="fc" id="L380">        map.clear();</span>
+<span class="fc" id="L381">        return this;</span>
+    }
+
+    public Object remove(Object key) {
+<span class="fc" id="L385">        return map.remove(key);</span>
+    }
+
+    public JSONObject fluentRemove(Object key) {
+<span class="fc" id="L389">        map.remove(key);</span>
+<span class="fc" id="L390">        return this;</span>
+    }
+
+    public Set&lt;String&gt; keySet() {
+<span class="fc" id="L394">        return map.keySet();</span>
+    }
+
+    public Collection&lt;Object&gt; values() {
+<span class="fc" id="L398">        return map.values();</span>
+    }
+
+    public Set&lt;Map.Entry&lt;String, Object&gt;&gt; entrySet() {
+<span class="fc" id="L402">        return map.entrySet();</span>
+    }
+
+    @Override
+    public JSONObject clone() {
+<span class="pc bpc" id="L407" title="1 of 2 branches missed.">        return new JSONObject(map instanceof LinkedHashMap //</span>
+                ? new LinkedHashMap&lt;String, Object&gt;(map) //
+                : new HashMap&lt;String, Object&gt;(map)
+        );
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="fc bfc" id="L415" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L416">            return true;</span>
+        }
+
+<span class="fc bfc" id="L419" title="All 2 branches covered.">        if (obj instanceof JSONObject) {</span>
+<span class="fc" id="L420">            return this.map.equals(((JSONObject) obj).map);</span>
+        }
+
+<span class="fc" id="L423">        return this.map.equals(obj);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L428">        return this.map.hashCode();</span>
+    }
+
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+<span class="fc" id="L432">        Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();</span>
+<span class="fc bfc" id="L433" title="All 2 branches covered.">        if (parameterTypes.length == 1) {</span>
+<span class="fc bfc" id="L434" title="All 2 branches covered.">            if (method.getName().equals(&quot;equals&quot;)) {</span>
+<span class="fc" id="L435">                return this.equals(args[0]);</span>
+            }
+
+<span class="fc" id="L438">            Class&lt;?&gt; returnType = method.getReturnType();</span>
+<span class="fc bfc" id="L439" title="All 2 branches covered.">            if (returnType != void.class) {</span>
+<span class="fc" id="L440">                throw new JSONException(&quot;illegal setter&quot;);</span>
+            }
+
+<span class="fc" id="L443">            String name = null;</span>
+<span class="fc" id="L444">            JSONField annotation = TypeUtils.getAnnotation(method, JSONField.class);</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">            if (annotation != null) {</span>
+<span class="fc bfc" id="L446" title="All 2 branches covered.">                if (annotation.name().length() != 0) {</span>
+<span class="fc" id="L447">                    name = annotation.name();</span>
+                }
+            }
+
+<span class="fc bfc" id="L451" title="All 2 branches covered.">            if (name == null) {</span>
+<span class="fc" id="L452">                name = method.getName();</span>
+
+<span class="fc bfc" id="L454" title="All 2 branches covered.">                if (!name.startsWith(&quot;set&quot;)) {</span>
+<span class="fc" id="L455">                    throw new JSONException(&quot;illegal setter&quot;);</span>
+                }
+
+<span class="fc" id="L458">                name = name.substring(3);</span>
+<span class="fc bfc" id="L459" title="All 2 branches covered.">                if (name.length() == 0) {</span>
+<span class="fc" id="L460">                    throw new JSONException(&quot;illegal setter&quot;);</span>
+                }
+<span class="fc" id="L462">                name = Character.toLowerCase(name.charAt(0)) + name.substring(1);</span>
+            }
+
+<span class="fc" id="L465">            map.put(name, args[0]);</span>
+<span class="fc" id="L466">            return null;</span>
+        }
+
+<span class="fc bfc" id="L469" title="All 2 branches covered.">        if (parameterTypes.length == 0) {</span>
+<span class="fc" id="L470">            Class&lt;?&gt; returnType = method.getReturnType();</span>
+<span class="fc bfc" id="L471" title="All 2 branches covered.">            if (returnType == void.class) {</span>
+<span class="fc" id="L472">                throw new JSONException(&quot;illegal getter&quot;);</span>
+            }
+
+<span class="fc" id="L475">            String name = null;</span>
+<span class="fc" id="L476">            JSONField annotation = TypeUtils.getAnnotation(method, JSONField.class);</span>
+<span class="fc bfc" id="L477" title="All 2 branches covered.">            if (annotation != null) {</span>
+<span class="fc bfc" id="L478" title="All 2 branches covered.">                if (annotation.name().length() != 0) {</span>
+<span class="fc" id="L479">                    name = annotation.name();</span>
+                }
+            }
+
+<span class="fc bfc" id="L483" title="All 2 branches covered.">            if (name == null) {</span>
+<span class="fc" id="L484">                name = method.getName();</span>
+<span class="fc bfc" id="L485" title="All 2 branches covered.">                if (name.startsWith(&quot;get&quot;)) {</span>
+<span class="fc" id="L486">                    name = name.substring(3);</span>
+<span class="fc bfc" id="L487" title="All 2 branches covered.">                    if (name.length() == 0) {</span>
+<span class="fc" id="L488">                        throw new JSONException(&quot;illegal getter&quot;);</span>
+                    }
+<span class="fc" id="L490">                    name = Character.toLowerCase(name.charAt(0)) + name.substring(1);</span>
+<span class="fc bfc" id="L491" title="All 2 branches covered.">                } else if (name.startsWith(&quot;is&quot;)) {</span>
+<span class="fc" id="L492">                    name = name.substring(2);</span>
+<span class="fc bfc" id="L493" title="All 2 branches covered.">                    if (name.length() == 0) {</span>
+<span class="fc" id="L494">                        throw new JSONException(&quot;illegal getter&quot;);</span>
+                    }
+<span class="fc" id="L496">                    name = Character.toLowerCase(name.charAt(0)) + name.substring(1);</span>
+<span class="fc bfc" id="L497" title="All 2 branches covered.">                } else if (name.startsWith(&quot;hashCode&quot;)) {</span>
+<span class="fc" id="L498">                    return this.hashCode();</span>
+<span class="fc bfc" id="L499" title="All 2 branches covered.">                } else if (name.startsWith(&quot;toString&quot;)) {</span>
+<span class="fc" id="L500">                    return this.toString();</span>
+                } else {
+<span class="fc" id="L502">                    throw new JSONException(&quot;illegal getter&quot;);</span>
+                }
+            }
+
+<span class="fc" id="L506">            Object value = map.get(name);</span>
+<span class="fc" id="L507">            return TypeUtils.cast(value, method.getGenericReturnType(), ParserConfig.getGlobalInstance());</span>
+        }
+
+<span class="fc" id="L510">        throw new UnsupportedOperationException(method.toGenericString());</span>
+    }
+
+    public Map&lt;String, Object&gt; getInnerMap() {
+<span class="fc" id="L514">        return this.map;</span>
+    }
+
+
+
+    private void readObject(final java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L520">        SecureObjectInputStream.ensureFields();</span>
+<span class="pc bpc" id="L521" title="2 of 4 branches missed.">        if (SecureObjectInputStream.fields != null &amp;&amp; !SecureObjectInputStream.fields_error) {</span>
+<span class="fc" id="L522">            ObjectInputStream secIn = new SecureObjectInputStream(in);</span>
+            try {
+<span class="fc" id="L524">                secIn.defaultReadObject();</span>
+<span class="fc" id="L525">                return;</span>
+<span class="nc" id="L526">            } catch (java.io.NotActiveException e) {</span>
+                // skip
+            }
+        }
+
+<span class="nc" id="L531">        in.defaultReadObject();</span>
+<span class="nc bnc" id="L532" title="All 2 branches missed.">        for (Entry entry : map.entrySet()) {</span>
+<span class="nc" id="L533">            final Object key = entry.getKey();</span>
+<span class="nc bnc" id="L534" title="All 2 branches missed.">            if (key != null) {</span>
+<span class="nc" id="L535">                ParserConfig.global.checkAutoType(key.getClass());</span>
+            }
+
+<span class="nc" id="L538">            final Object value = entry.getValue();</span>
+<span class="nc bnc" id="L539" title="All 2 branches missed.">            if (value != null) {</span>
+<span class="nc" id="L540">                ParserConfig.global.checkAutoType(value.getClass());</span>
+            }
+<span class="nc" id="L542">        }</span>
+<span class="nc" id="L543">    }</span>
+
+    static class SecureObjectInputStream extends ObjectInputStream {
+        static Field[] fields;
+        static volatile boolean fields_error;
+
+        static void ensureFields() {
+<span class="pc bpc" id="L550" title="1 of 4 branches missed.">            if (fields == null &amp;&amp; !fields_error) {</span>
+                try {
+<span class="fc" id="L552">                    final Field[] declaredFields = ObjectInputStream.class.getDeclaredFields();</span>
+<span class="fc" id="L553">                    String[] fieldnames = new String[]{&quot;bin&quot;, &quot;passHandle&quot;, &quot;handles&quot;, &quot;curContext&quot;};</span>
+<span class="fc" id="L554">                    Field[] array = new Field[fieldnames.length];</span>
+<span class="fc bfc" id="L555" title="All 2 branches covered.">                    for (int i = 0; i &lt; fieldnames.length; i++) {</span>
+<span class="fc" id="L556">                        Field field = TypeUtils</span>
+<span class="fc" id="L557">                                .getField(ObjectInputStream.class</span>
+                                        , fieldnames[i]
+                                        , declaredFields
+                                );
+<span class="fc" id="L561">                        field.setAccessible(true);</span>
+<span class="fc" id="L562">                        array[i] = field;</span>
+                    }
+<span class="fc" id="L564">                    fields = array;</span>
+<span class="nc" id="L565">                } catch (Throwable error) {</span>
+<span class="nc" id="L566">                    fields_error = true;</span>
+<span class="fc" id="L567">                }</span>
+            }
+<span class="fc" id="L569">        }</span>
+
+        public SecureObjectInputStream(ObjectInputStream in) throws IOException {
+<span class="fc" id="L572">            super(in);</span>
+            try {
+<span class="fc bfc" id="L574" title="All 2 branches covered.">                for (int i = 0; i &lt; fields.length; i++) {</span>
+<span class="fc" id="L575">                    final Field field = fields[i];</span>
+<span class="fc" id="L576">                    final Object value = field.get(in);</span>
+<span class="fc" id="L577">                    field.set(this, value);</span>
+                }
+<span class="nc" id="L579">            } catch (IllegalAccessException e) {</span>
+<span class="nc" id="L580">                fields_error = true;</span>
+<span class="fc" id="L581">            }</span>
+<span class="fc" id="L582">        }</span>
+
+        protected Class&lt;?&gt; resolveClass(ObjectStreamClass desc)
+                throws IOException, ClassNotFoundException {
+<span class="fc" id="L586">            String name = desc.getName();</span>
+<span class="fc bfc" id="L587" title="All 2 branches covered.">            if (name.length() &gt; 2) {</span>
+<span class="fc" id="L588">                int index = name.lastIndexOf('[');</span>
+<span class="fc bfc" id="L589" title="All 2 branches covered.">                if (index != -1) {</span>
+<span class="fc" id="L590">                    name = name.substring(index + 1);</span>
+                }
+<span class="pc bpc" id="L592" title="2 of 6 branches missed.">                if (name.length() &gt; 2 &amp;&amp; name.charAt(0) == 'L' &amp;&amp; name.charAt(name.length() - 1) == ';') {</span>
+<span class="fc" id="L593">                    name = name.substring(1, name.length() - 1);</span>
+                }
+
+<span class="pc bpc" id="L596" title="1 of 2 branches missed.">                if (TypeUtils.getClassFromMapping(name) == null) {</span>
+<span class="nc" id="L597">                    ParserConfig.global.checkAutoType(name, null, Feature.SupportAutoType.mask);</span>
+                }
+            }
+<span class="fc" id="L600">            return super.resolveClass(desc);</span>
+        }
+
+        protected Class&lt;?&gt; resolveProxyClass(String[] interfaces)
+                throws IOException, ClassNotFoundException {
+<span class="nc bnc" id="L605" title="All 2 branches missed.">            for (String interfacename : interfaces) {</span>
+                //检查是否处于黑名单
+<span class="nc bnc" id="L607" title="All 2 branches missed.">                if (TypeUtils.getClassFromMapping(interfacename) == null) {</span>
+<span class="nc" id="L608">                    ParserConfig.global.checkAutoType(interfacename, null);</span>
+                }
+            }
+<span class="nc" id="L611">            return super.resolveProxyClass(interfaces);</span>
+        }
+
+        //Hack:默认构造方法会调用这个方法，重写此方法使用反射还原部分关键属性
+        protected void readStreamHeader() throws IOException, StreamCorruptedException {
+
+<span class="fc" id="L617">        }</span>
+    }
+
+    public &lt;T&gt; T toJavaObject(Class&lt;T&gt; clazz) {
+<span class="pc bpc" id="L621" title="1 of 6 branches missed.">        if (clazz == Map.class || clazz == JSONObject.class || clazz == JSON.class) {</span>
+<span class="fc" id="L622">            return (T) this;</span>
+        }
+
+<span class="pc bpc" id="L625" title="3 of 4 branches missed.">        if (clazz == Object.class &amp;&amp; !containsKey(JSON.DEFAULT_TYPE_KEY)) {</span>
+<span class="nc" id="L626">            return (T) this;</span>
+        }
+
+<span class="fc" id="L629">        return TypeUtils.castToJavaBean(this, clazz, ParserConfig.getGlobalInstance());</span>
+    }
+
+    public &lt;T&gt; T toJavaObject(Class&lt;T&gt; clazz, ParserConfig config, int features) {
+<span class="pc bpc" id="L633" title="1 of 2 branches missed.">        if (clazz == Map.class) {</span>
+<span class="nc" id="L634">            return (T) this;</span>
+        }
+
+<span class="pc bpc" id="L637" title="3 of 4 branches missed.">        if (clazz == Object.class &amp;&amp; !containsKey(JSON.DEFAULT_TYPE_KEY)) {</span>
+<span class="nc" id="L638">            return (T) this;</span>
+        }
+
+<span class="fc" id="L641">        return TypeUtils.castToJavaBean(this, clazz, config);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

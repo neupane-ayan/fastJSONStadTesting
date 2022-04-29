@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MappingFastJsonValue.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.spring</a> &gt; <span class="el_source">MappingFastJsonValue.java</span></div><h1>MappingFastJsonValue.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.spring;
+
+import com.alibaba.fastjson.JSONPObject;
+import com.alibaba.fastjson.serializer.JSONSerializable;
+import com.alibaba.fastjson.serializer.JSONSerializer;
+import com.alibaba.fastjson.serializer.SerializeWriter;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+
+/**
+ * A simple holder for the POJO to serialize via {@link FastJsonHttpMessageConverter} along with further
+ * serialization instructions to be passed in to the converter.
+ *
+ * &lt;p&gt;
+ * On the server side this wrapper is added with a {@code ResponseBodyInterceptor} after content negotiation selects the
+ * converter to use but before the write.
+ *
+ * &lt;p&gt;
+ * On the client side, simply wrap the POJO and pass it in to the {@code RestTemplate}.
+ *
+ * @author Jerry.Chen
+ * @since 1.2.20
+ *
+ * @see JSONPObject
+ */
+@Deprecated
+public class MappingFastJsonValue implements JSONSerializable {
+    private static final String SECURITY_PREFIX = &quot;/**/&quot;;
+<span class="fc" id="L31">    private static final int BrowserSecureMask = SerializerFeature.BrowserSecure.mask;</span>
+
+    private Object value;
+    private String jsonpFunction;
+
+    /**
+     * Create a new instance wrapping the given POJO to be serialized.
+     *
+     * @param value the Object to be serialized
+     */
+<span class="fc" id="L41">    public MappingFastJsonValue(Object value) {</span>
+<span class="fc" id="L42">        this.value = value;</span>
+<span class="fc" id="L43">    }</span>
+
+    /**
+     * Modify the POJO to serialize.
+     */
+    public void setValue(Object value) {
+<span class="nc" id="L49">        this.value = value;</span>
+<span class="nc" id="L50">    }</span>
+
+    /**
+     * Return the POJO that needs to be serialized.
+     */
+    public Object getValue() {
+<span class="nc" id="L56">        return this.value;</span>
+    }
+
+    /**
+     * Set the name of the JSONP function name.
+     */
+    public void setJsonpFunction(String functionName) {
+<span class="fc" id="L63">        this.jsonpFunction = functionName;</span>
+<span class="fc" id="L64">    }</span>
+
+    /**
+     * Return the configured JSONP function name.
+     */
+    public String getJsonpFunction() {
+<span class="fc" id="L70">        return this.jsonpFunction;</span>
+    }
+
+    public void write(JSONSerializer serializer, Object fieldName, Type fieldType, int features) throws IOException {
+<span class="fc" id="L74">        SerializeWriter writer = serializer.out;</span>
+
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if(jsonpFunction == null){</span>
+<span class="fc" id="L77">            serializer.write(value);</span>
+<span class="fc" id="L78">            return;</span>
+        }
+
+
+<span class="pc bpc" id="L82" title="2 of 4 branches missed.">        if ((features &amp; BrowserSecureMask) != 0 || (writer.isEnabled(BrowserSecureMask))) {</span>
+<span class="fc" id="L83">            writer.write(SECURITY_PREFIX);</span>
+        }
+
+<span class="fc" id="L86">        writer.write(jsonpFunction);</span>
+<span class="fc" id="L87">        writer.write('(');</span>
+<span class="fc" id="L88">        serializer.write(value);</span>
+<span class="fc" id="L89">        writer.write(')');</span>
+<span class="fc" id="L90">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

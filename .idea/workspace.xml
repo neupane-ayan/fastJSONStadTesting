@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="193b52f5-4a0a-488f-92c9-72e952c424c7" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="enabledProfiles">
+      <list>
+        <option value="github_actions" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectId" id="28Tv61A5Jr6YPCzamDkSimurYMF" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.side.proportion" value="0.0" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+  </component>
+  <component name="RunManager" selected="JUnit.STADTestingTypeUtils">
+    <configuration name="STADTestingTypeUtils" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="fastjson" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.alibaba.fastjson.util.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.alibaba.fastjson.util" />
+      <option name="MAIN_CLASS_NAME" value="com.alibaba.fastjson.util.STADTestingTypeUtils" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="STADTestingTypeUtils.testCastBigIntDoubleNanInfinite" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="fastjson" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.alibaba.fastjson.util.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.alibaba.fastjson.util" />
+      <option name="MAIN_CLASS_NAME" value="com.alibaba.fastjson.util.STADTestingTypeUtils" />
+      <option name="METHOD_NAME" value="testCastBigIntDoubleNanInfinite" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="STADTestingTypeUtils.testCastToDateError" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="fastjson" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.alibaba.fastjson.util.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.alibaba.fastjson.util" />
+      <option name="MAIN_CLASS_NAME" value="com.alibaba.fastjson.util.STADTestingTypeUtils" />
+      <option name="METHOD_NAME" value="testCastToDateError" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="STADTestingTypeUtils.testCastToDateZero" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="fastjson" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.alibaba.fastjson.util.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.alibaba.fastjson.util" />
+      <option name="MAIN_CLASS_NAME" value="com.alibaba.fastjson.util.STADTestingTypeUtils" />
+      <option name="METHOD_NAME" value="testCastToDateZero" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="STADTestingTypeUtils.testParseLargerIntInLoop" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="fastjson" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.alibaba.fastjson.util.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.alibaba.fastjson.util" />
+      <option name="MAIN_CLASS_NAME" value="com.alibaba.fastjson.util.STADTestingTypeUtils" />
+      <option name="METHOD_NAME" value="testParseLargerIntInLoop" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <option name="filePath" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.STADTestingTypeUtils" />
+        <item itemvalue="JUnit.STADTestingTypeUtils.testCastBigIntDoubleNanInfinite" />
+        <item itemvalue="JUnit.STADTestingTypeUtils.testCastToDateZero" />
+        <item itemvalue="JUnit.STADTestingTypeUtils.testCastToDateError" />
+        <item itemvalue="JUnit.STADTestingTypeUtils.testParseLargerIntInLoop" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="193b52f5-4a0a-488f-92c9-72e952c424c7" name="Changes" comment="" />
+      <created>1651253211113</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1651253211113</updated>
+      <workItem from="1651253214171" duration="5732000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

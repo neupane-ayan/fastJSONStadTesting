@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TypeReference.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson</a> &gt; <span class="el_source">TypeReference.java</span></div><h1>TypeReference.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson;
+
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import com.alibaba.fastjson.util.ParameterizedTypeImpl;
+import com.alibaba.fastjson.util.TypeUtils;
+
+/** 
+ * Represents a generic type {@code T}. Java doesn't yet provide a way to
+ * represent generic types, so this class does. Forces clients to create a
+ * subclass of this class which enables retrieval the type information even at
+ * runtime.
+ *
+ * &lt;p&gt;For example, to create a type literal for {@code List&lt;String&gt;}, you can
+ * create an empty anonymous inner class:
+ *
+ * &lt;pre&gt;
+ * TypeReference&amp;lt;List&amp;lt;String&amp;gt;&amp;gt; list = new TypeReference&amp;lt;List&amp;lt;String&amp;gt;&amp;gt;() {};
+ * &lt;/pre&gt;
+ * This syntax cannot be used to create type literals that have wildcard
+ * parameters, such as {@code Class&lt;?&gt;} or {@code List&lt;? extends CharSequence&gt;}.
+ */
+public class TypeReference&lt;T&gt; {
+<span class="fc" id="L30">    static ConcurrentMap&lt;Type, Type&gt; classTypeCache</span>
+            = new ConcurrentHashMap&lt;Type, Type&gt;(16, 0.75f, 1);
+
+    protected final Type type;
+
+    /**
+     * Constructs a new type literal. Derives represented class from type
+     * parameter.
+     *
+     * &lt;p&gt;Clients create an empty anonymous subclass. Doing so embeds the type
+     * parameter in the anonymous class's type hierarchy so we can reconstitute it
+     * at runtime despite erasure.
+     */
+<span class="fc" id="L43">    protected TypeReference(){</span>
+<span class="fc" id="L44">        Type superClass = getClass().getGenericSuperclass();</span>
+
+<span class="fc" id="L46">        Type type = ((ParameterizedType) superClass).getActualTypeArguments()[0];</span>
+
+<span class="fc" id="L48">        Type cachedType = classTypeCache.get(type);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (cachedType == null) {</span>
+<span class="fc" id="L50">            classTypeCache.putIfAbsent(type, type);</span>
+<span class="fc" id="L51">            cachedType = classTypeCache.get(type);</span>
+        }
+
+<span class="fc" id="L54">        this.type = cachedType;</span>
+<span class="fc" id="L55">    }</span>
+
+    /**
+     * @since 1.2.9
+     * @param actualTypeArguments
+     */
+<span class="fc" id="L61">    protected TypeReference(Type... actualTypeArguments){</span>
+<span class="fc" id="L62">        Class&lt;?&gt; thisClass = this.getClass();</span>
+<span class="fc" id="L63">        Type superClass = thisClass.getGenericSuperclass();</span>
+
+<span class="fc" id="L65">        ParameterizedType argType = (ParameterizedType) ((ParameterizedType) superClass).getActualTypeArguments()[0];</span>
+<span class="fc" id="L66">        Type rawType = argType.getRawType();</span>
+<span class="fc" id="L67">        Type[] argTypes = argType.getActualTypeArguments();</span>
+
+<span class="fc" id="L69">        int actualIndex = 0;</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        for (int i = 0; i &lt; argTypes.length; ++i) {</span>
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">            if (argTypes[i] instanceof TypeVariable &amp;&amp;</span>
+                    actualIndex &lt; actualTypeArguments.length) {
+<span class="fc" id="L73">                argTypes[i] = actualTypeArguments[actualIndex++];</span>
+            }
+            // fix for openjdk and android env
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            if (argTypes[i] instanceof GenericArrayType) {</span>
+<span class="nc" id="L77">                argTypes[i] = TypeUtils.checkPrimitiveArray(</span>
+                        (GenericArrayType) argTypes[i]);
+            }
+
+            // 如果有多层泛型且该泛型已经注明实现的情况下，判断该泛型下一层是否还有泛型
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if(argTypes[i] instanceof ParameterizedType) {</span>
+<span class="fc" id="L83">                argTypes[i] = handlerParameterizedType((ParameterizedType) argTypes[i], actualTypeArguments, actualIndex);</span>
+            }
+        }
+
+<span class="fc" id="L87">        Type key = new ParameterizedTypeImpl(argTypes, thisClass, rawType);</span>
+<span class="fc" id="L88">        Type cachedType = classTypeCache.get(key);</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (cachedType == null) {</span>
+<span class="fc" id="L90">            classTypeCache.putIfAbsent(key, key);</span>
+<span class="fc" id="L91">            cachedType = classTypeCache.get(key);</span>
+        }
+
+<span class="fc" id="L94">        type = cachedType;</span>
+<span class="fc" id="L95">    }</span>
+
+    public static Type intern(ParameterizedTypeImpl type) {
+<span class="fc" id="L98">        Type cachedType = classTypeCache.get(type);</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (cachedType == null) {</span>
+<span class="fc" id="L100">            classTypeCache.putIfAbsent(type, type);</span>
+<span class="fc" id="L101">            cachedType = classTypeCache.get(type);</span>
+        }
+
+<span class="fc" id="L104">        return cachedType;</span>
+    }
+
+    private Type handlerParameterizedType(ParameterizedType type, Type[] actualTypeArguments, int actualIndex) {
+<span class="fc" id="L108">        Class&lt;?&gt; thisClass = this.getClass();</span>
+<span class="fc" id="L109">        Type rawType = type.getRawType();</span>
+<span class="fc" id="L110">        Type[] argTypes = type.getActualTypeArguments();</span>
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        for(int i = 0; i &lt; argTypes.length; ++i) {</span>
+<span class="pc bpc" id="L113" title="1 of 4 branches missed.">            if (argTypes[i] instanceof TypeVariable &amp;&amp; actualIndex &lt; actualTypeArguments.length) {</span>
+<span class="fc" id="L114">                argTypes[i] = actualTypeArguments[actualIndex++];</span>
+            }
+
+            // fix for openjdk and android env
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            if (argTypes[i] instanceof GenericArrayType) {</span>
+<span class="nc" id="L119">                argTypes[i] = TypeUtils.checkPrimitiveArray(</span>
+                        (GenericArrayType) argTypes[i]);
+            }
+
+            // 如果有多层泛型且该泛型已经注明实现的情况下，判断该泛型下一层是否还有泛型
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if(argTypes[i] instanceof ParameterizedType) {</span>
+<span class="fc" id="L125">                argTypes[i] = handlerParameterizedType((ParameterizedType) argTypes[i], actualTypeArguments, actualIndex);</span>
+            }
+        }
+
+<span class="fc" id="L129">        Type key = new ParameterizedTypeImpl(argTypes, thisClass, rawType);</span>
+<span class="fc" id="L130">        return key;</span>
+    }
+    
+    /**
+     * Gets underlying {@code Type} instance.
+     */
+    public Type getType() {
+<span class="fc" id="L137">        return type;</span>
+    }
+
+<span class="fc" id="L140">    public final static Type LIST_STRING = new TypeReference&lt;List&lt;String&gt;&gt;() {}.getType();</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastJsonFeature.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.jaxrs</a> &gt; <span class="el_source">FastJsonFeature.java</span></div><h1>FastJsonFeature.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.jaxrs;
+
+import org.glassfish.jersey.CommonProperties;
+import org.glassfish.jersey.internal.InternalProperties;
+import org.glassfish.jersey.internal.util.PropertiesHelper;
+
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.FeatureContext;
+import javax.ws.rs.ext.MessageBodyReader;
+import javax.ws.rs.ext.MessageBodyWriter;
+
+/**
+ * &lt;p&gt;Title: FastJsonFeature&lt;/p&gt;
+ * &lt;p&gt;Description: FastJsonFeature&lt;/p&gt;
+ *
+ * @author Victor.Zxy
+ * @see Feature
+ * @since 1.2.37
+ */
+<span class="fc" id="L21">public class FastJsonFeature implements Feature {</span>
+
+<span class="fc" id="L23">    private final static String JSON_FEATURE = FastJsonFeature.class.getSimpleName();</span>
+
+    @Override
+    public boolean configure(final FeatureContext context) {
+        try {
+<span class="fc" id="L28">            final Configuration config = context.getConfiguration();</span>
+
+<span class="fc" id="L30">            final String jsonFeature = CommonProperties.getValue(</span>
+<span class="fc" id="L31">                    config.getProperties()</span>
+<span class="fc" id="L32">                    , config.getRuntimeType()</span>
+                    , InternalProperties.JSON_FEATURE, JSON_FEATURE,
+                    String.class
+            );
+
+            // Other JSON providers registered.
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">            if (!JSON_FEATURE.equalsIgnoreCase(jsonFeature)) {</span>
+<span class="nc" id="L39">                return false;</span>
+            }
+
+            // Disable other JSON providers.
+<span class="fc" id="L43">            context.property(</span>
+<span class="fc" id="L44">                    PropertiesHelper.getPropertyNameForRuntime(InternalProperties.JSON_FEATURE, config.getRuntimeType())</span>
+                    , JSON_FEATURE);
+
+            // Register FastJson.
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            if (!config.isRegistered(FastJsonProvider.class)) {</span>
+<span class="fc" id="L49">                context.register(FastJsonProvider.class, MessageBodyReader.class, MessageBodyWriter.class);</span>
+            }
+<span class="nc" id="L51">        } catch (NoSuchMethodError e) {</span>
+            // skip
+<span class="fc" id="L53">        }</span>
+
+<span class="fc" id="L55">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

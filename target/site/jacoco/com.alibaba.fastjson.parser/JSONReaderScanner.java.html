@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSONReaderScanner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser</a> &gt; <span class="el_source">JSONReaderScanner.java</span></div><h1>JSONReaderScanner.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.parser;
+
+import java.io.CharArrayReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.MathContext;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.util.IOUtils;
+
+//这个类，为了性能优化做了很多特别处理，一切都是为了性能！！！
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public final class JSONReaderScanner extends JSONLexerBase {
+
+<span class="fc" id="L36">    private final static ThreadLocal&lt;char[]&gt; BUF_LOCAL = new ThreadLocal&lt;char[]&gt;();</span>
+
+    private Reader                           reader;
+    private char[]                           buf;
+    private int                              bufLength;
+
+    public JSONReaderScanner(String input){
+<span class="fc" id="L43">        this(input, JSON.DEFAULT_PARSER_FEATURE);</span>
+<span class="fc" id="L44">    }</span>
+
+    public JSONReaderScanner(String input, int features){
+<span class="fc" id="L47">        this(new StringReader(input), features);</span>
+<span class="fc" id="L48">    }</span>
+
+    public JSONReaderScanner(char[] input, int inputLength){
+<span class="fc" id="L51">        this(input, inputLength, JSON.DEFAULT_PARSER_FEATURE);</span>
+<span class="fc" id="L52">    }</span>
+
+    public JSONReaderScanner(Reader reader){
+<span class="fc" id="L55">        this(reader, JSON.DEFAULT_PARSER_FEATURE);</span>
+<span class="fc" id="L56">    }</span>
+
+    public JSONReaderScanner(Reader reader, int features){
+<span class="fc" id="L59">        super(features);</span>
+<span class="fc" id="L60">        this.reader = reader;</span>
+
+<span class="fc" id="L62">        buf = BUF_LOCAL.get();</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (buf != null) {</span>
+<span class="fc" id="L64">            BUF_LOCAL.set(null);</span>
+        }
+
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (buf == null) {</span>
+<span class="fc" id="L68">            buf = new char[1024 * 16];</span>
+        }
+
+        try {
+<span class="fc" id="L72">            bufLength = reader.read(buf);</span>
+<span class="fc" id="L73">        } catch (IOException e) {</span>
+<span class="fc" id="L74">            throw new JSONException(e.getMessage(), e);</span>
+<span class="fc" id="L75">        }</span>
+
+<span class="fc" id="L77">        bp = -1;</span>
+
+<span class="fc" id="L79">        next();</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (ch == 65279) { // utf8 bom</span>
+<span class="fc" id="L81">            next();</span>
+        }
+<span class="fc" id="L83">    }</span>
+
+    public JSONReaderScanner(char[] input, int inputLength, int features){
+<span class="fc" id="L86">        this(new CharArrayReader(input, 0, inputLength), features);</span>
+<span class="fc" id="L87">    }</span>
+
+    public final char charAt(int index) {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (index &gt;= bufLength) {</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            if (bufLength == -1) {</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">                if (index &lt; sp) {</span>
+<span class="fc" id="L93">                    return buf[index];</span>
+                }
+<span class="fc" id="L95">                return EOI;</span>
+            }
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            if (bp == 0) {</span>
+<span class="fc" id="L99">                char[] buf = new char[(this.buf.length * 3) / 2];</span>
+<span class="fc" id="L100">                System.arraycopy(this.buf, bp, buf, 0, bufLength);</span>
+
+<span class="fc" id="L102">                int rest = buf.length - bufLength;</span>
+                try {
+<span class="fc" id="L104">                    int len = reader.read(buf, bufLength, rest);</span>
+<span class="fc" id="L105">                    bufLength += len;</span>
+<span class="fc" id="L106">                    this.buf = buf;</span>
+<span class="nc" id="L107">                } catch (IOException e) {</span>
+<span class="nc" id="L108">                    throw new JSONException(e.getMessage(), e);</span>
+<span class="fc" id="L109">                }</span>
+<span class="fc" id="L110">            } else {</span>
+<span class="fc" id="L111">                int rest = bufLength - bp;</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                if (rest &gt; 0) {</span>
+<span class="fc" id="L113">                    System.arraycopy(buf, bp, buf, 0, rest);</span>
+                }
+
+                try {
+<span class="fc" id="L117">                    bufLength = reader.read(buf, rest, buf.length - rest);</span>
+<span class="nc" id="L118">                } catch (IOException e) {</span>
+<span class="nc" id="L119">                    throw new JSONException(e.getMessage(), e);</span>
+<span class="fc" id="L120">                }</span>
+
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">                if (bufLength == 0) {</span>
+<span class="nc" id="L123">                    throw new JSONException(&quot;illegal state, textLength is zero&quot;);</span>
+                }
+
+<span class="fc bfc" id="L126" title="All 2 branches covered.">                if (bufLength == -1) {</span>
+<span class="fc" id="L127">                    return EOI;</span>
+                }
+
+<span class="fc" id="L130">                bufLength += rest;</span>
+<span class="fc" id="L131">                index -= bp;</span>
+<span class="fc" id="L132">                np -= bp;</span>
+<span class="fc" id="L133">                bp = 0;</span>
+            }
+        }
+
+<span class="fc" id="L137">        return buf[index];</span>
+    }
+
+    public final int indexOf(char ch, int startIndex) {
+<span class="fc" id="L141">        int offset = startIndex - bp;</span>
+<span class="fc" id="L142">        for (;; ++offset) {</span>
+<span class="fc" id="L143">            final int index = bp + offset;</span>
+<span class="fc" id="L144">            char chLoal = charAt(index);</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">            if (ch == chLoal) {</span>
+<span class="fc" id="L146">                return offset + bp;</span>
+            }
+<span class="fc bfc" id="L148" title="All 2 branches covered.">            if (chLoal == EOI) {</span>
+<span class="fc" id="L149">                return -1;</span>
+            }
+        }
+    }
+
+    public final String addSymbol(int offset, int len, int hash, final SymbolTable symbolTable) {
+<span class="fc" id="L155">        return symbolTable.addSymbol(buf, offset, len, hash);</span>
+    }
+
+    public final char next() {
+<span class="fc" id="L159">        int index = ++bp;</span>
+
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        if (index &gt;= bufLength) {</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            if (bufLength == -1) {</span>
+<span class="fc" id="L163">                return EOI;</span>
+            }
+
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            if (sp &gt; 0) {</span>
+                int offset;
+<span class="fc" id="L168">                offset = bufLength - sp;</span>
+<span class="pc bpc" id="L169" title="1 of 4 branches missed.">                if (ch == '&quot;' &amp;&amp; offset &gt; 0) {</span>
+<span class="fc" id="L170">                    offset--;</span>
+                }
+<span class="fc" id="L172">                System.arraycopy(buf, offset, buf, 0, sp);</span>
+            }
+<span class="fc" id="L174">            np = -1;</span>
+
+<span class="fc" id="L176">            index = bp = sp;</span>
+
+            try {
+<span class="fc" id="L179">                int startPos = bp;</span>
+<span class="fc" id="L180">                int readLength = buf.length - startPos;</span>
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">                if (readLength == 0) {</span>
+<span class="nc" id="L182">                    char[] newBuf = new char[buf.length * 2];</span>
+<span class="nc" id="L183">                    System.arraycopy(buf, 0, newBuf, 0, buf.length);</span>
+<span class="nc" id="L184">                    buf = newBuf;</span>
+<span class="nc" id="L185">                    readLength = buf.length - startPos;</span>
+                }
+<span class="fc" id="L187">                bufLength = reader.read(buf, bp, readLength);</span>
+<span class="fc" id="L188">            } catch (IOException e) {</span>
+<span class="fc" id="L189">                throw new JSONException(e.getMessage(), e);</span>
+<span class="fc" id="L190">            }</span>
+
+<span class="fc bfc" id="L192" title="All 2 branches covered.">            if (bufLength == 0) {</span>
+<span class="fc" id="L193">                throw new JSONException(&quot;illegal stat, textLength is zero&quot;);</span>
+            }
+
+<span class="fc bfc" id="L196" title="All 2 branches covered.">            if (bufLength == -1) {</span>
+<span class="fc" id="L197">                return ch = EOI;</span>
+            }
+
+<span class="fc" id="L200">            bufLength += bp;</span>
+        }
+
+<span class="fc" id="L203">        return ch = buf[index];</span>
+    }
+
+    protected final void copyTo(int offset, int count, char[] dest) {
+<span class="fc" id="L207">        System.arraycopy(buf, offset, dest, 0, count);</span>
+<span class="fc" id="L208">    }</span>
+
+    public final boolean charArrayCompare(char[] chars) {
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        for (int i = 0; i &lt; chars.length; ++i) {</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            if (charAt(bp + i) != chars[i]) {</span>
+<span class="fc" id="L213">                return false;</span>
+            }
+        }
+
+<span class="fc" id="L217">        return true;</span>
+    }
+
+    public byte[] bytesValue() {
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">        if (token == JSONToken.HEX) {</span>
+<span class="nc" id="L222">            throw new JSONException(&quot;TODO&quot;);</span>
+        }
+
+<span class="fc" id="L225">        return IOUtils.decodeBase64(buf, np + 1, sp);</span>
+    }
+
+    protected final void arrayCopy(int srcPos, char[] dest, int destPos, int length) {
+<span class="fc" id="L229">        System.arraycopy(buf, srcPos, dest, destPos, length);</span>
+<span class="fc" id="L230">    }</span>
+
+    /**
+     * The value of a literal token, recorded as a string. For integers, leading 0x and 'l' suffixes are suppressed.
+     */
+    public final String stringVal() {
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (!hasSpecial) {</span>
+<span class="fc" id="L237">            int offset = np + 1;</span>
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">            if (offset &lt; 0) {</span>
+<span class="nc" id="L239">                throw new IllegalStateException();</span>
+            }
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">            if (offset &gt; buf.length - sp) {</span>
+<span class="nc" id="L242">                throw new IllegalStateException();</span>
+            }
+<span class="fc" id="L244">            return new String(buf, offset, sp);</span>
+            // return text.substring(np + 1, np + 1 + sp);
+        } else {
+<span class="fc" id="L247">            return new String(sbuf, 0, sp);</span>
+        }
+    }
+
+    public final String subString(int offset, int count) {
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">        if (count &lt; 0) {</span>
+<span class="nc" id="L253">            throw new StringIndexOutOfBoundsException(count);</span>
+        }
+<span class="fc" id="L255">        return new String(buf, offset, count);</span>
+        // return text.substring(offset, offset + count);
+    }
+
+    public final char[] sub_chars(int offset, int count) {
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">        if (count &lt; 0) {</span>
+<span class="nc" id="L261">            throw new StringIndexOutOfBoundsException(count);</span>
+        }
+        
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">        if (offset == 0) {</span>
+<span class="nc" id="L265">            return buf;</span>
+        }
+<span class="fc" id="L267">        char[] chars = new char[count];</span>
+<span class="fc" id="L268">        System.arraycopy(buf, offset, chars, 0, count);</span>
+<span class="fc" id="L269">        return chars;</span>
+    }
+
+    public final String numberString() {
+<span class="fc" id="L273">        int offset = np;</span>
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">        if (offset == -1) {</span>
+<span class="nc" id="L275">            offset = 0;</span>
+        }
+<span class="fc" id="L277">        char chLocal = charAt(offset + sp - 1);</span>
+
+<span class="fc" id="L279">        int sp = this.sp;</span>
+<span class="pc bpc" id="L280" title="3 of 10 branches missed.">        if (chLocal == 'L' || chLocal == 'S' || chLocal == 'B' || chLocal == 'F' || chLocal == 'D') {</span>
+<span class="fc" id="L281">            sp--;</span>
+        }
+
+<span class="fc" id="L284">        String value = new String(buf, offset, sp);</span>
+<span class="fc" id="L285">        return value;</span>
+    }
+
+    public final BigDecimal decimalValue() {
+<span class="fc" id="L289">        int offset = np;</span>
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">        if (offset == -1) {</span>
+<span class="nc" id="L291">            offset = 0;</span>
+        }
+<span class="fc" id="L293">        char chLocal = charAt(offset + sp - 1);</span>
+
+<span class="fc" id="L295">        int sp = this.sp;</span>
+<span class="pc bpc" id="L296" title="5 of 10 branches missed.">        if (chLocal == 'L' || chLocal == 'S' || chLocal == 'B' || chLocal == 'F' || chLocal == 'D') {</span>
+<span class="nc" id="L297">            sp--;</span>
+        }
+
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">        if (sp &gt; 65535) {</span>
+<span class="nc" id="L301">            throw new JSONException(&quot;decimal overflow&quot;);</span>
+        }
+
+<span class="fc" id="L304">        return new BigDecimal(buf, offset, sp, MathContext.UNLIMITED);</span>
+    }
+
+    public void close() {
+<span class="fc" id="L308">        super.close();</span>
+
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">        if (buf.length &lt;= 1024 * 64) {</span>
+<span class="fc" id="L311">            BUF_LOCAL.set(buf);</span>
+        }
+<span class="fc" id="L313">        this.buf = null;</span>
+
+<span class="fc" id="L315">        IOUtils.close(reader);</span>
+<span class="fc" id="L316">    }</span>
+
+    @Override
+    public boolean isEOF() {
+<span class="pc bpc" id="L320" title="4 of 8 branches missed.">        return bufLength == -1 || bp == buf.length || ch == EOI &amp;&amp; bp + 1 &gt;= buf.length;</span>
+    }
+
+    public final boolean isBlankInput() {
+<span class="pc" id="L324">        for (int i = 0;; ++i) {</span>
+<span class="fc" id="L325">            char chLocal = buf[i];</span>
+<span class="pc bpc" id="L326" title="1 of 2 branches missed.">            if (chLocal == EOI) {</span>
+<span class="nc" id="L327">                token = JSONToken.EOF;</span>
+<span class="nc" id="L328">                break;</span>
+            }
+
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">            if (!isWhitespace(chLocal)) {</span>
+<span class="fc" id="L332">                return false;</span>
+            }
+        }
+
+<span class="nc" id="L336">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharArrayCodec.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">CharArrayCodec.java</span></div><h1>CharArrayCodec.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+import java.lang.reflect.Type;
+import java.util.Collection;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
+
+
+<span class="fc" id="L14">public class CharArrayCodec implements ObjectDeserializer {</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type clazz, Object fieldName) {
+<span class="fc" id="L18">        return (T) deserialze(parser);</span>
+    }
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T deserialze(DefaultJSONParser parser) {
+<span class="fc" id="L23">        final JSONLexer lexer = parser.lexer;</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L25">            String val = lexer.stringVal();</span>
+<span class="fc" id="L26">            lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L27">            return (T) val.toCharArray();</span>
+        }
+        
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (lexer.token() == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L31">            Number val = lexer.integerValue();</span>
+<span class="fc" id="L32">            lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L33">            return (T) val.toString().toCharArray();</span>
+        }
+
+<span class="fc" id="L36">        Object value = parser.parse();</span>
+
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (value instanceof  String) {</span>
+<span class="nc" id="L39">            return (T) ((String) value).toCharArray();</span>
+        }
+
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (value instanceof Collection) {</span>
+<span class="fc" id="L43">            Collection&lt;?&gt; collection = (Collection) value;</span>
+
+<span class="fc" id="L45">            boolean accept = true;</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">            for (Object item : collection) {</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">                if (item instanceof String) {</span>
+<span class="fc" id="L48">                    int itemLength = ((String) item).length();</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">                    if (itemLength != 1) {</span>
+<span class="fc" id="L50">                        accept = false;</span>
+<span class="fc" id="L51">                        break;</span>
+                    }
+                }
+<span class="fc" id="L54">            }</span>
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            if (!accept) {</span>
+<span class="fc" id="L57">                throw new JSONException(&quot;can not cast to char[]&quot;);</span>
+            }
+
+<span class="fc" id="L60">            char[] chars = new char[collection.size()];</span>
+<span class="fc" id="L61">            int pos = 0;</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            for (Object item : collection) {</span>
+<span class="fc" id="L63">                chars[pos++] = ((String) item).charAt(0);</span>
+<span class="fc" id="L64">            }</span>
+<span class="fc" id="L65">            return (T) chars;</span>
+        }
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        return value == null //</span>
+            ? null //
+<span class="fc" id="L70">            : (T) JSON.toJSONString(value).toCharArray();</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L74">        return JSONToken.LITERAL_STRING;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

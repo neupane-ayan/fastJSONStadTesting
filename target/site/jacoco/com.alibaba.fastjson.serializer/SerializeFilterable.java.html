@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SerializeFilterable.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">SerializeFilterable.java</span></div><h1>SerializeFilterable.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.alibaba.fastjson.JSON;
+
+<span class="fc" id="L9">public abstract class SerializeFilterable {</span>
+
+<span class="fc" id="L11">    protected List&lt;BeforeFilter&gt;       beforeFilters       = null;</span>
+<span class="fc" id="L12">    protected List&lt;AfterFilter&gt;        afterFilters        = null;</span>
+<span class="fc" id="L13">    protected List&lt;PropertyFilter&gt;     propertyFilters     = null;</span>
+<span class="fc" id="L14">    protected List&lt;ValueFilter&gt;        valueFilters        = null;</span>
+<span class="fc" id="L15">    protected List&lt;NameFilter&gt;         nameFilters         = null;</span>
+<span class="fc" id="L16">    protected List&lt;PropertyPreFilter&gt;  propertyPreFilters  = null;</span>
+<span class="fc" id="L17">    protected List&lt;LabelFilter&gt;        labelFilters        = null;</span>
+<span class="fc" id="L18">    protected List&lt;ContextValueFilter&gt; contextValueFilters = null;</span>
+
+<span class="fc" id="L20">    protected boolean                  writeDirect         = true;</span>
+
+    public List&lt;BeforeFilter&gt; getBeforeFilters() {
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        if (beforeFilters == null) {</span>
+<span class="fc" id="L24">            beforeFilters = new ArrayList&lt;BeforeFilter&gt;();</span>
+<span class="fc" id="L25">            writeDirect = false;</span>
+        }
+
+<span class="fc" id="L28">        return beforeFilters;</span>
+    }
+
+    public List&lt;AfterFilter&gt; getAfterFilters() {
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        if (afterFilters == null) {</span>
+<span class="fc" id="L33">            afterFilters = new ArrayList&lt;AfterFilter&gt;();</span>
+<span class="fc" id="L34">            writeDirect = false;</span>
+        }
+
+<span class="fc" id="L37">        return afterFilters;</span>
+    }
+
+    public List&lt;NameFilter&gt; getNameFilters() {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (nameFilters == null) {</span>
+<span class="fc" id="L42">            nameFilters = new ArrayList&lt;NameFilter&gt;();</span>
+<span class="fc" id="L43">            writeDirect = false;</span>
+        }
+
+<span class="fc" id="L46">        return nameFilters;</span>
+    }
+
+    public List&lt;PropertyPreFilter&gt; getPropertyPreFilters() {
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (propertyPreFilters == null) {</span>
+<span class="fc" id="L51">            propertyPreFilters = new ArrayList&lt;PropertyPreFilter&gt;();</span>
+<span class="fc" id="L52">            writeDirect = false;</span>
+        }
+
+<span class="fc" id="L55">        return propertyPreFilters;</span>
+    }
+
+    public List&lt;LabelFilter&gt; getLabelFilters() {
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (labelFilters == null) {</span>
+<span class="fc" id="L60">            labelFilters = new ArrayList&lt;LabelFilter&gt;();</span>
+<span class="fc" id="L61">            writeDirect = false;</span>
+        }
+
+<span class="fc" id="L64">        return labelFilters;</span>
+    }
+
+    public List&lt;PropertyFilter&gt; getPropertyFilters() {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (propertyFilters == null) {</span>
+<span class="fc" id="L69">            propertyFilters = new ArrayList&lt;PropertyFilter&gt;();</span>
+<span class="fc" id="L70">            writeDirect = false;</span>
+        }
+
+<span class="fc" id="L73">        return propertyFilters;</span>
+    }
+
+    public List&lt;ContextValueFilter&gt; getContextValueFilters() {
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (contextValueFilters == null) {</span>
+<span class="fc" id="L78">            contextValueFilters = new ArrayList&lt;ContextValueFilter&gt;();</span>
+<span class="fc" id="L79">            writeDirect = false;</span>
+        }
+
+<span class="fc" id="L82">        return contextValueFilters;</span>
+    }
+
+    public List&lt;ValueFilter&gt; getValueFilters() {
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (valueFilters == null) {</span>
+<span class="fc" id="L87">            valueFilters = new ArrayList&lt;ValueFilter&gt;();</span>
+<span class="fc" id="L88">            writeDirect = false;</span>
+        }
+
+<span class="fc" id="L91">        return valueFilters;</span>
+    }
+
+    public void addFilter(SerializeFilter filter) {
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (filter == null) {</span>
+<span class="fc" id="L96">            return;</span>
+        }
+
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (filter instanceof PropertyPreFilter) {</span>
+<span class="fc" id="L100">            this.getPropertyPreFilters().add((PropertyPreFilter) filter);</span>
+        }
+
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (filter instanceof NameFilter) {</span>
+<span class="fc" id="L104">            this.getNameFilters().add((NameFilter) filter);</span>
+        }
+
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (filter instanceof ValueFilter) {</span>
+<span class="fc" id="L108">            this.getValueFilters().add((ValueFilter) filter);</span>
+        }
+
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (filter instanceof ContextValueFilter) {</span>
+<span class="fc" id="L112">            this.getContextValueFilters().add((ContextValueFilter) filter);</span>
+        }
+
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        if (filter instanceof PropertyFilter) {</span>
+<span class="fc" id="L116">            this.getPropertyFilters().add((PropertyFilter) filter);</span>
+        }
+
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        if (filter instanceof BeforeFilter) {</span>
+<span class="fc" id="L120">            this.getBeforeFilters().add((BeforeFilter) filter);</span>
+        }
+
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (filter instanceof AfterFilter) {</span>
+<span class="fc" id="L124">            this.getAfterFilters().add((AfterFilter) filter);</span>
+        }
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (filter instanceof LabelFilter) {</span>
+<span class="fc" id="L128">            this.getLabelFilters().add((LabelFilter) filter);</span>
+        }
+<span class="fc" id="L130">    }</span>
+
+    public boolean applyName(JSONSerializer jsonBeanDeser, //
+                             Object object, String key) {
+
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        if (jsonBeanDeser.propertyPreFilters != null) {</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">            for (PropertyPreFilter filter : jsonBeanDeser.propertyPreFilters) {</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">                if (!filter.apply(jsonBeanDeser, object, key)) {</span>
+<span class="fc" id="L138">                    return false;</span>
+                }
+<span class="fc" id="L140">            }</span>
+        }
+        
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (this.propertyPreFilters != null) {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">            for (PropertyPreFilter filter : this.propertyPreFilters) {</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">                if (!filter.apply(jsonBeanDeser, object, key)) {</span>
+<span class="fc" id="L146">                    return false;</span>
+                }
+<span class="fc" id="L148">            }</span>
+        }
+
+<span class="fc" id="L151">        return true;</span>
+    }
+    
+    public boolean apply(JSONSerializer jsonBeanDeser, //
+                         Object object, //
+                         String key, Object propertyValue) {
+        
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        if (jsonBeanDeser.propertyFilters != null) {</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            for (PropertyFilter propertyFilter : jsonBeanDeser.propertyFilters) {</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">                if (!propertyFilter.apply(object, key, propertyValue)) {</span>
+<span class="fc" id="L161">                    return false;</span>
+                }
+<span class="fc" id="L163">            }</span>
+        }
+        
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (this.propertyFilters != null) {</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">            for (PropertyFilter propertyFilter : this.propertyFilters) {</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">                if (!propertyFilter.apply(object, key, propertyValue)) {</span>
+<span class="fc" id="L169">                    return false;</span>
+                }
+<span class="fc" id="L171">            }</span>
+        }
+
+<span class="fc" id="L174">        return true;</span>
+    }
+    
+    protected String processKey(JSONSerializer jsonBeanDeser, //
+                             Object object, //
+                             String key, //
+                             Object propertyValue) {
+
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (jsonBeanDeser.nameFilters != null) {</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">            for (NameFilter nameFilter : jsonBeanDeser.nameFilters) {</span>
+<span class="fc" id="L184">                key = nameFilter.process(object, key, propertyValue);</span>
+<span class="fc" id="L185">            }</span>
+        }
+        
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        if (this.nameFilters != null) {</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">            for (NameFilter nameFilter : this.nameFilters) {</span>
+<span class="fc" id="L190">                key = nameFilter.process(object, key, propertyValue);</span>
+<span class="fc" id="L191">            }</span>
+        }
+
+<span class="fc" id="L194">        return key;</span>
+    }
+
+    protected Object processValue(JSONSerializer jsonBeanDeser, //
+            BeanContext beanContext,
+            Object object, //
+            String key, //
+            Object propertyValue) {
+<span class="fc" id="L202">        return processValue(jsonBeanDeser, beanContext, object, key, propertyValue, 0);</span>
+    }
+    
+    protected Object processValue(JSONSerializer jsonBeanDeser, //
+                               BeanContext beanContext,
+                               Object object, //
+                               String key, //
+                               Object propertyValue, //
+                               int features) {
+
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (propertyValue != null) {</span>
+<span class="fc bfc" id="L213" title="All 4 branches covered.">            if ((SerializerFeature.isEnabled(jsonBeanDeser.out.features, features, SerializerFeature.WriteNonStringValueAsString)  //</span>
+<span class="fc bfc" id="L214" title="All 6 branches covered.">                    || (beanContext != null &amp;&amp; (beanContext.getFeatures() &amp; SerializerFeature.WriteNonStringValueAsString.mask) != 0))</span>
+                    &amp;&amp; (propertyValue instanceof Number || propertyValue instanceof Boolean)) {
+<span class="fc" id="L216">                String format = null;</span>
+<span class="fc bfc" id="L217" title="All 4 branches covered.">                if (propertyValue instanceof Number</span>
+                        &amp;&amp; beanContext != null) {
+<span class="fc" id="L219">                    format = beanContext.getFormat();</span>
+                }
+
+<span class="fc bfc" id="L222" title="All 2 branches covered.">                if (format != null) {</span>
+<span class="fc" id="L223">                    propertyValue = new DecimalFormat(format).format(propertyValue);</span>
+                } else {
+<span class="fc" id="L225">                    propertyValue = propertyValue.toString();</span>
+                }
+<span class="fc bfc" id="L227" title="All 4 branches covered.">            } else if (beanContext != null &amp;&amp; beanContext.isJsonDirect()) {</span>
+<span class="fc" id="L228">                String jsonStr = (String) propertyValue;</span>
+<span class="fc" id="L229">                propertyValue = JSON.parse(jsonStr);</span>
+            }
+        }
+        
+<span class="fc bfc" id="L233" title="All 2 branches covered.">        if (jsonBeanDeser.valueFilters != null) {</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">            for (ValueFilter valueFilter : jsonBeanDeser.valueFilters) {</span>
+<span class="fc" id="L235">                propertyValue = valueFilter.process(object, key, propertyValue);</span>
+<span class="fc" id="L236">            }</span>
+        }
+
+<span class="fc" id="L239">        List&lt;ValueFilter&gt; valueFilters = this.valueFilters;</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        if (valueFilters != null) {</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">            for (ValueFilter valueFilter : valueFilters) {</span>
+<span class="fc" id="L242">                propertyValue = valueFilter.process(object, key, propertyValue);</span>
+<span class="fc" id="L243">            }</span>
+        }
+
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (jsonBeanDeser.contextValueFilters != null) {</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">            for (ContextValueFilter valueFilter : jsonBeanDeser.contextValueFilters) {</span>
+<span class="fc" id="L248">                propertyValue = valueFilter.process(beanContext, object, key, propertyValue);</span>
+<span class="fc" id="L249">            }</span>
+        }
+
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        if (this.contextValueFilters != null) {</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">            for (ContextValueFilter valueFilter : this.contextValueFilters) {</span>
+<span class="fc" id="L254">                propertyValue = valueFilter.process(beanContext, object, key, propertyValue);</span>
+<span class="fc" id="L255">            }</span>
+        }
+
+<span class="fc" id="L258">        return propertyValue;</span>
+    }
+    
+    /**
+     * only invoke by asm byte
+     * 
+     * @return
+     */
+    protected boolean writeDirect(JSONSerializer jsonBeanDeser) {
+<span class="fc bfc" id="L267" title="All 6 branches covered.">        return jsonBeanDeser.out.writeDirect //</span>
+               &amp;&amp; this.writeDirect //
+               &amp;&amp; jsonBeanDeser.writeDirect;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

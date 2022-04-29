@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertyPreFilters.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.spring</a> &gt; <span class="el_source">PropertyPreFilters.java</span></div><h1>PropertyPreFilters.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.spring;
+
+import com.alibaba.fastjson.serializer.SimplePropertyPreFilter;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * {@link SimplePropertyPreFilter}的一个简单封装
+ * @author  yanquanyu
+ * @author  liuming
+ */
+<span class="fc" id="L13">public class PropertyPreFilters {</span>
+<span class="fc" id="L14">    private List&lt;MySimplePropertyPreFilter&gt; filters = new ArrayList&lt;MySimplePropertyPreFilter&gt;();</span>
+
+
+    public MySimplePropertyPreFilter addFilter(){
+<span class="nc" id="L18">        MySimplePropertyPreFilter filter = new MySimplePropertyPreFilter();</span>
+<span class="nc" id="L19">        filters.add(filter);</span>
+<span class="nc" id="L20">        return filter;</span>
+    }
+
+    public MySimplePropertyPreFilter addFilter(String... properties){
+<span class="nc" id="L24">        MySimplePropertyPreFilter filter = new MySimplePropertyPreFilter(properties);</span>
+<span class="nc" id="L25">        filters.add(filter);</span>
+<span class="nc" id="L26">        return filter;</span>
+    }
+
+    public MySimplePropertyPreFilter addFilter(Class&lt;?&gt; clazz, String... properties){
+<span class="fc" id="L30">        MySimplePropertyPreFilter filter = new MySimplePropertyPreFilter(clazz,properties);</span>
+<span class="fc" id="L31">        filters.add(filter);</span>
+<span class="fc" id="L32">        return filter;</span>
+    }
+
+    public List&lt;MySimplePropertyPreFilter&gt; getFilters() {
+<span class="fc" id="L36">        return filters;</span>
+    }
+
+    public void setFilters(List&lt;MySimplePropertyPreFilter&gt; filters) {
+<span class="nc" id="L40">        this.filters = filters;</span>
+<span class="nc" id="L41">    }</span>
+
+    public MySimplePropertyPreFilter[] toFilters(){
+<span class="nc" id="L44">        return filters.toArray(new MySimplePropertyPreFilter[]{});</span>
+    }
+
+    public class MySimplePropertyPreFilter extends SimplePropertyPreFilter {
+
+<span class="nc" id="L49">        public MySimplePropertyPreFilter(){}</span>
+
+<span class="nc" id="L51">        public MySimplePropertyPreFilter(String... properties){</span>
+<span class="nc" id="L52">            super(properties);</span>
+<span class="nc" id="L53">        }</span>
+
+<span class="fc" id="L55">        public MySimplePropertyPreFilter(Class&lt;?&gt; clazz, String... properties){</span>
+<span class="fc" id="L56">            super(clazz,properties);</span>
+<span class="fc" id="L57">        }</span>
+
+        public MySimplePropertyPreFilter addExcludes(String... filters){
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            for (int i = 0; i &lt; filters.length; i++) {</span>
+<span class="fc" id="L61">                this.getExcludes().add(filters[i]);</span>
+            }
+<span class="fc" id="L63">            return this;</span>
+        }
+
+        public MySimplePropertyPreFilter addIncludes(String... filters){
+<span class="nc bnc" id="L67" title="All 2 branches missed.">            for (int i = 0; i &lt; filters.length; i++) {</span>
+<span class="nc" id="L68">                this.getIncludes().add(filters[i]);</span>
+            }
+<span class="nc" id="L70">            return this;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

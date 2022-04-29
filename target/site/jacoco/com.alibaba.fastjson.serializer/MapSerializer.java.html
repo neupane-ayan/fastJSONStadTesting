@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MapSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">MapSerializer.java</span></div><h1>MapSerializer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2018 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.serializer;
+
+import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.*;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+<span class="fc" id="L29">public class MapSerializer extends SerializeFilterable implements ObjectSerializer {</span>
+
+<span class="fc" id="L31">    public static MapSerializer instance = new MapSerializer();</span>
+
+<span class="fc" id="L33">    private static final int NON_STRINGKEY_AS_STRING = SerializerFeature.of(</span>
+            new SerializerFeature[] {
+                    SerializerFeature.BrowserCompatible,
+                    SerializerFeature.WriteNonStringKeyAsString,
+                    SerializerFeature.BrowserSecure});
+
+    public void write(JSONSerializer serializer
+            , Object object
+            , Object fieldName
+            , Type fieldType
+            , int features) throws IOException {
+<span class="fc" id="L44">        write(serializer, object, fieldName, fieldType, features, false);</span>
+<span class="fc" id="L45">    }</span>
+
+    @SuppressWarnings({ &quot;rawtypes&quot;})
+    public void write(JSONSerializer serializer
+            , Object object
+            , Object fieldName
+            , Type fieldType
+            , int features //
+            , boolean unwrapped) throws IOException {
+<span class="fc" id="L54">        SerializeWriter out = serializer.out;</span>
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L57">            out.writeNull();</span>
+<span class="fc" id="L58">            return;</span>
+        }
+
+<span class="fc" id="L61">        Map&lt;?, ?&gt; map = (Map&lt;?, ?&gt;) object;</span>
+<span class="fc" id="L62">        final int mapSortFieldMask = SerializerFeature.MapSortField.mask;</span>
+<span class="pc bpc" id="L63" title="1 of 4 branches missed.">        if ((out.features &amp; mapSortFieldMask) != 0 || (features &amp; mapSortFieldMask) != 0) {</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (map instanceof JSONObject) {</span>
+<span class="fc" id="L65">                map = ((JSONObject) map).getInnerMap();</span>
+            }
+
+<span class="pc bpc" id="L68" title="1 of 4 branches missed.">            if ((!(map instanceof SortedMap)) &amp;&amp; !(map instanceof LinkedHashMap)) {</span>
+                try {
+<span class="fc" id="L70">                    map = new TreeMap(map);</span>
+<span class="nc" id="L71">                } catch (Exception ex) {</span>
+                    // skip
+<span class="fc" id="L73">                }</span>
+            }
+        }
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (serializer.containsReference(object)) {</span>
+<span class="fc" id="L78">            serializer.writeReference(object);</span>
+<span class="fc" id="L79">            return;</span>
+        }
+
+<span class="fc" id="L82">        SerialContext parent = serializer.context;</span>
+<span class="fc" id="L83">        serializer.setContext(parent, object, fieldName, 0);</span>
+        try {
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            if (!unwrapped) {</span>
+<span class="fc" id="L86">                out.write('{');</span>
+            }
+
+<span class="fc" id="L89">            serializer.incrementIndent();</span>
+
+<span class="fc" id="L91">            Class&lt;?&gt; preClazz = null;</span>
+<span class="fc" id="L92">            ObjectSerializer preWriter = null;</span>
+
+<span class="fc" id="L94">            boolean first = true;</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            if (out.isEnabled(SerializerFeature.WriteClassName)) {</span>
+<span class="fc" id="L97">                String typeKey = serializer.config.typeKey;</span>
+<span class="fc" id="L98">                Class&lt;?&gt; mapClass = map.getClass();</span>
+<span class="fc bfc" id="L99" title="All 6 branches covered.">                boolean containsKey = (mapClass == JSONObject.class || mapClass == HashMap.class || mapClass == LinkedHashMap.class) </span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">                        &amp;&amp; map.containsKey(typeKey);</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">                if (!containsKey) {</span>
+<span class="fc" id="L102">                    out.writeFieldName(typeKey);</span>
+<span class="fc" id="L103">                    out.writeString(object.getClass().getName());</span>
+<span class="fc" id="L104">                    first = false;</span>
+                }
+            }
+
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            for (Map.Entry entry : map.entrySet()) {</span>
+<span class="fc" id="L109">                Object value = entry.getValue();</span>
+
+<span class="fc" id="L111">                Object entryKey = entry.getKey();</span>
+
+                {
+<span class="fc" id="L114">                    List&lt;PropertyPreFilter&gt; preFilters = serializer.propertyPreFilters;</span>
+<span class="pc bpc" id="L115" title="1 of 4 branches missed.">                    if (preFilters != null &amp;&amp; preFilters.size() &gt; 0) {</span>
+<span class="fc bfc" id="L116" title="All 4 branches covered.">                        if (entryKey == null || entryKey instanceof String) {</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                            if (!this.applyName(serializer, object, (String) entryKey)) {</span>
+<span class="fc" id="L118">                                continue;</span>
+                            }
+<span class="pc bpc" id="L120" title="2 of 4 branches missed.">                        } else if (entryKey.getClass().isPrimitive() || entryKey instanceof Number) {</span>
+<span class="fc" id="L121">                            String strKey = JSON.toJSONString(entryKey);</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">                            if (!this.applyName(serializer, object, strKey)) {</span>
+<span class="fc" id="L123">                                continue;</span>
+                            }
+                        }
+                    }
+                }
+                {
+<span class="fc" id="L129">                    List&lt;PropertyPreFilter&gt; preFilters = this.propertyPreFilters;</span>
+<span class="pc bpc" id="L130" title="1 of 4 branches missed.">                    if (preFilters != null &amp;&amp; preFilters.size() &gt; 0) {</span>
+<span class="pc bpc" id="L131" title="2 of 4 branches missed.">                        if (entryKey == null || entryKey instanceof String) {</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">                            if (!this.applyName(serializer, object, (String) entryKey)) {</span>
+<span class="fc" id="L133">                                continue;</span>
+                            }
+<span class="nc bnc" id="L135" title="All 4 branches missed.">                        } else if (entryKey.getClass().isPrimitive() || entryKey instanceof Number) {</span>
+<span class="nc" id="L136">                            String strKey = JSON.toJSONString(entryKey);</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                            if (!this.applyName(serializer, object, strKey)) {</span>
+<span class="nc" id="L138">                                continue;</span>
+                            }
+                        }
+                    }
+                }
+                
+                {
+<span class="fc" id="L145">                    List&lt;PropertyFilter&gt; propertyFilters = serializer.propertyFilters;</span>
+<span class="pc bpc" id="L146" title="1 of 4 branches missed.">                    if (propertyFilters != null &amp;&amp; propertyFilters.size() &gt; 0) {</span>
+<span class="pc bpc" id="L147" title="2 of 4 branches missed.">                        if (entryKey == null || entryKey instanceof String) {</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                            if (!this.apply(serializer, object, (String) entryKey, value)) {</span>
+<span class="fc" id="L149">                                continue;</span>
+                            }
+<span class="nc bnc" id="L151" title="All 4 branches missed.">                        } else if (entryKey.getClass().isPrimitive() || entryKey instanceof Number) {</span>
+<span class="nc" id="L152">                            String strKey = JSON.toJSONString(entryKey);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                            if (!this.apply(serializer, object, strKey, value)) {</span>
+<span class="nc" id="L154">                                continue;</span>
+                            }
+                        }
+                    }
+                }
+                {
+<span class="fc" id="L160">                    List&lt;PropertyFilter&gt; propertyFilters = this.propertyFilters;</span>
+<span class="pc bpc" id="L161" title="3 of 4 branches missed.">                    if (propertyFilters != null &amp;&amp; propertyFilters.size() &gt; 0) {</span>
+<span class="nc bnc" id="L162" title="All 4 branches missed.">                        if (entryKey == null || entryKey instanceof String) {</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                            if (!this.apply(serializer, object, (String) entryKey, value)) {</span>
+<span class="nc" id="L164">                                continue;</span>
+                            }
+<span class="nc bnc" id="L166" title="All 4 branches missed.">                        } else if (entryKey.getClass().isPrimitive() || entryKey instanceof Number) {</span>
+<span class="nc" id="L167">                            String strKey = JSON.toJSONString(entryKey);</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                            if (!this.apply(serializer, object, strKey, value)) {</span>
+<span class="nc" id="L169">                                continue;</span>
+                            }
+                        }
+                    }
+                }
+                
+                {
+<span class="fc" id="L176">                    List&lt;NameFilter&gt; nameFilters = serializer.nameFilters;</span>
+<span class="pc bpc" id="L177" title="1 of 4 branches missed.">                    if (nameFilters != null &amp;&amp; nameFilters.size() &gt; 0) {</span>
+<span class="fc bfc" id="L178" title="All 4 branches covered.">                        if (entryKey == null || entryKey instanceof String) {</span>
+<span class="fc" id="L179">                            entryKey = this.processKey(serializer, object, (String) entryKey, value);</span>
+<span class="pc bpc" id="L180" title="2 of 4 branches missed.">                        } else if (entryKey.getClass().isPrimitive() || entryKey instanceof Number) {</span>
+<span class="fc" id="L181">                            String strKey = JSON.toJSONString(entryKey);</span>
+<span class="fc" id="L182">                            entryKey = this.processKey(serializer, object, strKey, value);</span>
+                        }
+                    }
+                }
+                {
+<span class="fc" id="L187">                    List&lt;NameFilter&gt; nameFilters = this.nameFilters;</span>
+<span class="pc bpc" id="L188" title="3 of 4 branches missed.">                    if (nameFilters != null &amp;&amp; nameFilters.size() &gt; 0) {</span>
+<span class="nc bnc" id="L189" title="All 4 branches missed.">                        if (entryKey == null || entryKey instanceof String) {</span>
+<span class="nc" id="L190">                            entryKey = this.processKey(serializer, object, (String) entryKey, value);</span>
+<span class="nc bnc" id="L191" title="All 4 branches missed.">                        } else if (entryKey.getClass().isPrimitive() || entryKey instanceof Number) {</span>
+<span class="nc" id="L192">                            String strKey = JSON.toJSONString(entryKey);</span>
+<span class="nc" id="L193">                            entryKey = this.processKey(serializer, object, strKey, value);</span>
+                        }
+                    }
+                }
+
+                {
+<span class="fc bfc" id="L199" title="All 4 branches covered.">                    if (entryKey == null || entryKey instanceof String) {</span>
+<span class="fc" id="L200">                        value = this.processValue(serializer, null, object, (String) entryKey, value, features);</span>
+                    } else {
+<span class="fc bfc" id="L202" title="All 4 branches covered.">                        boolean objectOrArray = entryKey instanceof Map || entryKey instanceof Collection;</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                        if (!objectOrArray) {</span>
+<span class="fc" id="L204">                            String strKey = JSON.toJSONString(entryKey);</span>
+<span class="fc" id="L205">                            value = this.processValue(serializer, null, object, strKey, value, features);</span>
+                        }
+                    }
+                }
+
+<span class="fc bfc" id="L210" title="All 2 branches covered.">                if (value == null) {</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">                    if (!SerializerFeature.isEnabled(out.features, features, SerializerFeature.WriteMapNullValue)) {</span>
+<span class="fc" id="L212">                        continue;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                if (entryKey instanceof String) {</span>
+<span class="fc" id="L217">                    String key = (String) entryKey;</span>
+
+<span class="fc bfc" id="L219" title="All 2 branches covered.">                    if (!first) {</span>
+<span class="fc" id="L220">                        out.write(',');</span>
+                    }
+
+<span class="fc bfc" id="L223" title="All 2 branches covered.">                    if (out.isEnabled(SerializerFeature.PrettyFormat)) {</span>
+<span class="fc" id="L224">                        serializer.println();</span>
+                    }
+<span class="fc" id="L226">                    out.writeFieldName(key, true);</span>
+<span class="fc" id="L227">                } else {</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">                    if (!first) {</span>
+<span class="fc" id="L229">                        out.write(',');</span>
+                    }
+
+<span class="fc bfc" id="L232" title="All 6 branches covered.">                    if ((out.isEnabled(NON_STRINGKEY_AS_STRING) || SerializerFeature.isEnabled(features, SerializerFeature.WriteNonStringKeyAsString))</span>
+                            &amp;&amp; !(entryKey instanceof Enum)) {
+<span class="fc" id="L234">                        String strEntryKey = JSON.toJSONString(entryKey);</span>
+<span class="fc" id="L235">                        serializer.write(strEntryKey);</span>
+<span class="fc" id="L236">                    } else {</span>
+<span class="fc" id="L237">                        serializer.write(entryKey);</span>
+                    }
+
+<span class="fc" id="L240">                    out.write(':');</span>
+                }
+
+<span class="fc" id="L243">                first = false;</span>
+
+<span class="fc bfc" id="L245" title="All 2 branches covered.">                if (value == null) {</span>
+<span class="fc" id="L246">                    out.writeNull();</span>
+<span class="fc" id="L247">                    continue;</span>
+                }
+
+<span class="fc" id="L250">                Class&lt;?&gt; clazz = value.getClass();</span>
+
+<span class="fc bfc" id="L252" title="All 2 branches covered.">                if (clazz != preClazz) {</span>
+<span class="fc" id="L253">                    preClazz = clazz;</span>
+<span class="fc" id="L254">                    preWriter = serializer.getObjectWriter(clazz);</span>
+                }
+
+<span class="pc bpc" id="L257" title="1 of 4 branches missed.">                if (SerializerFeature.isEnabled(features, SerializerFeature.WriteClassName)</span>
+                        &amp;&amp; preWriter instanceof JavaBeanSerializer) {
+<span class="fc" id="L259">                    Type valueType = null;</span>
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">                    if (fieldType instanceof ParameterizedType) {</span>
+<span class="fc" id="L261">                        ParameterizedType parameterizedType = (ParameterizedType) fieldType;</span>
+<span class="fc" id="L262">                        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">                        if (actualTypeArguments.length == 2) {</span>
+<span class="fc" id="L264">                            valueType = actualTypeArguments[1];</span>
+                        }
+                    }
+
+<span class="fc" id="L268">                    JavaBeanSerializer javaBeanSerializer = (JavaBeanSerializer) preWriter;</span>
+<span class="fc" id="L269">                    javaBeanSerializer.writeNoneASM(serializer, value, entryKey, valueType, features);</span>
+<span class="fc" id="L270">                } else {</span>
+<span class="fc" id="L271">                    preWriter.write(serializer, value, entryKey, null, features);</span>
+                }
+<span class="fc" id="L273">            }</span>
+        } finally {
+<span class="fc" id="L275">            serializer.context = parent;</span>
+        }
+
+<span class="fc" id="L278">        serializer.decrementIdent();</span>
+<span class="fc bfc" id="L279" title="All 4 branches covered.">        if (out.isEnabled(SerializerFeature.PrettyFormat) &amp;&amp; map.size() &gt; 0) {</span>
+<span class="fc" id="L280">            serializer.println();</span>
+        }
+
+<span class="fc bfc" id="L283" title="All 2 branches covered.">        if (!unwrapped) {</span>
+<span class="fc" id="L284">            out.write('}');</span>
+        }
+<span class="fc" id="L286">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

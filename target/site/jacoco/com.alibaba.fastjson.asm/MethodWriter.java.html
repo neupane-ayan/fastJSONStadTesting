@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MethodWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.asm</a> &gt; <span class="el_source">MethodWriter.java</span></div><h1>MethodWriter.java</h1><pre class="source lang-java linenums">/***
+ * ASM: a very small and fast Java bytecode manipulation framework
+ * Copyright (c) 2000-2007 INRIA, France Telecom
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holders nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+package com.alibaba.fastjson.asm;
+
+/**
+ * @author Eric Bruneton
+ * @author Eugene Kuleshov
+ */
+public class MethodWriter implements MethodVisitor {
+
+    /**
+     * Next method writer (see {@link ClassWriter#firstMethod firstMethod}).
+     */
+    MethodWriter       next;
+
+    /**
+     * The class writer to which this method must be added.
+     */
+    final ClassWriter  cw;
+
+    /**
+     * Access flags of this method.
+     */
+    private int        access;
+
+    /**
+     * The index of the constant pool item that contains the name of this method.
+     */
+    private final int  name;
+
+    /**
+     * The index of the constant pool item that contains the descriptor of this method.
+     */
+    private final int  desc;
+
+    /**
+     * Number of exceptions that can be thrown by this method.
+     */
+    int                exceptionCount;
+
+    /**
+     * The exceptions that can be thrown by this method. More precisely, this array contains the indexes of the constant
+     * pool items that contain the internal names of these exception classes.
+     */
+    int[]              exceptions;
+
+    /**
+     * The bytecode of this method.
+     */
+<span class="fc" id="L77">    private ByteVector code                                    = new ByteVector();</span>
+
+    /**
+     * Maximum stack size of this method.
+     */
+    private int        maxStack;
+
+    /**
+     * Maximum number of local variables for this method.
+     */
+    private int        maxLocals;
+
+    // ------------------------------------------------------------------------
+
+    /*
+     * Fields for the control flow graph analysis algorithm (used to compute the maximum stack size). A control flow
+     * graph contains one node per &quot;basic block&quot;, and one edge per &quot;jump&quot; from one basic block to another. Each node
+     * (i.e., each basic block) is represented by the Label object that corresponds to the first instruction of this
+     * basic block. Each node also stores the list of its successors in the graph, as a linked list of Edge objects.
+     */
+
+    // ------------------------------------------------------------------------
+    // Constructor
+    // ------------------------------------------------------------------------
+
+<span class="fc" id="L102">    public MethodWriter(final ClassWriter cw, final int access, final String name, final String desc, final String signature, final String[] exceptions){</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (cw.firstMethod == null) {</span>
+<span class="fc" id="L104">            cw.firstMethod = this;</span>
+        } else {
+<span class="fc" id="L106">            cw.lastMethod.next = this;</span>
+        }
+<span class="fc" id="L108">        cw.lastMethod = this;</span>
+<span class="fc" id="L109">        this.cw = cw;</span>
+<span class="fc" id="L110">        this.access = access;</span>
+<span class="fc" id="L111">        this.name = cw.newUTF8(name);</span>
+<span class="fc" id="L112">        this.desc = cw.newUTF8(desc);</span>
+
+<span class="pc bpc" id="L114" title="1 of 4 branches missed.">        if (exceptions != null &amp;&amp; exceptions.length &gt; 0) {</span>
+<span class="fc" id="L115">            exceptionCount = exceptions.length;</span>
+<span class="fc" id="L116">            this.exceptions = new int[exceptionCount];</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            for (int i = 0; i &lt; exceptionCount; ++i) {</span>
+<span class="fc" id="L118">                this.exceptions[i] = cw.newClassItem(exceptions[i]).index;</span>
+            }
+        }
+<span class="fc" id="L121">    }</span>
+
+    // ------------------------------------------------------------------------
+    // Implementation of the MethodVisitor interface
+    // ------------------------------------------------------------------------
+
+    public void visitInsn(final int opcode) {
+        // adds the instruction to the bytecode of the method
+<span class="fc" id="L129">        code.putByte(opcode);</span>
+        // update currentBlock
+        // Label currentBlock = this.currentBlock;
+<span class="fc" id="L132">    }</span>
+
+    public void visitIntInsn(final int opcode, final int operand) {
+        // Label currentBlock = this.currentBlock;
+        // adds the instruction to the bytecode of the method
+        // if (opcode == Opcodes.SIPUSH) {
+        // code.put12(opcode, operand);
+        // } else { // BIPUSH or NEWARRAY
+<span class="fc" id="L140">        code.put11(opcode, operand);</span>
+        // }
+<span class="fc" id="L142">    }</span>
+
+    public void visitVarInsn(final int opcode, final int var) {
+        // Label currentBlock = this.currentBlock;
+        // adds the instruction to the bytecode of the method
+<span class="pc bpc" id="L147" title="1 of 4 branches missed.">        if (var &lt; 4 &amp;&amp; opcode != Opcodes.RET) {</span>
+            int opt;
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">            if (opcode &lt; Opcodes.ISTORE) {</span>
+                /* ILOAD_0 */
+<span class="fc" id="L151">                opt = 26 + ((opcode - Opcodes.ILOAD) &lt;&lt; 2) + var;</span>
+            } else {
+                /* ISTORE_0 */
+<span class="nc" id="L154">                opt = 59 + ((opcode - Opcodes.ISTORE) &lt;&lt; 2) + var;</span>
+            }
+<span class="fc" id="L156">            code.putByte(opt);</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        } else if (var &gt;= 256) {</span>
+<span class="nc" id="L158">            code.putByte(196 /* WIDE */).put12(opcode, var);</span>
+        } else {
+<span class="fc" id="L160">            code.put11(opcode, var);</span>
+        }
+<span class="fc" id="L162">    }</span>
+
+    public void visitTypeInsn(final int opcode, final String type) {
+<span class="fc" id="L165">        Item i = cw.newClassItem(type);</span>
+        // Label currentBlock = this.currentBlock;
+        // adds the instruction to the bytecode of the method
+<span class="fc" id="L168">        code.put12(opcode, i.index);</span>
+<span class="fc" id="L169">    }</span>
+
+    public void visitFieldInsn(final int opcode, final String owner, final String name, final String desc) {
+<span class="fc" id="L172">        Item i = cw.newFieldItem(owner, name, desc);</span>
+        // Label currentBlock = this.currentBlock;
+        // adds the instruction to the bytecode of the method
+<span class="fc" id="L175">        code.put12(opcode, i.index);</span>
+<span class="fc" id="L176">    }</span>
+
+    public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc) {
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        boolean itf = opcode == Opcodes.INVOKEINTERFACE;</span>
+<span class="fc" id="L180">        Item i = cw.newMethodItem(owner, name, desc, itf);</span>
+<span class="fc" id="L181">        int argSize = i.intVal;</span>
+        // Label currentBlock = this.currentBlock;
+        // adds the instruction to the bytecode of the method
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (itf) {</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">            if (argSize == 0) {</span>
+<span class="fc" id="L186">                argSize = Type.getArgumentsAndReturnSizes(desc);</span>
+<span class="fc" id="L187">                i.intVal = argSize;</span>
+            }
+<span class="fc" id="L189">            code.put12(Opcodes.INVOKEINTERFACE, i.index).put11(argSize &gt;&gt; 2, 0);</span>
+        } else {
+<span class="fc" id="L191">            code.put12(opcode, i.index);</span>
+        }
+<span class="fc" id="L193">    }</span>
+
+    public void visitJumpInsn(final int opcode, final Label label) {
+        // Label currentBlock = this.currentBlock;
+        // adds the instruction to the bytecode of the method
+<span class="pc bpc" id="L198" title="1 of 4 branches missed.">        if ((label.status &amp; 2 /* Label.RESOLVED */ ) != 0 &amp;&amp; label.position - code.length &lt; Short.MIN_VALUE) {</span>
+<span class="nc" id="L199">            throw new UnsupportedOperationException();</span>
+        } else {
+            /*
+             * case of a backward jump with an offset &gt;= -32768, or of a forward jump with, of course, an unknown
+             * offset. In these cases we store the offset in 2 bytes (which will be increased in resizeInstructions, if
+             * needed).
+             */
+<span class="fc" id="L206">            code.putByte(opcode);</span>
+            // Currently, GOTO_W is the only supported wide reference
+<span class="fc bfc" id="L208" title="All 2 branches covered.">            label.put(this, code, code.length - 1, opcode == Opcodes.GOTO_W);</span>
+        }
+<span class="fc" id="L210">    }</span>
+
+    public void visitLabel(final Label label) {
+        // resolves previous forward references to label, if any
+<span class="fc" id="L214">        label.resolve(this, code.length, code.data);</span>
+<span class="fc" id="L215">    }</span>
+
+    public void visitLdcInsn(final Object cst) {
+<span class="fc" id="L218">        Item i = cw.newConstItem(cst);</span>
+        // Label currentBlock = this.currentBlock;
+        // adds the instruction to the bytecode of the method
+<span class="fc" id="L221">        int index = i.index;</span>
+<span class="pc bpc" id="L222" title="2 of 4 branches missed.">        if (i.type == 5 /* ClassWriter.LONG */ || i.type == 6 /* ClassWriter.DOUBLE */) {</span>
+<span class="nc" id="L223">            code.put12(20 /* LDC2_W */, index);</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">        } else if (index &gt;= 256) {</span>
+<span class="fc" id="L225">            code.put12(19 /* LDC_W */, index);</span>
+        } else {
+<span class="fc" id="L227">            code.put11(18 /*Opcodes.LDC*/, index);</span>
+        }
+<span class="fc" id="L229">    }</span>
+
+    public void visitIincInsn(final int var, final int increment) {
+        // adds the instruction to the bytecode of the method
+//        if ((var &gt; 255) || (increment &gt; 127) || (increment &lt; -128)) {
+//            code.putByte(196 /* WIDE */).put12(Opcodes.IINC, var).putShort(increment);
+//        } else {
+<span class="fc" id="L236">            code.putByte(132 /* Opcodes.IINC*/ ).put11(var, increment);</span>
+//        }
+<span class="fc" id="L238">    }</span>
+
+    public void visitMaxs(final int maxStack, final int maxLocals) {
+<span class="fc" id="L241">        this.maxStack = maxStack;</span>
+<span class="fc" id="L242">        this.maxLocals = maxLocals;</span>
+<span class="fc" id="L243">    }</span>
+
+    public void visitEnd() {
+<span class="fc" id="L246">    }</span>
+
+    // ------------------------------------------------------------------------
+    // Utility methods: control flow analysis algorithm
+    // ------------------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    // Utility methods: stack map frames
+    // ------------------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    // Utility methods: dump bytecode array
+    // ------------------------------------------------------------------------
+
+    /**
+     * Returns the size of the bytecode of this method.
+     * 
+     * @return the size of the bytecode of this method.
+     */
+    final int getSize() {
+<span class="fc" id="L266">        int size = 8;</span>
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">        if (code.length &gt; 0) {</span>
+<span class="fc" id="L268">            cw.newUTF8(&quot;Code&quot;);</span>
+<span class="fc" id="L269">            size += 18 + code.length + 8 * 0;</span>
+        }
+<span class="fc bfc" id="L271" title="All 2 branches covered.">        if (exceptionCount &gt; 0) {</span>
+<span class="fc" id="L272">            cw.newUTF8(&quot;Exceptions&quot;);</span>
+<span class="fc" id="L273">            size += 8 + 2 * exceptionCount;</span>
+        }
+<span class="fc" id="L275">        return size;</span>
+    }
+
+    /**
+     * Puts the bytecode of this method in the given byte vector.
+     * 
+     * @param out the byte vector into which the bytecode of this method must be copied.
+     */
+    final void put(final ByteVector out) {
+<span class="fc" id="L284">        final int mask = 393216; //Opcodes.ACC_DEPRECATED | ClassWriter.ACC_SYNTHETIC_ATTRIBUTE | ((access &amp; ClassWriter.ACC_SYNTHETIC_ATTRIBUTE) / (ClassWriter.ACC_SYNTHETIC_ATTRIBUTE / Opcodes.ACC_SYNTHETIC));</span>
+<span class="fc" id="L285">        out.putShort(access &amp; ~mask).putShort(name).putShort(desc);</span>
+<span class="fc" id="L286">        int attributeCount = 0;</span>
+<span class="pc bpc" id="L287" title="1 of 2 branches missed.">        if (code.length &gt; 0) {</span>
+<span class="fc" id="L288">            ++attributeCount;</span>
+        }
+<span class="fc bfc" id="L290" title="All 2 branches covered.">        if (exceptionCount &gt; 0) {</span>
+<span class="fc" id="L291">            ++attributeCount;</span>
+        }
+
+<span class="fc" id="L294">        out.putShort(attributeCount);</span>
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">        if (code.length &gt; 0) {</span>
+<span class="fc" id="L296">            int size = 12 + code.length + 8 * 0; // handlerCount</span>
+<span class="fc" id="L297">            out.putShort(cw.newUTF8(&quot;Code&quot;)).putInt(size);</span>
+<span class="fc" id="L298">            out.putShort(maxStack).putShort(maxLocals);</span>
+<span class="fc" id="L299">            out.putInt(code.length).putByteArray(code.data, 0, code.length);</span>
+<span class="fc" id="L300">            out.putShort(0); // handlerCount</span>
+<span class="fc" id="L301">            attributeCount = 0;</span>
+<span class="fc" id="L302">            out.putShort(attributeCount);</span>
+        }
+<span class="fc bfc" id="L304" title="All 2 branches covered.">        if (exceptionCount &gt; 0) {</span>
+<span class="fc" id="L305">            out.putShort(cw.newUTF8(&quot;Exceptions&quot;)).putInt(2 * exceptionCount + 2);</span>
+<span class="fc" id="L306">            out.putShort(exceptionCount);</span>
+<span class="fc bfc" id="L307" title="All 2 branches covered.">            for (int i = 0; i &lt; exceptionCount; ++i) {</span>
+<span class="fc" id="L308">                out.putShort(exceptions[i]);</span>
+            }
+        }
+
+<span class="fc" id="L312">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

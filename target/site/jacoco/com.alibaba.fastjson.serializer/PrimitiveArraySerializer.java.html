@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrimitiveArraySerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">PrimitiveArraySerializer.java</span></div><h1>PrimitiveArraySerializer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2018 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.serializer;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+<span class="fc" id="L24">public class PrimitiveArraySerializer implements ObjectSerializer {</span>
+
+<span class="fc" id="L26">    public static PrimitiveArraySerializer instance = new PrimitiveArraySerializer();</span>
+
+    public final void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType, int features) throws IOException {
+<span class="fc" id="L29">        SerializeWriter out = serializer.out;</span>
+        
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L32">            out.writeNull(SerializerFeature.WriteNullListAsEmpty);</span>
+<span class="nc" id="L33">            return;</span>
+        }
+        
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (object instanceof int[]) {</span>
+<span class="fc" id="L37">            int[] array = (int[]) object;</span>
+<span class="fc" id="L38">            out.write('[');</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            for (int i = 0; i &lt; array.length; ++i) {</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">                if (i != 0) {</span>
+<span class="fc" id="L41">                    out.write(',');</span>
+                }
+<span class="fc" id="L43">                out.writeInt(array[i]);</span>
+            }
+<span class="fc" id="L45">            out.write(']');</span>
+<span class="fc" id="L46">            return;</span>
+        }
+        
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (object instanceof short[]) {</span>
+<span class="fc" id="L50">            short[] array = (short[]) object;</span>
+<span class="fc" id="L51">            out.write('[');</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            for (int i = 0; i &lt; array.length; ++i) {</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                if (i != 0) {</span>
+<span class="fc" id="L54">                    out.write(',');</span>
+                }
+<span class="fc" id="L56">                out.writeInt(array[i]);</span>
+            }
+<span class="fc" id="L58">            out.write(']');</span>
+<span class="fc" id="L59">            return;</span>
+        }
+        
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (object instanceof long[]) {</span>
+<span class="fc" id="L63">            long[] array = (long[]) object;</span>
+
+<span class="fc" id="L65">            out.write('[');</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            for (int i = 0; i &lt; array.length; ++i) {</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                if (i != 0) {</span>
+<span class="fc" id="L68">                    out.write(',');</span>
+                }
+<span class="fc" id="L70">                out.writeLong(array[i]);</span>
+            }
+<span class="fc" id="L72">            out.write(']');</span>
+<span class="fc" id="L73">            return;</span>
+        }
+        
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (object instanceof boolean[]) {</span>
+<span class="fc" id="L77">            boolean[] array = (boolean[]) object;</span>
+<span class="fc" id="L78">            out.write('[');</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            for (int i = 0; i &lt; array.length; ++i) {</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">                if (i != 0) {</span>
+<span class="fc" id="L81">                    out.write(',');</span>
+                }
+<span class="fc" id="L83">                out.write(array[i]);</span>
+            }
+<span class="fc" id="L85">            out.write(']');</span>
+<span class="fc" id="L86">            return;</span>
+        }
+        
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (object instanceof float[]) {</span>
+<span class="fc" id="L90">            float[] array = (float[]) object;</span>
+<span class="fc" id="L91">            out.write('[');</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            for (int i = 0; i &lt; array.length; ++i) {</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">                if (i != 0) {</span>
+<span class="fc" id="L94">                    out.write(',');</span>
+                }
+                
+<span class="fc" id="L97">                float item = array[i];</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                if (Float.isNaN(item)) {</span>
+<span class="fc" id="L99">                    out.writeNull();</span>
+                } else {
+<span class="fc" id="L101">                    out.append(Float.toString(item));</span>
+                }
+            }
+<span class="fc" id="L104">            out.write(']');</span>
+<span class="fc" id="L105">            return;</span>
+        }
+        
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (object instanceof double[]) {</span>
+<span class="fc" id="L109">            double[] array = (double[]) object;</span>
+<span class="fc" id="L110">            out.write('[');</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            for (int i = 0; i &lt; array.length; ++i) {</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                if (i != 0) {</span>
+<span class="fc" id="L113">                    out.write(',');</span>
+                }
+                
+<span class="fc" id="L116">                double item = array[i];</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                if (Double.isNaN(item)) {</span>
+<span class="fc" id="L118">                    out.writeNull();</span>
+                } else {
+<span class="fc" id="L120">                    out.append(Double.toString(item));</span>
+                }
+            }
+<span class="fc" id="L123">            out.write(']');</span>
+<span class="fc" id="L124">            return;</span>
+        }
+        
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (object instanceof byte[]) {</span>
+<span class="fc" id="L128">            byte[] array = (byte[]) object;</span>
+<span class="fc" id="L129">            out.writeByteArray(array);</span>
+<span class="fc" id="L130">            return;</span>
+        }
+        
+<span class="fc" id="L133">        char[] chars = (char[]) object;</span>
+<span class="fc" id="L134">        out.writeString(chars);</span>
+<span class="fc" id="L135">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

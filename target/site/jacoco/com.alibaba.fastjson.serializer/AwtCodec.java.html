@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AwtCodec.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">AwtCodec.java</span></div><h1>AwtCodec.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.io.IOException;
+import java.lang.reflect.Type;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.parser.ParseContext;
+import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
+
+<span class="fc" id="L18">public class AwtCodec implements ObjectSerializer, ObjectDeserializer {</span>
+
+<span class="fc" id="L20">    public final static AwtCodec instance = new AwtCodec();</span>
+    
+    public static boolean support(Class&lt;?&gt; clazz) {
+<span class="pc bpc" id="L23" title="1 of 8 branches missed.">        return clazz == Point.class //</span>
+               || clazz == Rectangle.class //
+               || clazz == Font.class //
+               || clazz == Color.class //
+        ;
+    }
+
+    public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType,
+                      int features) throws IOException {
+<span class="fc" id="L32">        SerializeWriter out = serializer.out;</span>
+
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L35">            out.writeNull();</span>
+<span class="fc" id="L36">            return;</span>
+        }
+
+<span class="fc" id="L39">        char sep = '{';</span>
+
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (object instanceof Point) {</span>
+<span class="fc" id="L42">            Point font = (Point) object;</span>
+            
+<span class="fc" id="L44">            sep = writeClassName(out, Point.class, sep);</span>
+            
+<span class="fc" id="L46">            out.writeFieldValue(sep, &quot;x&quot;, font.x);</span>
+<span class="fc" id="L47">            out.writeFieldValue(',', &quot;y&quot;, font.y);</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        } else if (object instanceof Font) {</span>
+<span class="fc" id="L49">            Font font = (Font) object;</span>
+            
+<span class="fc" id="L51">            sep = writeClassName(out, Font.class, sep);</span>
+            
+<span class="fc" id="L53">            out.writeFieldValue(sep, &quot;name&quot;, font.getName());</span>
+<span class="fc" id="L54">            out.writeFieldValue(',', &quot;style&quot;, font.getStyle());</span>
+<span class="fc" id="L55">            out.writeFieldValue(',', &quot;size&quot;, font.getSize());</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        } else if (object instanceof Rectangle) {</span>
+<span class="fc" id="L57">            Rectangle rectangle = (Rectangle) object;</span>
+            
+<span class="fc" id="L59">            sep = writeClassName(out, Rectangle.class, sep);</span>
+            
+<span class="fc" id="L61">            out.writeFieldValue(sep, &quot;x&quot;, rectangle.x);</span>
+<span class="fc" id="L62">            out.writeFieldValue(',', &quot;y&quot;, rectangle.y);</span>
+<span class="fc" id="L63">            out.writeFieldValue(',', &quot;width&quot;, rectangle.width);</span>
+<span class="fc" id="L64">            out.writeFieldValue(',', &quot;height&quot;, rectangle.height);</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        } else if (object instanceof Color) {</span>
+<span class="fc" id="L66">            Color color = (Color) object;</span>
+            
+<span class="fc" id="L68">            sep = writeClassName(out, Color.class, sep);</span>
+            
+<span class="fc" id="L70">            out.writeFieldValue(sep, &quot;r&quot;, color.getRed());</span>
+<span class="fc" id="L71">            out.writeFieldValue(',', &quot;g&quot;, color.getGreen());</span>
+<span class="fc" id="L72">            out.writeFieldValue(',', &quot;b&quot;, color.getBlue());</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            if (color.getAlpha() &gt; 0) {</span>
+<span class="fc" id="L74">                out.writeFieldValue(',', &quot;alpha&quot;, color.getAlpha());</span>
+            }
+<span class="fc" id="L76">        } else {</span>
+<span class="nc" id="L77">            throw new JSONException(&quot;not support awt class : &quot; + object.getClass().getName());</span>
+        }
+
+<span class="fc" id="L80">        out.write('}');</span>
+
+<span class="fc" id="L82">    }</span>
+
+    protected char writeClassName(SerializeWriter out, Class&lt;?&gt; clazz, char sep) {
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (out.isEnabled(SerializerFeature.WriteClassName)) {</span>
+<span class="fc" id="L86">            out.write('{');</span>
+<span class="fc" id="L87">            out.writeFieldName(JSON.DEFAULT_TYPE_KEY);</span>
+<span class="fc" id="L88">            out.writeString(clazz.getName());</span>
+<span class="fc" id="L89">            sep = ',';</span>
+        }
+<span class="fc" id="L91">        return sep;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+<span class="fc" id="L97">        JSONLexer lexer = parser.lexer;</span>
+
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L100">            lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L101">            return null;</span>
+        }
+
+<span class="fc bfc" id="L104" title="All 4 branches covered.">        if (lexer.token() != JSONToken.LBRACE &amp;&amp; lexer.token() != JSONToken.COMMA) {</span>
+<span class="fc" id="L105">            throw new JSONException(&quot;syntax error&quot;);</span>
+        }
+<span class="fc" id="L107">        lexer.nextToken();</span>
+
+        T obj;
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (type == Point.class) {</span>
+<span class="fc" id="L111">            obj = (T) parsePoint(parser, fieldName);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        } else if (type == Rectangle.class) {</span>
+<span class="fc" id="L113">            obj = (T) parseRectangle(parser);</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        } else if (type == Color.class) {</span>
+<span class="fc" id="L115">            obj = (T) parseColor(parser);</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        } else if (type == Font.class) {</span>
+<span class="fc" id="L117">            obj = (T) parseFont(parser);</span>
+        } else {
+<span class="nc" id="L119">            throw new JSONException(&quot;not support awt class : &quot; + type);</span>
+        }
+
+<span class="fc" id="L122">        ParseContext context = parser.getContext();</span>
+<span class="fc" id="L123">        parser.setContext(obj, fieldName);</span>
+<span class="fc" id="L124">        parser.setContext(context);</span>
+
+<span class="fc" id="L126">        return obj;</span>
+    }
+    
+    protected Font parseFont(DefaultJSONParser parser) {
+<span class="fc" id="L130">        JSONLexer lexer = parser.lexer;</span>
+        
+<span class="fc" id="L132">        int size = 0, style = 0;</span>
+<span class="fc" id="L133">        String name = null;</span>
+        for (;;) {
+<span class="fc bfc" id="L135" title="All 2 branches covered.">            if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L136">                lexer.nextToken();</span>
+<span class="fc" id="L137">                break;</span>
+            }
+
+            String key;
+<span class="fc bfc" id="L141" title="All 2 branches covered.">            if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L142">                key = lexer.stringVal();</span>
+<span class="fc" id="L143">                lexer.nextTokenWithColon(JSONToken.LITERAL_INT);</span>
+            } else {
+<span class="fc" id="L145">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            if (key.equalsIgnoreCase(&quot;name&quot;)) {</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">                if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L151">                    name = lexer.stringVal();</span>
+<span class="fc" id="L152">                    lexer.nextToken();</span>
+                } else {
+<span class="fc" id="L154">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            } else if (key.equalsIgnoreCase(&quot;style&quot;)) {</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                if (lexer.token() == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L158">                    style = lexer.intValue();</span>
+<span class="fc" id="L159">                    lexer.nextToken();</span>
+                } else {
+<span class="fc" id="L161">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            } else if (key.equalsIgnoreCase(&quot;size&quot;)) {</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">                if (lexer.token() == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L165">                    size = lexer.intValue();</span>
+<span class="fc" id="L166">                    lexer.nextToken();</span>
+                } else {
+<span class="fc" id="L168">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+            } else {
+<span class="fc" id="L171">                throw new JSONException(&quot;syntax error, &quot; + key);</span>
+            }
+
+<span class="fc bfc" id="L174" title="All 2 branches covered.">            if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="fc" id="L175">                lexer.nextToken(JSONToken.LITERAL_STRING);</span>
+            }
+<span class="fc" id="L177">        }</span>
+
+<span class="fc" id="L179">        return new Font(name, style, size);</span>
+    }
+    
+    protected Color parseColor(DefaultJSONParser parser) {
+<span class="fc" id="L183">        JSONLexer lexer = parser.lexer;</span>
+        
+<span class="fc" id="L185">        int r = 0, g = 0, b = 0, alpha = 0;</span>
+        for (;;) {
+<span class="fc bfc" id="L187" title="All 2 branches covered.">            if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L188">                lexer.nextToken();</span>
+<span class="fc" id="L189">                break;</span>
+            }
+
+            String key;
+<span class="fc bfc" id="L193" title="All 2 branches covered.">            if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L194">                key = lexer.stringVal();</span>
+<span class="fc" id="L195">                lexer.nextTokenWithColon(JSONToken.LITERAL_INT);</span>
+            } else {
+<span class="fc" id="L197">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+
+            int val;
+<span class="fc bfc" id="L201" title="All 2 branches covered.">            if (lexer.token() == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L202">                val = lexer.intValue();</span>
+<span class="fc" id="L203">                lexer.nextToken();</span>
+            } else {
+<span class="fc" id="L205">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">            if (key.equalsIgnoreCase(&quot;r&quot;)) {</span>
+<span class="fc" id="L209">                r = val;</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">            } else if (key.equalsIgnoreCase(&quot;g&quot;)) {</span>
+<span class="fc" id="L211">                g = val;</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            } else if (key.equalsIgnoreCase(&quot;b&quot;)) {</span>
+<span class="fc" id="L213">                b = val;</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">            } else if (key.equalsIgnoreCase(&quot;alpha&quot;)) {</span>
+<span class="fc" id="L215">                alpha = val;</span>
+            } else {
+<span class="fc" id="L217">                throw new JSONException(&quot;syntax error, &quot; + key);</span>
+            }
+
+<span class="fc bfc" id="L220" title="All 2 branches covered.">            if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="fc" id="L221">                lexer.nextToken(JSONToken.LITERAL_STRING);</span>
+            }
+<span class="fc" id="L223">        }</span>
+
+<span class="fc" id="L225">        return new Color(r, g, b, alpha);</span>
+    }
+    
+    protected Rectangle parseRectangle(DefaultJSONParser parser) {
+<span class="fc" id="L229">        JSONLexer lexer = parser.lexer;</span>
+        
+<span class="fc" id="L231">        int x = 0, y = 0, width = 0, height = 0;</span>
+        for (;;) {
+<span class="fc bfc" id="L233" title="All 2 branches covered.">            if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L234">                lexer.nextToken();</span>
+<span class="fc" id="L235">                break;</span>
+            }
+
+            String key;
+<span class="fc bfc" id="L239" title="All 2 branches covered.">            if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L240">                key = lexer.stringVal();</span>
+<span class="fc" id="L241">                lexer.nextTokenWithColon(JSONToken.LITERAL_INT);</span>
+            } else {
+<span class="fc" id="L243">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+
+            int val;
+<span class="fc" id="L247">            int token = lexer.token();</span>
+<span class="fc bfc" id="L248" title="All 2 branches covered.">            if (token == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L249">                val = lexer.intValue();</span>
+<span class="fc" id="L250">                lexer.nextToken();</span>
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">            } else if (token == JSONToken.LITERAL_FLOAT) {</span>
+<span class="nc" id="L252">                val = (int) lexer.floatValue();</span>
+<span class="nc" id="L253">                lexer.nextToken();</span>
+            } else {
+<span class="fc" id="L255">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+
+<span class="fc bfc" id="L258" title="All 2 branches covered.">            if (key.equalsIgnoreCase(&quot;x&quot;)) {</span>
+<span class="fc" id="L259">                x = val;</span>
+<span class="fc bfc" id="L260" title="All 2 branches covered.">            } else if (key.equalsIgnoreCase(&quot;y&quot;)) {</span>
+<span class="fc" id="L261">                y = val;</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">            } else if (key.equalsIgnoreCase(&quot;width&quot;)) {</span>
+<span class="fc" id="L263">                width = val;</span>
+<span class="fc bfc" id="L264" title="All 2 branches covered.">            } else if (key.equalsIgnoreCase(&quot;height&quot;)) {</span>
+<span class="fc" id="L265">                height = val;</span>
+            } else {
+<span class="fc" id="L267">                throw new JSONException(&quot;syntax error, &quot; + key);</span>
+            }
+
+<span class="fc bfc" id="L270" title="All 2 branches covered.">            if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="fc" id="L271">                lexer.nextToken(JSONToken.LITERAL_STRING);</span>
+            }
+<span class="fc" id="L273">        }</span>
+
+<span class="fc" id="L275">        return new Rectangle(x, y, width, height);</span>
+    }
+
+    protected Point parsePoint(DefaultJSONParser parser, Object fieldName) {
+<span class="fc" id="L279">        JSONLexer lexer = parser.lexer;</span>
+        
+<span class="fc" id="L281">        int x = 0, y = 0;</span>
+        for (;;) {
+<span class="fc bfc" id="L283" title="All 2 branches covered.">            if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L284">                lexer.nextToken();</span>
+<span class="fc" id="L285">                break;</span>
+            }
+
+            String key;
+<span class="fc bfc" id="L289" title="All 2 branches covered.">            if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L290">                key = lexer.stringVal();</span>
+
+<span class="fc bfc" id="L292" title="All 2 branches covered.">                if (JSON.DEFAULT_TYPE_KEY.equals(key)) {</span>
+<span class="fc" id="L293">                    parser.acceptType(&quot;java.awt.Point&quot;);</span>
+<span class="fc" id="L294">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L297" title="All 2 branches covered.">                if (&quot;$ref&quot;.equals(key)) {</span>
+<span class="fc" id="L298">                    return (Point) parseRef(parser, fieldName);</span>
+                }
+
+<span class="fc" id="L301">                lexer.nextTokenWithColon(JSONToken.LITERAL_INT);</span>
+            } else {
+<span class="fc" id="L303">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+
+<span class="fc" id="L306">            int token = lexer.token();</span>
+            int val;
+<span class="fc bfc" id="L308" title="All 2 branches covered.">            if (token == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L309">                val = lexer.intValue();</span>
+<span class="fc" id="L310">                lexer.nextToken();</span>
+<span class="fc bfc" id="L311" title="All 2 branches covered.">            } else if(token == JSONToken.LITERAL_FLOAT) {</span>
+<span class="fc" id="L312">                val = (int) lexer.floatValue();</span>
+<span class="fc" id="L313">                lexer.nextToken();</span>
+            } else {
+<span class="fc" id="L315">                throw new JSONException(&quot;syntax error : &quot; + lexer.tokenName());</span>
+            }
+
+<span class="fc bfc" id="L318" title="All 2 branches covered.">            if (key.equalsIgnoreCase(&quot;x&quot;)) {</span>
+<span class="fc" id="L319">                x = val;</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">            } else if (key.equalsIgnoreCase(&quot;y&quot;)) {</span>
+<span class="fc" id="L321">                y = val;</span>
+            } else {
+<span class="fc" id="L323">                throw new JSONException(&quot;syntax error, &quot; + key);</span>
+            }
+
+<span class="fc bfc" id="L326" title="All 2 branches covered.">            if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="fc" id="L327">                lexer.nextToken(JSONToken.LITERAL_STRING);</span>
+            }
+<span class="fc" id="L329">        }</span>
+
+<span class="fc" id="L331">        return new Point(x, y);</span>
+    }
+
+    private Object parseRef(DefaultJSONParser parser, Object fieldName) {
+<span class="fc" id="L335">        JSONLexer lexer = parser.getLexer();</span>
+<span class="fc" id="L336">        lexer.nextTokenWithColon(JSONToken.LITERAL_STRING);</span>
+<span class="fc" id="L337">        String ref = lexer.stringVal();</span>
+<span class="fc" id="L338">        parser.setContext(parser.getContext(), fieldName);</span>
+<span class="fc" id="L339">        parser.addResolveTask(new DefaultJSONParser.ResolveTask(parser.getContext(), ref));</span>
+<span class="fc" id="L340">        parser.popContext();</span>
+<span class="fc" id="L341">        parser.setResolveStatus(DefaultJSONParser.NeedToResolve);</span>
+<span class="fc" id="L342">        lexer.nextToken(JSONToken.RBRACE);</span>
+<span class="fc" id="L343">        parser.accept(JSONToken.RBRACE);</span>
+<span class="fc" id="L344">        return null;</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L348">        return JSONToken.LBRACE;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

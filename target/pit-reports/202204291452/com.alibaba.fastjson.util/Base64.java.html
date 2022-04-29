@@ -1,0 +1,4209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="../style.css">
+</head>
+<body>
+
+
+<h1>Base64.java</h1>
+
+<table class="src">
+
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_1'/>
+1
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_1'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>package com.alibaba.fastjson.util;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_2'/>
+2
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_2'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_3'/>
+3
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_3'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import java.util.Arrays;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_4'/>
+4
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_4'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_5'/>
+5
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_5'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>/**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_6'/>
+6
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_6'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_7'/>
+7
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_7'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * @version 2.2</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_8'/>
+8
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_8'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * @author Mikael Grev Date: 2004-aug-02 Time: 11:31:11</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_9'/>
+9
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_9'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * @deprecated internal api, don&#39;t use.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_10'/>
+10
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_10'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> */</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_11'/>
+11
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_11'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class=''>public class Base64 {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_12'/>
+12
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_12'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_13'/>
+13
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_13'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>    public static final char[] CA = &#34;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&#34;.toCharArray();</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_14'/>
+14
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_14'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>    public static final int[]  IA = new int[256];</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_15'/>
+15
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_15'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    static {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_16'/>
+16
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_16'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        Arrays.fill(IA, -1);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_17'/>
+17
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_17'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        for (int i = 0, iS = CA.length; i &#60; iS; i++)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_18'/>
+18
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_18'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>            IA[CA[i]] = i;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_19'/>
+19
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_19'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        IA[&#39;=&#39;] = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_20'/>
+20
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_20'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_21'/>
+21
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_21'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_22'/>
+22
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_22'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_23'/>
+23
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_23'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Decodes a BASE64 encoded char array that is known to be resonably well formatted. The method is about twice as</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_24'/>
+24
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_24'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * fast as #decode(char[]). The preconditions are:&#60;br&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_25'/>
+25
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_25'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * + The array must have a line length of 76 chars OR no line separators at all (one line).&#60;br&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_26'/>
+26
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_26'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * + Line separator must be &#34;\r\n&#34;, as specified in RFC 2045 + The array must not contain illegal characters within</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_27'/>
+27
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_27'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * the encoded string&#60;br&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_28'/>
+28
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_28'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * + The array CAN have illegal characters at the beginning and end, those will be dealt with appropriately.&#60;br&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_29'/>
+29
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_29'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_30'/>
+30
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_30'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param chars The source array. Length 0 will return an empty array. &#60;code&#62;null&#60;/code&#62; will throw an exception.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_31'/>
+31
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_31'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return The decoded array of bytes. May be of length 0.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_32'/>
+32
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_32'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_33'/>
+33
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_33'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public static byte[] decodeFast(char[] chars, int offset, int charsLen) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_34'/>
+34
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_34'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Check special case</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_35'/>
+35
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_35'>1</a>
+<span>
+1. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        if (charsLen == 0) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_36'/>
+36
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_36'>1</a>
+<span>
+1. decodeFast : replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            return new byte[0];</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_37'/>
+37
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_37'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_38'/>
+38
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_38'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_39'/>
+39
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_39'>2</a>
+<span>
+1. decodeFast : Replaced integer addition with subtraction &rarr; KILLED<br/>
+2. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int sIx = offset, eIx = offset + charsLen - 1; // Start and end index after trimming.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_40'/>
+40
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_40'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_41'/>
+41
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_41'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Trim illegal chars from start</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_42'/>
+42
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_42'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        while (sIx &#60; eIx &#38;&#38; IA[chars[sIx]] &#60; 0)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_43'/>
+43
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_43'>1</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            sIx++;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_44'/>
+44
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_44'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_45'/>
+45
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_45'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Trim illegal chars from end</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_46'/>
+46
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_46'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        while (eIx &#62; 0 &#38;&#38; IA[chars[eIx]] &#60; 0)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_47'/>
+47
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_47'>1</a>
+<span>
+1. decodeFast : Changed increment from -1 to 1 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            eIx--;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_48'/>
+48
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_48'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_49'/>
+49
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_49'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // get the padding count (=) (0, 1 or 2)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_50'/>
+50
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_50'>3</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+2. decodeFast : negated conditional &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int pad = chars[eIx] == &#39;=&#39; ? (chars[eIx - 1] == &#39;=&#39; ? 2 : 1) : 0; // Count &#39;=&#39; at end.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_51'/>
+51
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_51'>2</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+2. decodeFast : Replaced integer addition with subtraction &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int cCnt = eIx - sIx + 1; // Content count including possible separators</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_52'/>
+52
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_52'>5</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : Replaced integer division with multiplication &rarr; KILLED<br/>
+3. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+5. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        int sepCnt = charsLen &#62; 76 ? (chars[76] == &#39;\r&#39; ? cCnt / 78 : 0) &#60;&#60; 1 : 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_53'/>
+53
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_53'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_54'/>
+54
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_54'>4</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+2. decodeFast : Replaced integer multiplication with division &rarr; KILLED<br/>
+3. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+4. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int len = ((cCnt - sepCnt) * 6 &#62;&#62; 3) - pad; // The number of decoded bytes</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_55'/>
+55
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_55'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        byte[] bytes = new byte[len]; // Preallocate byte[] of exact length</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_56'/>
+56
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_56'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_57'/>
+57
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_57'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Decode all but the last 0 - 2 bytes.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_58'/>
+58
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_58'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        int d = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_59'/>
+59
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_59'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Replaced integer division with multiplication &rarr; KILLED<br/>
+3. decodeFast : Replaced integer multiplication with division &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        for (int cc = 0, eLen = (len / 3) * 3; d &#60; eLen;) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_60'/>
+60
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_60'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // Assemble three bytes into an int from four &#34;valid&#34; characters.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_61'/>
+61
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_61'>10</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+3. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+4. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+5. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+6. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+7. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+8. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+9. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+10. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            int i = IA[chars[sIx++]] &#60;&#60; 18 | IA[chars[sIx++]] &#60;&#60; 12 | IA[chars[sIx++]] &#60;&#60; 6 | IA[chars[sIx++]];</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_62'/>
+62
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_62'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_63'/>
+63
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_63'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // Add the bytes</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_64'/>
+64
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_64'>2</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            bytes[d++] = (byte) (i &#62;&#62; 16);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_65'/>
+65
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_65'>2</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            bytes[d++] = (byte) (i &#62;&#62; 8);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_66'/>
+66
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_66'>1</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            bytes[d++] = (byte) i;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_67'/>
+67
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_67'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_68'/>
+68
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_68'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // If line separator, jump over it.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_69'/>
+69
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_69'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            if (sepCnt &#62; 0 &#38;&#38; ++cc == 19) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_70'/>
+70
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_70'>1</a>
+<span>
+1. decodeFast : Changed increment from 2 to -2 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                sIx += 2;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_71'/>
+71
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_71'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>                cc = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_72'/>
+72
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_72'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            }</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_73'/>
+73
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_73'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_74'/>
+74
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_74'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_75'/>
+75
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_75'>2</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        if (d &#60; len) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_76'/>
+76
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_76'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // Decode last 1-3 bytes (incl &#39;=&#39;) into 1-3 bytes</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_77'/>
+77
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_77'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>            int i = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_78'/>
+78
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_78'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+3. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            for (int j = 0; sIx &#60;= eIx - pad; j++)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_79'/>
+79
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_79'>5</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced integer multiplication with division &rarr; KILLED<br/>
+3. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+4. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+5. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                i |= IA[chars[sIx++]] &#60;&#60; (18 - j * 6);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_80'/>
+80
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_80'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_81'/>
+81
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_81'>3</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Changed increment from -8 to 8 &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            for (int r = 16; d &#60; len; r -= 8)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_82'/>
+82
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_82'>2</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                bytes[d++] = (byte) (i &#62;&#62; r);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_83'/>
+83
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_83'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_84'/>
+84
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_84'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_85'/>
+85
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_85'>1</a>
+<span>
+1. decodeFast : replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return bytes;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_86'/>
+86
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_86'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_87'/>
+87
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_87'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_88'/>
+88
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_88'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public static byte[] decodeFast(String chars, int offset, int charsLen) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_89'/>
+89
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_89'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Check special case</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_90'/>
+90
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_90'>1</a>
+<span>
+1. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        if (charsLen == 0) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_91'/>
+91
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_91'>1</a>
+<span>
+1. decodeFast : replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            return new byte[0];</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_92'/>
+92
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_92'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_93'/>
+93
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_93'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_94'/>
+94
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_94'>2</a>
+<span>
+1. decodeFast : Replaced integer addition with subtraction &rarr; KILLED<br/>
+2. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int sIx = offset, eIx = offset + charsLen - 1; // Start and end index after trimming.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_95'/>
+95
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_95'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_96'/>
+96
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_96'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Trim illegal chars from start</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_97'/>
+97
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_97'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        while (sIx &#60; eIx &#38;&#38; IA[chars.charAt(sIx)] &#60; 0)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_98'/>
+98
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_98'>1</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            sIx++;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_99'/>
+99
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_99'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_100'/>
+100
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_100'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Trim illegal chars from end</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_101'/>
+101
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_101'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        while (eIx &#62; 0 &#38;&#38; IA[chars.charAt(eIx)] &#60; 0)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_102'/>
+102
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_102'>1</a>
+<span>
+1. decodeFast : Changed increment from -1 to 1 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            eIx--;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_103'/>
+103
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_103'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_104'/>
+104
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_104'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // get the padding count (=) (0, 1 or 2)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_105'/>
+105
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_105'>3</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+2. decodeFast : negated conditional &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int pad = chars.charAt(eIx) == &#39;=&#39; ? (chars.charAt(eIx - 1) == &#39;=&#39; ? 2 : 1) : 0; // Count &#39;=&#39; at end.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_106'/>
+106
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_106'>2</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+2. decodeFast : Replaced integer addition with subtraction &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int cCnt = eIx - sIx + 1; // Content count including possible separators</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_107'/>
+107
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_107'>5</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : Replaced integer division with multiplication &rarr; KILLED<br/>
+3. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+5. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        int sepCnt = charsLen &#62; 76 ? (chars.charAt(76) == &#39;\r&#39; ? cCnt / 78 : 0) &#60;&#60; 1 : 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_108'/>
+108
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_108'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_109'/>
+109
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_109'>4</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+2. decodeFast : Replaced integer multiplication with division &rarr; KILLED<br/>
+3. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+4. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int len = ((cCnt - sepCnt) * 6 &#62;&#62; 3) - pad; // The number of decoded bytes</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_110'/>
+110
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_110'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        byte[] bytes = new byte[len]; // Preallocate byte[] of exact length</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_111'/>
+111
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_111'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_112'/>
+112
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_112'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Decode all but the last 0 - 2 bytes.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_113'/>
+113
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_113'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        int d = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_114'/>
+114
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_114'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Replaced integer division with multiplication &rarr; KILLED<br/>
+3. decodeFast : Replaced integer multiplication with division &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        for (int cc = 0, eLen = (len / 3) * 3; d &#60; eLen;) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_115'/>
+115
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_115'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // Assemble three bytes into an int from four &#34;valid&#34; characters.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_116'/>
+116
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_116'>10</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+3. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+4. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+5. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+6. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+7. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+8. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+9. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+10. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            int i = IA[chars.charAt(sIx++)] &#60;&#60; 18 | IA[chars.charAt(sIx++)] &#60;&#60; 12 | IA[chars.charAt(sIx++)] &#60;&#60; 6 | IA[chars.charAt(sIx++)];</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_117'/>
+117
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_117'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_118'/>
+118
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_118'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // Add the bytes</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_119'/>
+119
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_119'>2</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            bytes[d++] = (byte) (i &#62;&#62; 16);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_120'/>
+120
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_120'>2</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            bytes[d++] = (byte) (i &#62;&#62; 8);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_121'/>
+121
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_121'>1</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            bytes[d++] = (byte) i;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_122'/>
+122
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_122'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_123'/>
+123
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_123'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // If line separator, jump over it.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_124'/>
+124
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_124'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            if (sepCnt &#62; 0 &#38;&#38; ++cc == 19) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_125'/>
+125
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_125'>1</a>
+<span>
+1. decodeFast : Changed increment from 2 to -2 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                sIx += 2;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_126'/>
+126
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_126'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>                cc = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_127'/>
+127
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_127'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            }</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_128'/>
+128
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_128'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_129'/>
+129
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_129'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_130'/>
+130
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_130'>2</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        if (d &#60; len) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_131'/>
+131
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_131'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // Decode last 1-3 bytes (incl &#39;=&#39;) into 1-3 bytes</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_132'/>
+132
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_132'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>            int i = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_133'/>
+133
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_133'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+3. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            for (int j = 0; sIx &#60;= eIx - pad; j++)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_134'/>
+134
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_134'>5</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced integer multiplication with division &rarr; KILLED<br/>
+3. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+4. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+5. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                i |= IA[chars.charAt(sIx++)] &#60;&#60; (18 - j * 6);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_135'/>
+135
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_135'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_136'/>
+136
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_136'>3</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Changed increment from -8 to 8 &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            for (int r = 16; d &#60; len; r -= 8)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_137'/>
+137
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_137'>2</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                bytes[d++] = (byte) (i &#62;&#62; r);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_138'/>
+138
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_138'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_139'/>
+139
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_139'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_140'/>
+140
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_140'>1</a>
+<span>
+1. decodeFast : replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return bytes;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_141'/>
+141
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_141'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_142'/>
+142
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_142'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_143'/>
+143
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_143'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_144'/>
+144
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_144'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Decodes a BASE64 encoded string that is known to be resonably well formatted. The method is about twice as fast</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_145'/>
+145
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_145'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * as decode(String). The preconditions are:&#60;br&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_146'/>
+146
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_146'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * + The array must have a line length of 76 chars OR no line separators at all (one line).&#60;br&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_147'/>
+147
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_147'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * + Line separator must be &#34;\r\n&#34;, as specified in RFC 2045 + The array must not contain illegal characters within</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_148'/>
+148
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_148'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * the encoded string&#60;br&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_149'/>
+149
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_149'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * + The array CAN have illegal characters at the beginning and end, those will be dealt with appropriately.&#60;br&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_150'/>
+150
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_150'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_151'/>
+151
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_151'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param s The source string. Length 0 will return an empty array. &#60;code&#62;null&#60;/code&#62; will throw an exception.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_152'/>
+152
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_152'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return The decoded array of bytes. May be of length 0.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_153'/>
+153
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_153'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_154'/>
+154
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_154'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public static byte[] decodeFast(String s) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_155'/>
+155
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_155'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Check special case</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_156'/>
+156
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_156'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        int sLen = s.length();</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_157'/>
+157
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_157'>1</a>
+<span>
+1. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        if (sLen == 0) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_158'/>
+158
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_158'>1</a>
+<span>
+1. decodeFast : replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            return new byte[0];</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_159'/>
+159
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_159'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_160'/>
+160
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_160'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_161'/>
+161
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_161'>1</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int sIx = 0, eIx = sLen - 1; // Start and end index after trimming.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_162'/>
+162
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_162'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_163'/>
+163
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_163'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Trim illegal chars from start</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_164'/>
+164
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_164'>5</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+3. decodeFast : Replaced bitwise AND with OR &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+5. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        while (sIx &#60; eIx &#38;&#38; IA[s.charAt(sIx) &#38; 0xff] &#60; 0)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_165'/>
+165
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_165'>1</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            sIx++;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_166'/>
+166
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_166'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_167'/>
+167
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_167'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Trim illegal chars from end</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_168'/>
+168
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_168'>5</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+3. decodeFast : Replaced bitwise AND with OR &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+5. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        while (eIx &#62; 0 &#38;&#38; IA[s.charAt(eIx) &#38; 0xff] &#60; 0)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_169'/>
+169
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_169'>1</a>
+<span>
+1. decodeFast : Changed increment from -1 to 1 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            eIx--;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_170'/>
+170
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_170'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_171'/>
+171
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_171'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // get the padding count (=) (0, 1 or 2)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_172'/>
+172
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_172'>3</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+2. decodeFast : negated conditional &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int pad = s.charAt(eIx) == &#39;=&#39; ? (s.charAt(eIx - 1) == &#39;=&#39; ? 2 : 1) : 0; // Count &#39;=&#39; at end.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_173'/>
+173
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_173'>2</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+2. decodeFast : Replaced integer addition with subtraction &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int cCnt = eIx - sIx + 1; // Content count including possible separators</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_174'/>
+174
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_174'>5</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : Replaced integer division with multiplication &rarr; KILLED<br/>
+3. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+5. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        int sepCnt = sLen &#62; 76 ? (s.charAt(76) == &#39;\r&#39; ? cCnt / 78 : 0) &#60;&#60; 1 : 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_175'/>
+175
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_175'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_176'/>
+176
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_176'>4</a>
+<span>
+1. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+2. decodeFast : Replaced integer multiplication with division &rarr; KILLED<br/>
+3. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+4. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        int len = ((cCnt - sepCnt) * 6 &#62;&#62; 3) - pad; // The number of decoded bytes</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_177'/>
+177
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_177'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        byte[] dArr = new byte[len]; // Preallocate byte[] of exact length</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_178'/>
+178
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_178'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_179'/>
+179
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_179'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        // Decode all but the last 0 - 2 bytes.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_180'/>
+180
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_180'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        int d = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_181'/>
+181
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_181'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Replaced integer division with multiplication &rarr; KILLED<br/>
+3. decodeFast : Replaced integer multiplication with division &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        for (int cc = 0, eLen = (len / 3) * 3; d &#60; eLen;) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_182'/>
+182
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_182'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // Assemble three bytes into an int from four &#34;valid&#34; characters.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_183'/>
+183
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_183'>9</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+3. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+4. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+5. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+6. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+7. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+8. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+9. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            int i = IA[s.charAt(sIx++)] &#60;&#60; 18 | IA[s.charAt(sIx++)] &#60;&#60; 12 | IA[s.charAt(sIx++)] &#60;&#60; 6</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_184'/>
+184
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_184'>1</a>
+<span>
+1. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                    | IA[s.charAt(sIx++)];</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_185'/>
+185
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_185'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_186'/>
+186
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_186'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // Add the bytes</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_187'/>
+187
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_187'>2</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            dArr[d++] = (byte) (i &#62;&#62; 16);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_188'/>
+188
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_188'>2</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            dArr[d++] = (byte) (i &#62;&#62; 8);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_189'/>
+189
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_189'>1</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            dArr[d++] = (byte) i;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_190'/>
+190
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_190'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_191'/>
+191
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_191'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // If line separator, jump over it.</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_192'/>
+192
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_192'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            if (sepCnt &#62; 0 &#38;&#38; ++cc == 19) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_193'/>
+193
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_193'>1</a>
+<span>
+1. decodeFast : Changed increment from 2 to -2 &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                sIx += 2;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_194'/>
+194
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_194'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>                cc = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_195'/>
+195
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_195'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            }</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_196'/>
+196
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_196'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_197'/>
+197
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_197'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_198'/>
+198
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_198'>2</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; SURVIVED<br/>
+2. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        if (d &#60; len) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_199'/>
+199
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_199'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            // Decode last 1-3 bytes (incl &#39;=&#39;) into 1-3 bytes</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_200'/>
+200
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_200'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>            int i = 0;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_201'/>
+201
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_201'>4</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+3. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+4. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            for (int j = 0; sIx &#60;= eIx - pad; j++)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_202'/>
+202
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_202'>5</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced integer multiplication with division &rarr; KILLED<br/>
+3. decodeFast : Replaced integer subtraction with addition &rarr; KILLED<br/>
+4. decodeFast : Replaced Shift Left with Shift Right &rarr; KILLED<br/>
+5. decodeFast : Replaced bitwise OR with AND &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                i |= IA[s.charAt(sIx++)] &#60;&#60; (18 - j * 6);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_203'/>
+203
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_203'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_204'/>
+204
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_204'>3</a>
+<span>
+1. decodeFast : changed conditional boundary &rarr; KILLED<br/>
+2. decodeFast : Changed increment from -8 to 8 &rarr; KILLED<br/>
+3. decodeFast : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            for (int r = 16; d &#60; len; r -= 8)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_205'/>
+205
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_205'>2</a>
+<span>
+1. decodeFast : Changed increment from 1 to -1 &rarr; KILLED<br/>
+2. decodeFast : Replaced Shift Right with Shift Left &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                dArr[d++] = (byte) (i &#62;&#62; r);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_206'/>
+206
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_206'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_207'/>
+207
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_207'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_208'/>
+208
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_208'>1</a>
+<span>
+1. decodeFast : replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return dArr;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_209'/>
+209
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_209'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_210'/>
+210
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_210'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+
+<tr><td></td><td></td><td><h2>Mutations</h2></td></tr>
+
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_35'>35</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_35'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testCheckLenZero(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_36'>36</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_36'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testCheckLenZero(com.alibaba.fastjson.util.STADTestingBase64)</span></span> replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_39'>39</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_39'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer addition with subtraction &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_42'>42</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_42'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim1_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim2(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_43'>43</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_43'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim2(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_46'>46</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_46'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='SURVIVED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrimEnd(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_47'>47</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_47'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrimEnd(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from -1 to 1 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_50'>50</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_50'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_51'>51</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_51'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim1(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer addition with subtraction &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_52'>52</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_52'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer division with multiplication &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_54'>54</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_54'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer multiplication with division &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_59'>59</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_59'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer division with multiplication &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer multiplication with division &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_61'>61</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_61'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>6.<span><b>6</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>7.<span><b>7</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> <p class='KILLED'><span class='pop'>8.<span><b>8</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>9.<span><b>9</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> <p class='KILLED'><span class='pop'>10.<span><b>10</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_64'>64</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_64'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_65'>65</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_65'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_66'>66</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_66'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_69'>69</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_69'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_70'>70</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_70'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 2 to -2 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_75'>75</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_75'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_78'>78</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_78'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_79'>79</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_79'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer multiplication with division &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_81'>81</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_81'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from -8 to 8 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_82'>82</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_82'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_85'>85</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_85'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test)</span></span> replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_90'>90</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_90'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testCheckLenZero_S(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_91'>91</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_91'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testCheckLenZero_S(com.alibaba.fastjson.util.STADTestingBase64)</span></span> replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_94'>94</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_94'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer addition with subtraction &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_97'>97</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_97'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim2_S(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim2_S(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_98'>98</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_98'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim2_S(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_101'>101</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_101'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='SURVIVED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrimEnd_S(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_102'>102</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_102'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrimEnd_S(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from -1 to 1 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_105'>105</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_105'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_106'>106</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_106'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim2_S(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer addition with subtraction &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_107'>107</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_107'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer division with multiplication &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_109'>109</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_109'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer multiplication with division &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_114'>114</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_114'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer division with multiplication &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer multiplication with division &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_116'>116</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_116'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>6.<span><b>6</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>7.<span><b>7</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> <p class='KILLED'><span class='pop'>8.<span><b>8</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>9.<span><b>9</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> <p class='KILLED'><span class='pop'>10.<span><b>10</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_119'>119</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_119'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_120'>120</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_120'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_121'>121</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_121'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_124'>124</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_124'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_125'>125</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_125'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 2 to -2 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_130'>130</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_130'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_133'>133</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_133'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_134'>134</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_134'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer multiplication with division &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_136'>136</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_136'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWOLine_S(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from -8 to 8 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_137'>137</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_137'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_140'>140</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_140'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test)</span></span> replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_157'>157</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_157'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testCheckLenZero_S_ONLY(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_158'>158</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_158'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testCheckLenZero_S_ONLY(com.alibaba.json.bvt.Base64Test)</span></span> replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_161'>161</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_161'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_164'>164</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_164'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim1_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced bitwise AND with OR &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim1_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_165'>165</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_165'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim1_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_168'>168</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_168'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='SURVIVED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced bitwise AND with OR &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrimEnd_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_169'>169</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_169'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrimEnd_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from -1 to 1 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_172'>172</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_172'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_173'>173</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_173'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim1_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer addition with subtraction &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_174'>174</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_174'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S_ONLY(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer division with multiplication &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S_ONLY(com.alibaba.json.bvt.Base64Test)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_176'>176</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_176'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S_ONLY(com.alibaba.json.bvt.Base64Test)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer multiplication with division &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_181'>181</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_181'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer division with multiplication &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer multiplication with division &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_183'>183</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_183'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>6.<span><b>6</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>7.<span><b>7</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> <p class='KILLED'><span class='pop'>8.<span><b>8</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>9.<span><b>9</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_184'>184</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_184'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_187'>187</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_187'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_188'>188</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_188'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_189'>189</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_189'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_192'>192</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_192'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S_ONLY(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S_ONLY(com.alibaba.json.bvt.Base64Test)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_193'>193</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_193'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S_ONLY(com.alibaba.json.bvt.Base64Test)</span></span> Changed increment from 2 to -2 &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_198'>198</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_198'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>none</span></span> changed conditional boundary &rarr; SURVIVED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_201'>201</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_201'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_202'>202</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_202'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer multiplication with division &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced integer subtraction with addition &rarr; KILLED</p> <p class='KILLED'><span class='pop'>4.<span><b>4</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Left with Shift Right &rarr; KILLED</p> <p class='KILLED'><span class='pop'>5.<span><b>5</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced bitwise OR with AND &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_204'>204</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_204'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> changed conditional boundary &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from -8 to 8 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_205'>205</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_205'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Changed increment from 1 to -1 &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> Replaced Shift Right with Shift Left &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@a3e2e8e_208'>208</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@a3e2e8e_208'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>decodeFast<br/><b>Killed by : </b>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64)</span></span> replaced return value with null for com/alibaba/fastjson/util/Base64::decodeFast &rarr; KILLED</p> 
+</td>
+</tr>
+
+</table>
+
+
+<h2>Active mutators</h2>
+<ul>
+<li class='mutator'>BOOLEAN_FALSE_RETURN</li>
+<li class='mutator'>BOOLEAN_TRUE_RETURN</li>
+<li class='mutator'>CONDITIONALS_BOUNDARY_MUTATOR</li>
+<li class='mutator'>EMPTY_RETURN_VALUES</li>
+<li class='mutator'>INCREMENTS_MUTATOR</li>
+<li class='mutator'>INVERT_NEGS_MUTATOR</li>
+<li class='mutator'>MATH_MUTATOR</li>
+<li class='mutator'>NEGATE_CONDITIONALS_MUTATOR</li>
+<li class='mutator'>NULL_RETURN_VALUES</li>
+<li class='mutator'>PRIMITIVE_RETURN_VALS_MUTATOR</li>
+<li class='mutator'>VOID_METHOD_CALL_MUTATOR</li>
+
+</ul>
+
+<h2>Tests examined</h2>
+<ul>
+<li>com.alibaba.json.bvt.Base64Test.testOffsetTrim2_S(com.alibaba.json.bvt.Base64Test) (1 ms)</li><li>com.alibaba.json.bvt.Base64Test.testMultiLine(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrimEnd(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine(com.alibaba.fastjson.util.STADTestingBase64) (14 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testCheckLenZero_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64) (1 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S(com.alibaba.fastjson.util.STADTestingBase64) (13 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrim1_S_ONLY(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrimEnd_S_ONLY(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testBasicWLine_S(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testBasicWOLine_S(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrimEnd(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testCheckLenZero_S(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrim3_S(com.alibaba.json.bvt.Base64Test) (1 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrim1_S(com.alibaba.json.bvt.Base64Test) (2 ms)</li><li>com.alibaba.json.bvt.Base64Test.testMultiLineBreak(com.alibaba.json.bvt.Base64Test) (1 ms)</li><li>com.alibaba.json.bvt.util.Base64Test.test_base64(com.alibaba.json.bvt.util.Base64Test) (1 ms)</li><li>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S_ONLY(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim1_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testMultiLine(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testCheckLenZero_S(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testBasicWOLine_S_ONLY(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrimEnd_S(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim3_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrim1(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testCheckLenZero(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrim3_S_ONLY(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrim2(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrim3(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim3(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim2_S(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testMultiLinev_ONLY(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrimEnd_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testBasicWLine(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testBasicWLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64) (1 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim3_S(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testMultiLinev_ONLY(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S(com.alibaba.fastjson.util.STADTestingBase64) (1 ms)</li><li>com.alibaba.json.bvt.Base64Test.testMultiLineBreak_S(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testOffsetTrim2_S_ONLY(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim1(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testBasicWOLine(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testCheckLenZero(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testBasicWLine_S_ONLY(com.alibaba.json.bvt.Base64Test) (1 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim2_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testMultiLinev(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testBasicWOLine_S_ONLY(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim1_S(com.alibaba.fastjson.util.STADTestingBase64) (1 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrimEnd_S(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li><li>com.alibaba.json.bvt.Base64Test.testCheckLenZero_S_ONLY(com.alibaba.json.bvt.Base64Test) (0 ms)</li><li>com.alibaba.fastjson.util.STADTestingBase64.testOffsetTrim2(com.alibaba.fastjson.util.STADTestingBase64) (0 ms)</li>
+</ul>
+
+<br/>
+
+Report generated by <a href='http://pitest.org'>PIT</a> 1.5.0
+
+</body>
+</html>

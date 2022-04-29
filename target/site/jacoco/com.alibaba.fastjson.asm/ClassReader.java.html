@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClassReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.asm</a> &gt; <span class="el_source">ClassReader.java</span></div><h1>ClassReader.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.asm;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * Created by wenshao on 05/08/2017.
+ */
+public class ClassReader {
+    public  final byte[] b;
+    private final int[] items;
+    private final String[] strings;
+    private final int maxStringLength;
+    public  final int header;
+    private boolean readAnnotations;
+
+<span class="fc" id="L18">    public ClassReader(InputStream is, boolean readAnnotations) throws IOException {</span>
+<span class="fc" id="L19">        this.readAnnotations = readAnnotations;</span>
+
+        {
+<span class="fc" id="L22">            ByteArrayOutputStream out = new ByteArrayOutputStream();</span>
+<span class="fc" id="L23">            byte[] buf = new byte[1024];</span>
+            for (; ; ) {
+<span class="fc" id="L25">                int len = is.read(buf);</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">                if (len == -1) {</span>
+<span class="fc" id="L27">                    break;</span>
+                }
+
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">                if (len &gt; 0) {</span>
+<span class="fc" id="L31">                    out.write(buf, 0, len);</span>
+                }
+<span class="fc" id="L33">            }</span>
+<span class="fc" id="L34">            is.close();</span>
+<span class="fc" id="L35">            this.b = out.toByteArray();</span>
+        }
+
+        // parses the constant pool
+<span class="fc" id="L39">        items = new int[readUnsignedShort(8)];</span>
+<span class="fc" id="L40">        int n = items.length;</span>
+<span class="fc" id="L41">        strings = new String[n];</span>
+<span class="fc" id="L42">        int max = 0;</span>
+<span class="fc" id="L43">        int index = 10;</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (int i = 1; i &lt; n; ++i) {</span>
+<span class="fc" id="L45">            items[i] = index + 1;</span>
+            int size;
+<span class="fc bfc" id="L47" title="All 5 branches covered.">            switch (b[index]) {</span>
+                case 9: // FIELD:
+                case 10: // METH:
+                case 11: //IMETH:
+                case 3: //INT:
+                case 4: //FLOAT:
+                case 18: //INVOKEDYN:
+                case 12: //NAME_TYPE:
+<span class="fc" id="L55">                    size = 5;</span>
+<span class="fc" id="L56">                    break;</span>
+                case 5: //LONG:
+                case 6: //DOUBLE:
+<span class="fc" id="L59">                    size = 9;</span>
+<span class="fc" id="L60">                    ++i;</span>
+<span class="fc" id="L61">                    break;</span>
+                case 15: //MHANDLE:
+<span class="fc" id="L63">                    size = 4;</span>
+<span class="fc" id="L64">                    break;</span>
+                case 1: //UTF8:
+<span class="fc" id="L66">                    size = 3 + readUnsignedShort(index + 1);</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                    if (size &gt; max) {</span>
+<span class="fc" id="L68">                        max = size;</span>
+                    }
+                    break;
+                // case HamConstants.CLASS:
+                // case HamConstants.STR:
+                default:
+<span class="fc" id="L74">                    size = 3;</span>
+                    break;
+            }
+<span class="fc" id="L77">            index += size;</span>
+        }
+<span class="fc" id="L79">        maxStringLength = max;</span>
+        // the class header information starts just after the constant pool
+<span class="fc" id="L81">        header = index;</span>
+<span class="fc" id="L82">    }</span>
+
+    public void accept(final TypeCollector classVisitor) {
+<span class="fc" id="L85">        char[] c = new char[maxStringLength]; // buffer used to read strings</span>
+        int i, j; // loop variables
+        int u, v; // indexes in b
+<span class="fc" id="L88">        int anns = 0;</span>
+
+        //read annotations
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (readAnnotations) {</span>
+<span class="fc" id="L92">            u = getAttributes();</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            for (i = readUnsignedShort(u); i &gt; 0; --i) {</span>
+<span class="fc" id="L94">                String attrName = readUTF8(u + 2, c);</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">                if (&quot;RuntimeVisibleAnnotations&quot;.equals(attrName)) {</span>
+<span class="fc" id="L96">                    anns = u + 8;</span>
+<span class="fc" id="L97">                    break;</span>
+                }
+<span class="fc" id="L99">                u += 6 + readInt(u + 4);</span>
+            }
+        }
+
+        // visits the header
+<span class="fc" id="L104">        u = header;</span>
+<span class="fc" id="L105">        int len = readUnsignedShort(u + 6);</span>
+<span class="fc" id="L106">        u += 8;</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        for (i = 0; i &lt; len; ++i) {</span>
+<span class="fc" id="L108">            u += 2;</span>
+        }
+<span class="fc" id="L110">        v = u;</span>
+<span class="fc" id="L111">        i = readUnsignedShort(v);</span>
+<span class="fc" id="L112">        v += 2;</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        for (; i &gt; 0; --i) {</span>
+<span class="fc" id="L114">            j = readUnsignedShort(v + 6);</span>
+<span class="fc" id="L115">            v += 8;</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">            for (; j &gt; 0; --j) {</span>
+<span class="fc" id="L117">                v += 6 + readInt(v + 2);</span>
+            }
+        }
+<span class="fc" id="L120">        i = readUnsignedShort(v);</span>
+<span class="fc" id="L121">        v += 2;</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        for (; i &gt; 0; --i) {</span>
+<span class="fc" id="L123">            j = readUnsignedShort(v + 6);</span>
+<span class="fc" id="L124">            v += 8;</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            for (; j &gt; 0; --j) {</span>
+<span class="fc" id="L126">                v += 6 + readInt(v + 2);</span>
+            }
+        }
+
+<span class="fc" id="L130">        i = readUnsignedShort(v);</span>
+<span class="fc" id="L131">        v += 2;</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        for (; i &gt; 0; --i) {</span>
+<span class="fc" id="L133">            v += 6 + readInt(v + 2);</span>
+        }
+
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (anns != 0) {</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">            for (i = readUnsignedShort(anns), v = anns + 2; i &gt; 0; --i) {</span>
+<span class="fc" id="L138">                String name = readUTF8(v, c);</span>
+<span class="fc" id="L139">                classVisitor.visitAnnotation(name);</span>
+            }
+        }
+
+        // visits the fields
+<span class="fc" id="L144">        i = readUnsignedShort(u);</span>
+<span class="fc" id="L145">        u += 2;</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        for (; i &gt; 0; --i) {</span>
+<span class="fc" id="L147">            j = readUnsignedShort(u + 6);</span>
+<span class="fc" id="L148">            u += 8;</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            for (; j &gt; 0; --j) {</span>
+<span class="fc" id="L150">                u += 6 + readInt(u + 2);</span>
+            }
+        }
+
+        // visits the methods
+<span class="fc" id="L155">        i = readUnsignedShort(u);</span>
+<span class="fc" id="L156">        u += 2;</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        for (; i &gt; 0; --i) {</span>
+            // inlined in original ASM source, now a method call
+<span class="fc" id="L159">            u = readMethod(classVisitor, c, u);</span>
+        }
+<span class="fc" id="L161">    }</span>
+
+    private int getAttributes() {
+        // skips the header
+<span class="fc" id="L165">        int u = header + 8 + readUnsignedShort(header + 6) * 2;</span>
+        // skips fields and methods
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        for (int i = readUnsignedShort(u); i &gt; 0; --i) {</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            for (int j = readUnsignedShort(u + 8); j &gt; 0; --j) {</span>
+<span class="fc" id="L169">                u += 6 + readInt(u + 12);</span>
+            }
+<span class="fc" id="L171">            u += 8;</span>
+        }
+<span class="fc" id="L173">        u += 2;</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        for (int i = readUnsignedShort(u); i &gt; 0; --i) {</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">            for (int j = readUnsignedShort(u + 8); j &gt; 0; --j) {</span>
+<span class="fc" id="L176">                u += 6 + readInt(u + 12);</span>
+            }
+<span class="fc" id="L178">            u += 8;</span>
+        }
+        // the attribute_info structure starts just after the methods
+<span class="fc" id="L181">        return u + 2;</span>
+    }
+
+    private int readMethod(TypeCollector classVisitor, char[] c, int u) {
+        int v;
+        int w;
+        int j;
+        String attrName;
+        int k;
+<span class="fc" id="L190">        int access = readUnsignedShort(u);</span>
+<span class="fc" id="L191">        String name = readUTF8(u + 2, c);</span>
+<span class="fc" id="L192">        String desc = readUTF8(u + 4, c);</span>
+<span class="fc" id="L193">        v = 0;</span>
+<span class="fc" id="L194">        w = 0;</span>
+
+        // looks for Code and Exceptions attributes
+<span class="fc" id="L197">        j = readUnsignedShort(u + 6);</span>
+<span class="fc" id="L198">        u += 8;</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        for (; j &gt; 0; --j) {</span>
+<span class="fc" id="L200">            attrName = readUTF8(u, c);</span>
+<span class="fc" id="L201">            int attrSize = readInt(u + 2);</span>
+<span class="fc" id="L202">            u += 6;</span>
+            // tests are sorted in decreasing frequency order
+            // (based on frequencies observed on typical classes)
+<span class="fc bfc" id="L205" title="All 2 branches covered.">            if (attrName.equals(&quot;Code&quot;)) {</span>
+<span class="fc" id="L206">                v = u;</span>
+            }
+<span class="fc" id="L208">            u += attrSize;</span>
+        }
+        // reads declared exceptions
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">        if (w == 0) {</span>
+        } else {
+<span class="nc" id="L213">            w += 2;</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">            for (j = 0; j &lt; readUnsignedShort(w); ++j) {</span>
+<span class="nc" id="L215">                w += 2;</span>
+            }
+        }
+
+        // visits the method's code, if any
+<span class="fc" id="L220">        MethodCollector mv = classVisitor.visitMethod(access, name, desc);</span>
+
+<span class="pc bpc" id="L222" title="1 of 4 branches missed.">        if (mv != null &amp;&amp; v != 0) {</span>
+<span class="fc" id="L223">            int codeLength = readInt(v + 4);</span>
+<span class="fc" id="L224">            v += 8;</span>
+
+<span class="fc" id="L226">            int codeStart = v;</span>
+<span class="fc" id="L227">            int codeEnd = v + codeLength;</span>
+<span class="fc" id="L228">            v = codeEnd;</span>
+
+<span class="fc" id="L230">            j = readUnsignedShort(v);</span>
+<span class="fc" id="L231">            v += 2;</span>
+<span class="pc bpc" id="L232" title="1 of 2 branches missed.">            for (; j &gt; 0; --j) {</span>
+<span class="nc" id="L233">                v += 8;</span>
+            }
+            // parses the local variable, line number tables, and code
+            // attributes
+<span class="fc" id="L237">            int varTable = 0;</span>
+<span class="fc" id="L238">            int varTypeTable = 0;</span>
+<span class="fc" id="L239">            j = readUnsignedShort(v);</span>
+<span class="fc" id="L240">            v += 2;</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">            for (; j &gt; 0; --j) {</span>
+<span class="fc" id="L242">                attrName = readUTF8(v, c);</span>
+<span class="fc bfc" id="L243" title="All 2 branches covered.">                if (attrName.equals(&quot;LocalVariableTable&quot;)) {</span>
+<span class="fc" id="L244">                    varTable = v + 6;</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">                } else if (attrName.equals(&quot;LocalVariableTypeTable&quot;)) {</span>
+<span class="fc" id="L246">                    varTypeTable = v + 6;</span>
+                }
+<span class="fc" id="L248">                v += 6 + readInt(v + 2);</span>
+            }
+
+<span class="fc" id="L251">            v = codeStart;</span>
+            // visits the local variable tables
+<span class="fc bfc" id="L253" title="All 2 branches covered.">            if (varTable != 0) {</span>
+<span class="fc bfc" id="L254" title="All 2 branches covered.">                if (varTypeTable != 0) {</span>
+<span class="fc" id="L255">                    k = readUnsignedShort(varTypeTable) * 3;</span>
+<span class="fc" id="L256">                    w = varTypeTable + 2;</span>
+<span class="fc" id="L257">                    int[] typeTable = new int[k];</span>
+<span class="fc bfc" id="L258" title="All 2 branches covered.">                    while (k &gt; 0) {</span>
+<span class="fc" id="L259">                        typeTable[--k] = w + 6; // signature</span>
+<span class="fc" id="L260">                        typeTable[--k] = readUnsignedShort(w + 8); // index</span>
+<span class="fc" id="L261">                        typeTable[--k] = readUnsignedShort(w); // start</span>
+<span class="fc" id="L262">                        w += 10;</span>
+                    }
+                }
+<span class="fc" id="L265">                k = readUnsignedShort(varTable);</span>
+<span class="fc" id="L266">                w = varTable + 2;</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">                for (; k &gt; 0; --k) {</span>
+<span class="fc" id="L268">                    int index = readUnsignedShort(w + 8);</span>
+<span class="fc" id="L269">                    mv.visitLocalVariable(readUTF8(w + 4, c), index);</span>
+<span class="fc" id="L270">                    w += 10;</span>
+                }
+            }
+        }
+<span class="fc" id="L274">        return u;</span>
+    }
+
+    private int readUnsignedShort(final int index) {
+<span class="fc" id="L278">        byte[] b = this.b;</span>
+<span class="fc" id="L279">        return ((b[index] &amp; 0xFF) &lt;&lt; 8) | (b[index + 1] &amp; 0xFF);</span>
+    }
+
+    private int readInt(final int index) {
+<span class="fc" id="L283">        byte[] b = this.b;</span>
+<span class="fc" id="L284">        return ((b[index] &amp; 0xFF) &lt;&lt; 24) | ((b[index + 1] &amp; 0xFF) &lt;&lt; 16)</span>
+                | ((b[index + 2] &amp; 0xFF) &lt;&lt; 8) | (b[index + 3] &amp; 0xFF);
+    }
+
+    private String readUTF8(int index, final char[] buf) {
+<span class="fc" id="L289">        int item = readUnsignedShort(index);</span>
+<span class="fc" id="L290">        String s = strings[item];</span>
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        if (s != null) {</span>
+<span class="fc" id="L292">            return s;</span>
+        }
+<span class="fc" id="L294">        index = items[item];</span>
+<span class="fc" id="L295">        return strings[item] = readUTF(index + 2, readUnsignedShort(index), buf);</span>
+    }
+
+    private String readUTF(int index, final int utfLen, final char[] buf) {
+<span class="fc" id="L299">        int endIndex = index + utfLen;</span>
+<span class="fc" id="L300">        byte[] b = this.b;</span>
+<span class="fc" id="L301">        int strLen = 0;</span>
+        int c;
+<span class="fc" id="L303">        int st = 0;</span>
+<span class="fc" id="L304">        char cc = 0;</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        while (index &lt; endIndex) {</span>
+<span class="fc" id="L306">            c = b[index++];</span>
+<span class="pc bpc" id="L307" title="3 of 4 branches missed.">            switch (st) {</span>
+                case 0:
+<span class="fc" id="L309">                    c = c &amp; 0xFF;</span>
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">                    if (c &lt; 0x80) {  // 0xxxxxxx</span>
+<span class="fc" id="L311">                        buf[strLen++] = (char) c;</span>
+<span class="nc bnc" id="L312" title="All 4 branches missed.">                    } else if (c &lt; 0xE0 &amp;&amp; c &gt; 0xBF) {  // 110x xxxx 10xx xxxx</span>
+<span class="nc" id="L313">                        cc = (char) (c &amp; 0x1F);</span>
+<span class="nc" id="L314">                        st = 1;</span>
+                    } else {  // 1110 xxxx 10xx xxxx 10xx xxxx
+<span class="nc" id="L316">                        cc = (char) (c &amp; 0x0F);</span>
+<span class="nc" id="L317">                        st = 2;</span>
+                    }
+<span class="nc" id="L319">                    break;</span>
+
+                case 1:  // byte 2 of 2-byte char or byte 3 of 3-byte char
+<span class="nc" id="L322">                    buf[strLen++] = (char) ((cc &lt;&lt; 6) | (c &amp; 0x3F));</span>
+<span class="nc" id="L323">                    st = 0;</span>
+<span class="nc" id="L324">                    break;</span>
+
+                case 2:  // byte 2 of 3-byte char
+<span class="nc" id="L327">                    cc = (char) ((cc &lt;&lt; 6) | (c &amp; 0x3F));</span>
+<span class="nc" id="L328">                    st = 1;</span>
+<span class="fc" id="L329">                    break;</span>
+            }
+        }
+<span class="fc" id="L332">        return new String(buf, 0, strLen);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

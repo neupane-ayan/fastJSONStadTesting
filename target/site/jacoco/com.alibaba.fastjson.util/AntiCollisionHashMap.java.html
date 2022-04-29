@@ -1,0 +1,966 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AntiCollisionHashMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.util</a> &gt; <span class="el_source">AntiCollisionHashMap.java</span></div><h1>AntiCollisionHashMap.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.util;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
+
+/**
+ * @deprecated
+ */
+public class AntiCollisionHashMap&lt;K, V&gt; extends AbstractMap&lt;K, V&gt; implements
+        Map&lt;K, V&gt;, Cloneable, Serializable {
+
+<span class="fc" id="L13">    transient volatile Set&lt;K&gt; keySet = null;</span>
+<span class="fc" id="L14">    transient volatile Collection&lt;V&gt; values = null;</span>
+
+    /**
+     * The default initial capacity - MUST be a power of two.
+     */
+    static final int DEFAULT_INITIAL_CAPACITY = 16;
+
+    /**
+     * The maximum capacity, used if a higher value is implicitly specified by
+     * either of the constructors with arguments. MUST be a power of two &lt;=
+     * 1&lt;&lt;30.
+     */
+    static final int MAXIMUM_CAPACITY = 1 &lt;&lt; 30;
+
+    /**
+     * The load factor used when none specified in constructor.
+     */
+    static final float DEFAULT_LOAD_FACTOR = 0.75f;
+
+    /**
+     * The table, resized as necessary. Length MUST Always be a power of two.
+     */
+    transient Entry&lt;K, V&gt;[] table;
+
+    /**
+     * The number of key-value mappings contained in this map.
+     */
+    transient int size;
+
+    /**
+     * The next size value at which to resize (capacity * load factor).
+     *
+     * @serial
+     */
+    int threshold;
+
+    /**
+     * The load factor for the hash table.
+     *
+     * @serial
+     */
+    final float loadFactor;
+
+    /**
+     * The number of times this SafelyHashMap has been structurally modified
+     * Structural modifications are those that change the number of mappings in
+     * the SafelyHashMap or otherwise modify its internal structure (e.g.,
+     * rehash). This field is used to make iterators on Collection-views of the
+     * SafelyHashMap fail-fast. (See ConcurrentModificationException).
+     */
+    transient volatile int modCount;
+
+    /**
+     * Constructs an empty &lt;tt&gt;SafelyHashMap&lt;/tt&gt; with the specified initial
+     * capacity and load factor.
+     *
+     * @param initialCapacity
+     *            the initial capacity
+     * @param loadFactor
+     *            the load factor
+     * @throws IllegalArgumentException
+     *             if the initial capacity is negative or the load factor is
+     *             nonpositive
+     */
+
+    final static int M_MASK = 0x8765fed3;
+    final static int SEED = -2128831035;
+    final static int KEY = 16777619;
+
+<span class="fc" id="L83">    final int random = new Random().nextInt(99999); // a fixed value in an instance</span>
+    private int hashString(String key) {
+
+<span class="fc" id="L86">        int hash = SEED * random;</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        for (int i = 0; i &lt; key.length(); i++)</span>
+<span class="fc" id="L88">            hash = (hash * KEY) ^ key.charAt(i);</span>
+<span class="fc" id="L89">        return (hash ^ (hash &gt;&gt; 1)) &amp; M_MASK;</span>
+    }
+
+<span class="fc" id="L92">    public AntiCollisionHashMap(int initialCapacity, float loadFactor) {</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (initialCapacity &lt; 0)</span>
+<span class="nc" id="L94">            throw new IllegalArgumentException(&quot;Illegal initial capacity: &quot;</span>
+                    + initialCapacity);
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (initialCapacity &gt; MAXIMUM_CAPACITY)</span>
+<span class="nc" id="L97">            initialCapacity = MAXIMUM_CAPACITY;</span>
+<span class="pc bpc" id="L98" title="2 of 4 branches missed.">        if (loadFactor &lt;= 0 || Float.isNaN(loadFactor))</span>
+<span class="nc" id="L99">            throw new IllegalArgumentException(&quot;Illegal load factor: &quot;</span>
+                    + loadFactor);
+
+        // Find a power of 2 &gt;= initialCapacity
+<span class="fc" id="L103">        int capacity = 1;</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        while (capacity &lt; initialCapacity)</span>
+<span class="fc" id="L105">            capacity &lt;&lt;= 1;</span>
+
+<span class="fc" id="L107">        this.loadFactor = loadFactor;</span>
+<span class="fc" id="L108">        threshold = (int) (capacity * loadFactor);</span>
+<span class="fc" id="L109">        table = new Entry[capacity];</span>
+<span class="fc" id="L110">        init();</span>
+<span class="fc" id="L111">    }</span>
+
+    /**
+     * Constructs an empty &lt;tt&gt;SafelyHashMap&lt;/tt&gt; with the specified initial
+     * capacity and the default load factor (0.75).
+     *
+     * @param initialCapacity
+     *            the initial capacity.
+     * @throws IllegalArgumentException
+     *             if the initial capacity is negative.
+     */
+    public AntiCollisionHashMap(int initialCapacity) {
+<span class="fc" id="L123">        this(initialCapacity, DEFAULT_LOAD_FACTOR);</span>
+<span class="fc" id="L124">    }</span>
+
+    /**
+     * Constructs an empty &lt;tt&gt;SafelyHashMap&lt;/tt&gt; with the default initial
+     * capacity (16) and the default load factor (0.75).
+     */
+<span class="fc" id="L130">    public AntiCollisionHashMap() {</span>
+<span class="fc" id="L131">        this.loadFactor = DEFAULT_LOAD_FACTOR;</span>
+<span class="fc" id="L132">        threshold = (int) (DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);</span>
+<span class="fc" id="L133">        table = new Entry[DEFAULT_INITIAL_CAPACITY];</span>
+<span class="fc" id="L134">        init();</span>
+<span class="fc" id="L135">    }</span>
+
+    /**
+     * Constructs a new &lt;tt&gt;SafelyHashMap&lt;/tt&gt; with the same mappings as the
+     * specified &lt;tt&gt;Map&lt;/tt&gt;. The &lt;tt&gt;SafelyHashMap&lt;/tt&gt; is created with
+     * default load factor (0.75) and an initial capacity sufficient to hold the
+     * mappings in the specified &lt;tt&gt;Map&lt;/tt&gt;.
+     *
+     * @param m
+     *            the map whose mappings are to be placed in this map
+     * @throws NullPointerException
+     *             if the specified map is null
+     */
+    public AntiCollisionHashMap(Map&lt;? extends K, ? extends V&gt; m) {
+<span class="fc" id="L149">        this(Math.max((int) (m.size() / DEFAULT_LOAD_FACTOR) + 1,</span>
+                DEFAULT_INITIAL_CAPACITY), DEFAULT_LOAD_FACTOR);
+<span class="fc" id="L151">        putAllForCreate(m);</span>
+<span class="fc" id="L152">    }</span>
+
+    // internal utilities
+
+    /**
+     * Initialization hook for subclasses. This method is called in all
+     * constructors and pseudo-constructors (clone, readObject) after
+     * SafelyHashMap has been initialized but before any entries have been
+     * inserted. (In the absence of this method, readObject would require
+     * explicit knowledge of subclasses.)
+     */
+    void init() {
+<span class="fc" id="L164">    }</span>
+
+    /**
+     * Applies a supplemental hash function to a given hashCode, which defends
+     * against poor quality hash functions. This is critical because
+     * SafelyHashMap uses power-of-two length hash tables, that otherwise
+     * encounter collisions for hashCodes that do not differ in lower bits.
+     * Note: Null keys always map to hash 0, thus index 0.
+     */
+    static int hash(int h) {
+        // This function ensures that hashCodes that differ only by
+        // constant multiples at each bit position have a bounded
+        // number of collisions (approximately 8 at default load factor).
+<span class="fc" id="L177">        h = h * h;</span>
+<span class="fc" id="L178">        h ^= (h &gt;&gt;&gt; 20) ^ (h &gt;&gt;&gt; 12);</span>
+<span class="fc" id="L179">        return h ^ (h &gt;&gt;&gt; 7) ^ (h &gt;&gt;&gt; 4);</span>
+    }
+
+    /**
+     * Returns index for hash code h.
+     */
+    static int indexFor(int h, int length) {
+<span class="fc" id="L186">        return h &amp; (length - 1);</span>
+    }
+
+    /**
+     * Returns the number of key-value mappings in this map.
+     *
+     * @return the number of key-value mappings in this map
+     */
+    public int size() {
+<span class="fc" id="L195">        return size;</span>
+    }
+
+    /**
+     * Returns &lt;tt&gt;true&lt;/tt&gt; if this map contains no key-value mappings.
+     *
+     * @return &lt;tt&gt;true&lt;/tt&gt; if this map contains no key-value mappings
+     */
+    public boolean isEmpty() {
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        return size == 0;</span>
+    }
+
+    /**
+     * Returns the value to which the specified key is mapped, or {@code null}
+     * if this map contains no mapping for the key.
+     *
+     * &lt;p&gt;
+     * More formally, if this map contains a mapping from a key {@code k} to a
+     * value {@code v} such that {@code (key==null ? k==null :
+     * key.equals(k))}, then this method returns {@code v}; otherwise it returns
+     * {@code null}. (There can be at most one such mapping.)
+     *
+     * &lt;p&gt;
+     * A return value of {@code null} does not &lt;i&gt;necessarily&lt;/i&gt; indicate that
+     * the map contains no mapping for the key; it's also possible that the map
+     * explicitly maps the key to {@code null}. The {@link #containsKey
+     * containsKey} operation may be used to distinguish these two cases.
+     *
+     * @see #put(Object, Object)
+     */
+    public V get(Object key) {
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        if (key == null)</span>
+<span class="fc" id="L227">            return getForNullKey();</span>
+<span class="fc" id="L228">        int hash = 0;</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        if (key instanceof String)</span>
+<span class="fc" id="L230">            hash = hash(hashString((String) key));</span>
+        else
+<span class="fc" id="L232">            hash = hash(key.hashCode());</span>
+<span class="pc bpc" id="L233" title="1 of 2 branches missed.">        for (Entry&lt;K, V&gt; e = table[indexFor(hash, table.length)]; e != null; e = e.next) {</span>
+            Object k;
+<span class="pc bpc" id="L235" title="1 of 6 branches missed.">            if (e.hash == hash &amp;&amp; ((k = e.key) == key || key.equals(k)))</span>
+<span class="fc" id="L236">                return e.value;</span>
+        }
+<span class="nc" id="L238">        return null;</span>
+    }
+
+    /**
+     * Offloaded version of get() to look up null keys. Null keys map to index
+     * 0. This null case is split out into separate methods for the sake of
+     * performance in the two most commonly used operations (get and put), but
+     * incorporated with conditionals in others.
+     */
+    private V getForNullKey() {
+<span class="fc bfc" id="L248" title="All 2 branches covered.">        for (Entry&lt;K, V&gt; e = table[0]; e != null; e = e.next) {</span>
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">            if (e.key == null)</span>
+<span class="nc" id="L250">                return e.value;</span>
+        }
+<span class="fc" id="L252">        return null;</span>
+    }
+
+    /**
+     * Returns &lt;tt&gt;true&lt;/tt&gt; if this map contains a mapping for the specified
+     * key.
+     *
+     * @param key
+     *            The key whose presence in this map is to be tested
+     * @return &lt;tt&gt;true&lt;/tt&gt; if this map contains a mapping for the specified
+     *         key.
+     */
+    public boolean containsKey(Object key) {
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        return getEntry(key) != null;</span>
+    }
+
+    /**
+     * Returns the entry associated with the specified key in the SafelyHashMap.
+     * Returns null if the SafelyHashMap contains no mapping for the key.
+     */
+    final Entry&lt;K, V&gt; getEntry(Object key) {
+<span class="pc bpc" id="L273" title="1 of 4 branches missed.">        int hash = (key == null) ? 0</span>
+<span class="pc" id="L274">                : (key instanceof String) ? hash(hashString((String) key))</span>
+<span class="fc" id="L275">                : hash(key.hashCode());</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">        for (Entry&lt;K, V&gt; e = table[indexFor(hash, table.length)]; e != null; e = e.next) {</span>
+            Object k;
+<span class="pc bpc" id="L278" title="3 of 6 branches missed.">            if (e.hash == hash</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">                    &amp;&amp; ((k = e.key) == key || (key != null &amp;&amp; key.equals(k))))</span>
+<span class="fc" id="L280">                return e;</span>
+        }
+<span class="nc" id="L282">        return null;</span>
+    }
+
+    /**
+     * Associates the specified value with the specified key in this map. If the
+     * map previously contained a mapping for the key, the old value is
+     * replaced.
+     *
+     * @param key
+     *            key with which the specified value is to be associated
+     * @param value
+     *            value to be associated with the specified key
+     * @return the previous value associated with &lt;tt&gt;key&lt;/tt&gt;, or &lt;tt&gt;null&lt;/tt&gt;
+     *         if there was no mapping for &lt;tt&gt;key&lt;/tt&gt;. (A &lt;tt&gt;null&lt;/tt&gt; return
+     *         can also indicate that the map previously associated
+     *         &lt;tt&gt;null&lt;/tt&gt; with &lt;tt&gt;key&lt;/tt&gt;.)
+     */
+    public V put(K key, V value) {
+<span class="fc bfc" id="L300" title="All 2 branches covered.">        if (key == null)</span>
+<span class="fc" id="L301">            return putForNullKey(value);</span>
+<span class="fc" id="L302">        int hash = 0;</span>
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (key instanceof String)</span>
+<span class="fc" id="L304">            hash = hash(hashString((String) key));</span>
+        else
+<span class="fc" id="L306">            hash = hash(key.hashCode());</span>
+<span class="fc" id="L307">        int i = indexFor(hash, table.length);</span>
+<span class="fc bfc" id="L308" title="All 2 branches covered.">        for (Entry&lt;K, V&gt; e = table[i]; e != null; e = e.next) {</span>
+            Object k;
+<span class="pc bpc" id="L310" title="3 of 6 branches missed.">            if (e.hash == hash &amp;&amp; ((k = e.key) == key || key.equals(k))) {</span>
+<span class="fc" id="L311">                V oldValue = e.value;</span>
+<span class="fc" id="L312">                e.value = value;</span>
+<span class="fc" id="L313">                return oldValue;</span>
+            }
+        }
+
+<span class="fc" id="L317">        modCount++;</span>
+<span class="fc" id="L318">        addEntry(hash, key, value, i);</span>
+<span class="fc" id="L319">        return null;</span>
+    }
+
+    /**
+     * Offloaded version of put for null keys
+     */
+    private V putForNullKey(V value) {
+<span class="pc bpc" id="L326" title="1 of 2 branches missed.">        for (Entry&lt;K, V&gt; e = table[0]; e != null; e = e.next) {</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">            if (e.key == null) {</span>
+<span class="nc" id="L328">                V oldValue = e.value;</span>
+<span class="nc" id="L329">                e.value = value;</span>
+<span class="nc" id="L330">                return oldValue;</span>
+            }
+        }
+<span class="fc" id="L333">        modCount++;</span>
+<span class="fc" id="L334">        addEntry(0, null, value, 0);</span>
+<span class="fc" id="L335">        return null;</span>
+    }
+
+    /**
+     * This method is used instead of put by constructors and pseudoconstructors
+     * (clone, readObject). It does not resize the table, check for
+     * comodification, etc. It calls createEntry rather than addEntry.
+     */
+    private void putForCreate(K key, V value) {
+<span class="pc bpc" id="L344" title="1 of 4 branches missed.">        int hash = (key == null) ? 0</span>
+<span class="fc" id="L345">                : (key instanceof String) ? hash(hashString((String) key))</span>
+<span class="fc" id="L346">                : hash(key.hashCode());</span>
+<span class="fc" id="L347">        int i = indexFor(hash, table.length);</span>
+
+        /**
+         * Look for preexisting entry for key. This will never happen for clone
+         * or deserialize. It will only happen for construction if the input Map
+         * is a sorted map whose ordering is inconsistent w/ equals.
+         */
+<span class="fc bfc" id="L354" title="All 2 branches covered.">        for (Entry&lt;K, V&gt; e = table[i]; e != null; e = e.next) {</span>
+            Object k;
+<span class="pc bpc" id="L356" title="5 of 6 branches missed.">            if (e.hash == hash</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">                    &amp;&amp; ((k = e.key) == key || (key != null &amp;&amp; key.equals(k)))) {</span>
+<span class="nc" id="L358">                e.value = value;</span>
+<span class="nc" id="L359">                return;</span>
+            }
+        }
+
+<span class="fc" id="L363">        createEntry(hash, key, value, i);</span>
+<span class="fc" id="L364">    }</span>
+
+    private void putAllForCreate(Map&lt;? extends K, ? extends V&gt; m) {
+<span class="fc" id="L367">        for (Iterator&lt;? extends Map.Entry&lt;? extends K, ? extends V&gt;&gt; i = m</span>
+<span class="fc bfc" id="L368" title="All 2 branches covered.">                .entrySet().iterator(); i.hasNext();) {</span>
+<span class="fc" id="L369">            Map.Entry&lt;? extends K, ? extends V&gt; e = i.next();</span>
+<span class="fc" id="L370">            putForCreate(e.getKey(), e.getValue());</span>
+<span class="fc" id="L371">        }</span>
+<span class="fc" id="L372">    }</span>
+
+    /**
+     * Rehashes the contents of this map into a new array with a larger
+     * capacity. This method is called automatically when the number of keys in
+     * this map reaches its threshold.
+     *
+     * If current capacity is MAXIMUM_CAPACITY, this method does not resize the
+     * map, but sets threshold to Integer.MAX_VALUE. This has the effect of
+     * preventing future calls.
+     *
+     * @param newCapacity
+     *            the new capacity, MUST be a power of two; must be greater than
+     *            current capacity unless current capacity is MAXIMUM_CAPACITY
+     *            (in which case value is irrelevant).
+     */
+    void resize(int newCapacity) {
+<span class="fc" id="L389">        Entry&lt;K, V&gt;[] oldTable = table;</span>
+<span class="fc" id="L390">        int oldCapacity = oldTable.length;</span>
+<span class="pc bpc" id="L391" title="1 of 2 branches missed.">        if (oldCapacity == MAXIMUM_CAPACITY) {</span>
+<span class="nc" id="L392">            threshold = Integer.MAX_VALUE;</span>
+<span class="nc" id="L393">            return;</span>
+        }
+
+<span class="fc" id="L396">        Entry&lt;K, V&gt;[] newTable = new Entry[newCapacity];</span>
+<span class="fc" id="L397">        transfer(newTable);</span>
+<span class="fc" id="L398">        table = newTable;</span>
+<span class="fc" id="L399">        threshold = (int) (newCapacity * loadFactor);</span>
+<span class="fc" id="L400">    }</span>
+
+    /**
+     * Transfers all entries from current table to newTable.
+     */
+    void transfer(Entry[] newTable) {
+<span class="fc" id="L406">        Entry[] src = table;</span>
+<span class="fc" id="L407">        int newCapacity = newTable.length;</span>
+<span class="fc bfc" id="L408" title="All 2 branches covered.">        for (int j = 0; j &lt; src.length; j++) {</span>
+<span class="fc" id="L409">            Entry&lt;K, V&gt; e = src[j];</span>
+<span class="fc bfc" id="L410" title="All 2 branches covered.">            if (e != null) {</span>
+<span class="fc" id="L411">                src[j] = null;</span>
+                do {
+<span class="fc" id="L413">                    Entry&lt;K, V&gt; next = e.next;</span>
+<span class="fc" id="L414">                    int i = indexFor(e.hash, newCapacity);</span>
+<span class="fc" id="L415">                    e.next = newTable[i];</span>
+<span class="fc" id="L416">                    newTable[i] = e;</span>
+<span class="fc" id="L417">                    e = next;</span>
+<span class="fc bfc" id="L418" title="All 2 branches covered.">                } while (e != null);</span>
+            }
+        }
+<span class="fc" id="L421">    }</span>
+
+    /**
+     * Copies all of the mappings from the specified map to this map. These
+     * mappings will replace any mappings that this map had for any of the keys
+     * currently in the specified map.
+     *
+     * @param m
+     *            mappings to be stored in this map
+     * @throws NullPointerException
+     *             if the specified map is null
+     */
+    public void putAll(Map&lt;? extends K, ? extends V&gt; m) {
+<span class="fc" id="L434">        int numKeysToBeAdded = m.size();</span>
+<span class="pc bpc" id="L435" title="1 of 2 branches missed.">        if (numKeysToBeAdded == 0)</span>
+<span class="nc" id="L436">            return;</span>
+
+		/*
+		 * Expand the map if the map if the number of mappings to be added is
+		 * greater than or equal to threshold. This is conservative; the obvious
+		 * condition is (m.size() + size) &gt;= threshold, but this condition could
+		 * result in a map with twice the appropriate capacity, if the keys to
+		 * be added overlap with the keys already in this map. By using the
+		 * conservative calculation, we subject ourself to at most one extra
+		 * resize.
+		 */
+<span class="pc bpc" id="L447" title="1 of 2 branches missed.">        if (numKeysToBeAdded &gt; threshold) {</span>
+<span class="fc" id="L448">            int targetCapacity = (int) (numKeysToBeAdded / loadFactor + 1);</span>
+<span class="pc bpc" id="L449" title="1 of 2 branches missed.">            if (targetCapacity &gt; MAXIMUM_CAPACITY)</span>
+<span class="nc" id="L450">                targetCapacity = MAXIMUM_CAPACITY;</span>
+<span class="fc" id="L451">            int newCapacity = table.length;</span>
+<span class="fc bfc" id="L452" title="All 2 branches covered.">            while (newCapacity &lt; targetCapacity)</span>
+<span class="fc" id="L453">                newCapacity &lt;&lt;= 1;</span>
+<span class="pc bpc" id="L454" title="1 of 2 branches missed.">            if (newCapacity &gt; table.length)</span>
+<span class="fc" id="L455">                resize(newCapacity);</span>
+        }
+
+<span class="fc" id="L458">        for (Iterator&lt;? extends Map.Entry&lt;? extends K, ? extends V&gt;&gt; i = m</span>
+<span class="fc bfc" id="L459" title="All 2 branches covered.">                .entrySet().iterator(); i.hasNext();) {</span>
+<span class="fc" id="L460">            Map.Entry&lt;? extends K, ? extends V&gt; e = i.next();</span>
+<span class="fc" id="L461">            put(e.getKey(), e.getValue());</span>
+<span class="fc" id="L462">        }</span>
+<span class="fc" id="L463">    }</span>
+
+    /**
+     * Removes the mapping for the specified key from this map if present.
+     *
+     * @param key
+     *            key whose mapping is to be removed from the map
+     * @return the previous value associated with &lt;tt&gt;key&lt;/tt&gt;, or &lt;tt&gt;null&lt;/tt&gt;
+     *         if there was no mapping for &lt;tt&gt;key&lt;/tt&gt;. (A &lt;tt&gt;null&lt;/tt&gt; return
+     *         can also indicate that the map previously associated
+     *         &lt;tt&gt;null&lt;/tt&gt; with &lt;tt&gt;key&lt;/tt&gt;.)
+     */
+    public V remove(Object key) {
+<span class="fc" id="L476">        Entry&lt;K, V&gt; e = removeEntryForKey(key);</span>
+<span class="pc bpc" id="L477" title="1 of 2 branches missed.">        return (e == null ? null : e.value);</span>
+    }
+
+    /**
+     * Removes and returns the entry associated with the specified key in the
+     * SafelyHashMap. Returns null if the SafelyHashMap contains no mapping for
+     * this key.
+     */
+    final Entry&lt;K, V&gt; removeEntryForKey(Object key) {
+<span class="pc bpc" id="L486" title="1 of 4 branches missed.">        int hash = (key == null) ? 0</span>
+<span class="pc" id="L487">                : (key instanceof String) ? hash(hashString((String) key))</span>
+<span class="fc" id="L488">                : hash(key.hashCode());</span>
+<span class="fc" id="L489">        int i = indexFor(hash, table.length);</span>
+<span class="fc" id="L490">        Entry&lt;K, V&gt; prev = table[i];</span>
+<span class="fc" id="L491">        Entry&lt;K, V&gt; e = prev;</span>
+
+<span class="pc bpc" id="L493" title="1 of 2 branches missed.">        while (e != null) {</span>
+<span class="fc" id="L494">            Entry&lt;K, V&gt; next = e.next;</span>
+            Object k;
+<span class="pc bpc" id="L496" title="3 of 6 branches missed.">            if (e.hash == hash</span>
+<span class="nc bnc" id="L497" title="All 2 branches missed.">                    &amp;&amp; ((k = e.key) == key || (key != null &amp;&amp; key.equals(k)))) {</span>
+<span class="fc" id="L498">                modCount++;</span>
+<span class="fc" id="L499">                size--;</span>
+<span class="fc bfc" id="L500" title="All 2 branches covered.">                if (prev == e)</span>
+<span class="fc" id="L501">                    table[i] = next;</span>
+                else
+<span class="fc" id="L503">                    prev.next = next;</span>
+<span class="fc" id="L504">                return e;</span>
+            }
+<span class="fc" id="L506">            prev = e;</span>
+<span class="fc" id="L507">            e = next;</span>
+<span class="fc" id="L508">        }</span>
+
+<span class="nc" id="L510">        return e;</span>
+    }
+
+    /**
+     * Special version of remove for EntrySet.
+     */
+    final Entry&lt;K, V&gt; removeMapping(Object o) {
+<span class="fc bfc" id="L517" title="All 2 branches covered.">        if (!(o instanceof Map.Entry))</span>
+<span class="fc" id="L518">            return null;</span>
+
+<span class="fc" id="L520">        Map.Entry&lt;K, V&gt; entry = (Map.Entry&lt;K, V&gt;) o;</span>
+<span class="fc" id="L521">        Object key = entry.getKey();</span>
+<span class="pc bpc" id="L522" title="2 of 4 branches missed.">        int hash = (key == null) ? 0</span>
+<span class="pc" id="L523">                : (key instanceof String) ? hash(hashString((String) key))</span>
+<span class="fc" id="L524">                : hash(key.hashCode());</span>
+<span class="fc" id="L525">        int i = indexFor(hash, table.length);</span>
+<span class="fc" id="L526">        Entry&lt;K, V&gt; prev = table[i];</span>
+<span class="fc" id="L527">        Entry&lt;K, V&gt; e = prev;</span>
+
+<span class="pc bpc" id="L529" title="1 of 2 branches missed.">        while (e != null) {</span>
+<span class="fc" id="L530">            Entry&lt;K, V&gt; next = e.next;</span>
+<span class="pc bpc" id="L531" title="2 of 4 branches missed.">            if (e.hash == hash &amp;&amp; e.equals(entry)) {</span>
+<span class="fc" id="L532">                modCount++;</span>
+<span class="fc" id="L533">                size--;</span>
+<span class="pc bpc" id="L534" title="1 of 2 branches missed.">                if (prev == e)</span>
+<span class="fc" id="L535">                    table[i] = next;</span>
+                else
+<span class="nc" id="L537">                    prev.next = next;</span>
+<span class="fc" id="L538">                return e;</span>
+            }
+<span class="nc" id="L540">            prev = e;</span>
+<span class="nc" id="L541">            e = next;</span>
+<span class="nc" id="L542">        }</span>
+
+<span class="nc" id="L544">        return e;</span>
+    }
+
+    /**
+     * Removes all of the mappings from this map. The map will be empty after
+     * this call returns.
+     */
+    public void clear() {
+<span class="fc" id="L552">        modCount++;</span>
+<span class="fc" id="L553">        Entry[] tab = table;</span>
+<span class="fc bfc" id="L554" title="All 2 branches covered.">        for (int i = 0; i &lt; tab.length; i++)</span>
+<span class="fc" id="L555">            tab[i] = null;</span>
+<span class="fc" id="L556">        size = 0;</span>
+<span class="fc" id="L557">    }</span>
+
+    /**
+     * Returns &lt;tt&gt;true&lt;/tt&gt; if this map maps one or more keys to the specified
+     * value.
+     *
+     * @param value
+     *            value whose presence in this map is to be tested
+     * @return &lt;tt&gt;true&lt;/tt&gt; if this map maps one or more keys to the specified
+     *         value
+     */
+    public boolean containsValue(Object value) {
+<span class="fc bfc" id="L569" title="All 2 branches covered.">        if (value == null)</span>
+<span class="fc" id="L570">            return containsNullValue();</span>
+
+<span class="fc" id="L572">        Entry[] tab = table;</span>
+<span class="pc bpc" id="L573" title="1 of 2 branches missed.">        for (int i = 0; i &lt; tab.length; i++)</span>
+<span class="fc bfc" id="L574" title="All 2 branches covered.">            for (Entry e = tab[i]; e != null; e = e.next)</span>
+<span class="fc bfc" id="L575" title="All 2 branches covered.">                if (value.equals(e.value))</span>
+<span class="fc" id="L576">                    return true;</span>
+<span class="nc" id="L577">        return false;</span>
+    }
+
+    /**
+     * Special-case code for containsValue with null argument
+     */
+    private boolean containsNullValue() {
+<span class="fc" id="L584">        Entry[] tab = table;</span>
+<span class="fc bfc" id="L585" title="All 2 branches covered.">        for (int i = 0; i &lt; tab.length; i++)</span>
+<span class="fc bfc" id="L586" title="All 2 branches covered.">            for (Entry e = tab[i]; e != null; e = e.next)</span>
+<span class="fc bfc" id="L587" title="All 2 branches covered.">                if (e.value == null)</span>
+<span class="fc" id="L588">                    return true;</span>
+<span class="fc" id="L589">        return false;</span>
+    }
+
+    /**
+     * Returns a shallow copy of this &lt;tt&gt;SafelyHashMap&lt;/tt&gt; instance: the keys
+     * and values themselves are not cloned.
+     *
+     * @return a shallow copy of this map
+     */
+    public Object clone() {
+<span class="fc" id="L599">        AntiCollisionHashMap&lt;K, V&gt; result = null;</span>
+        try {
+<span class="fc" id="L601">            result = (AntiCollisionHashMap&lt;K, V&gt;) super.clone();</span>
+<span class="nc" id="L602">        } catch (CloneNotSupportedException e) {</span>
+            // assert false;
+<span class="fc" id="L604">        }</span>
+<span class="fc" id="L605">        result.table = new Entry[table.length];</span>
+<span class="fc" id="L606">        result.entrySet = null;</span>
+<span class="fc" id="L607">        result.modCount = 0;</span>
+<span class="fc" id="L608">        result.size = 0;</span>
+<span class="fc" id="L609">        result.init();</span>
+<span class="fc" id="L610">        result.putAllForCreate(this);</span>
+
+<span class="fc" id="L612">        return result;</span>
+    }
+
+    static class Entry&lt;K, V&gt; implements Map.Entry&lt;K, V&gt; {
+        final K key;
+        V value;
+        Entry&lt;K, V&gt; next;
+        final int hash;
+
+        /**
+         * Creates new entry.
+         */
+<span class="fc" id="L624">        Entry(int h, K k, V v, Entry&lt;K, V&gt; n) {</span>
+<span class="fc" id="L625">            value = v;</span>
+<span class="fc" id="L626">            next = n;</span>
+<span class="fc" id="L627">            key = k;</span>
+<span class="fc" id="L628">            hash = h;</span>
+<span class="fc" id="L629">        }</span>
+
+        public final K getKey() {
+<span class="fc" id="L632">            return key;</span>
+        }
+
+        public final V getValue() {
+<span class="fc" id="L636">            return value;</span>
+        }
+
+        public final V setValue(V newValue) {
+<span class="fc" id="L640">            V oldValue = value;</span>
+<span class="fc" id="L641">            value = newValue;</span>
+<span class="fc" id="L642">            return oldValue;</span>
+        }
+
+        public final boolean equals(Object o) {
+<span class="pc bpc" id="L646" title="1 of 2 branches missed.">            if (!(o instanceof Map.Entry))</span>
+<span class="nc" id="L647">                return false;</span>
+<span class="fc" id="L648">            Map.Entry e = (Map.Entry) o;</span>
+<span class="fc" id="L649">            Object k1 = getKey();</span>
+<span class="fc" id="L650">            Object k2 = e.getKey();</span>
+<span class="pc bpc" id="L651" title="5 of 6 branches missed.">            if (k1 == k2 || (k1 != null &amp;&amp; k1.equals(k2))) {</span>
+<span class="fc" id="L652">                Object v1 = getValue();</span>
+<span class="fc" id="L653">                Object v2 = e.getValue();</span>
+<span class="pc bpc" id="L654" title="5 of 6 branches missed.">                return (v1 == v2 || (v1 != null &amp;&amp; v1.equals(v2)));</span>
+            }
+<span class="nc" id="L656">            return false;</span>
+        }
+
+        public final int hashCode() {
+<span class="pc bpc" id="L660" title="2 of 4 branches missed.">            return (key == null ? 0 : key.hashCode())</span>
+<span class="fc" id="L661">                    ^ (value == null ? 0 : value.hashCode());</span>
+        }
+
+        public final String toString() {
+<span class="fc" id="L665">            return getKey() + &quot;=&quot; + getValue();</span>
+        }
+
+    }
+
+    /**
+     * Adds a new entry with the specified key, value and hash code to the
+     * specified bucket. It is the responsibility of this method to resize the
+     * table if appropriate.
+     *
+     * Subclass overrides this to alter the behavior of put method.
+     */
+    void addEntry(int hash, K key, V value, int bucketIndex) {
+<span class="fc" id="L678">        Entry&lt;K, V&gt; e = table[bucketIndex];</span>
+<span class="fc" id="L679">        table[bucketIndex] = new Entry&lt;K, V&gt;(hash, key, value, e);</span>
+<span class="fc bfc" id="L680" title="All 2 branches covered.">        if (size++ &gt;= threshold)</span>
+<span class="fc" id="L681">            resize(2 * table.length);</span>
+<span class="fc" id="L682">    }</span>
+
+    /**
+     * Like addEntry except that this version is used when creating entries as
+     * part of Map construction or &quot;pseudo-construction&quot; (cloning,
+     * deserialization). This version needn't worry about resizing the table.
+     *
+     * Subclass overrides this to alter the behavior of SafelyHashMap(Map),
+     * clone, and readObject.
+     */
+    void createEntry(int hash, K key, V value, int bucketIndex) {
+<span class="fc" id="L693">        Entry&lt;K, V&gt; e = table[bucketIndex];</span>
+<span class="fc" id="L694">        table[bucketIndex] = new Entry&lt;K, V&gt;(hash, key, value, e);</span>
+<span class="fc" id="L695">        size++;</span>
+<span class="fc" id="L696">    }</span>
+
+    private abstract class HashIterator&lt;E&gt; implements Iterator&lt;E&gt; {
+        Entry&lt;K, V&gt; next; // next entry to return
+        int expectedModCount; // For fast-fail
+        int index; // current slot
+        Entry&lt;K, V&gt; current; // current entry
+
+<span class="fc" id="L704">        HashIterator() {</span>
+<span class="fc" id="L705">            expectedModCount = modCount;</span>
+<span class="fc bfc" id="L706" title="All 2 branches covered.">            if (size &gt; 0) { // advance to first entry</span>
+<span class="fc" id="L707">                Entry[] t = table;</span>
+<span class="pc bpc" id="L708" title="2 of 4 branches missed.">                while (index &lt; t.length &amp;&amp; (next = t[index++]) == null)</span>
+<span class="nc" id="L709">                    ;</span>
+            }
+<span class="fc" id="L711">        }</span>
+
+        public final boolean hasNext() {
+<span class="fc bfc" id="L714" title="All 2 branches covered.">            return next != null;</span>
+        }
+
+        final Entry&lt;K, V&gt; nextEntry() {
+<span class="pc bpc" id="L718" title="1 of 2 branches missed.">            if (modCount != expectedModCount)</span>
+<span class="nc" id="L719">                throw new ConcurrentModificationException();</span>
+<span class="fc" id="L720">            Entry&lt;K, V&gt; e = next;</span>
+<span class="pc bpc" id="L721" title="1 of 2 branches missed.">            if (e == null)</span>
+<span class="nc" id="L722">                throw new NoSuchElementException();</span>
+
+<span class="fc bfc" id="L724" title="All 2 branches covered.">            if ((next = e.next) == null) {</span>
+<span class="fc" id="L725">                Entry[] t = table;</span>
+<span class="fc bfc" id="L726" title="All 4 branches covered.">                while (index &lt; t.length &amp;&amp; (next = t[index++]) == null)</span>
+<span class="fc" id="L727">                    ;</span>
+            }
+<span class="fc" id="L729">            current = e;</span>
+<span class="fc" id="L730">            return e;</span>
+        }
+
+        public void remove() {
+<span class="pc bpc" id="L734" title="1 of 2 branches missed.">            if (current == null)</span>
+<span class="nc" id="L735">                throw new IllegalStateException();</span>
+<span class="pc bpc" id="L736" title="1 of 2 branches missed.">            if (modCount != expectedModCount)</span>
+<span class="nc" id="L737">                throw new ConcurrentModificationException();</span>
+<span class="fc" id="L738">            Object k = current.key;</span>
+<span class="fc" id="L739">            current = null;</span>
+<span class="fc" id="L740">            AntiCollisionHashMap.this.removeEntryForKey(k);</span>
+<span class="fc" id="L741">            expectedModCount = modCount;</span>
+<span class="fc" id="L742">        }</span>
+
+    }
+
+<span class="fc" id="L746">    private final class ValueIterator extends HashIterator&lt;V&gt; {</span>
+        public V next() {
+<span class="fc" id="L748">            return nextEntry().value;</span>
+        }
+    }
+
+<span class="fc" id="L752">    private final class KeyIterator extends HashIterator&lt;K&gt; {</span>
+        public K next() {
+<span class="fc" id="L754">            return nextEntry().getKey();</span>
+        }
+    }
+
+<span class="fc" id="L758">    private final class EntryIterator extends HashIterator&lt;Map.Entry&lt;K, V&gt;&gt; {</span>
+        public Map.Entry&lt;K, V&gt; next() {
+<span class="fc" id="L760">            return nextEntry();</span>
+        }
+    }
+
+    // Subclass overrides these to alter behavior of views' iterator() method
+    Iterator&lt;K&gt; newKeyIterator() {
+<span class="fc" id="L766">        return new KeyIterator();</span>
+    }
+
+    Iterator&lt;V&gt; newValueIterator() {
+<span class="fc" id="L770">        return new ValueIterator();</span>
+    }
+
+    Iterator&lt;Map.Entry&lt;K, V&gt;&gt; newEntryIterator() {
+<span class="fc" id="L774">        return new EntryIterator();</span>
+    }
+
+    // Views
+
+<span class="fc" id="L779">    private transient Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet = null;</span>
+
+    /**
+     * Returns a {@link Set} view of the keys contained in this map. The set is
+     * backed by the map, so changes to the map are reflected in the set, and
+     * vice-versa. If the map is modified while an iteration over the set is in
+     * progress (except through the iterator's own &lt;tt&gt;remove&lt;/tt&gt; operation),
+     * the results of the iteration are undefined. The set supports element
+     * removal, which removes the corresponding mapping from the map, via the
+     * &lt;tt&gt;Iterator.remove&lt;/tt&gt;, &lt;tt&gt;Set.remove&lt;/tt&gt;, &lt;tt&gt;removeAll&lt;/tt&gt;,
+     * &lt;tt&gt;retainAll&lt;/tt&gt;, and &lt;tt&gt;clear&lt;/tt&gt; operations. It does not support
+     * the &lt;tt&gt;add&lt;/tt&gt; or &lt;tt&gt;addAll&lt;/tt&gt; operations.
+     */
+    public Set&lt;K&gt; keySet() {
+
+<span class="fc" id="L794">        Set&lt;K&gt; ks = keySet;</span>
+<span class="fc bfc" id="L795" title="All 2 branches covered.">        return (ks != null ? ks : (keySet = new KeySet()));</span>
+    }
+
+<span class="fc" id="L798">    private final class KeySet extends AbstractSet&lt;K&gt; {</span>
+        public Iterator&lt;K&gt; iterator() {
+<span class="fc" id="L800">            return newKeyIterator();</span>
+        }
+
+        public int size() {
+<span class="fc" id="L804">            return size;</span>
+        }
+
+        public boolean contains(Object o) {
+<span class="fc" id="L808">            return containsKey(o);</span>
+        }
+
+        public boolean remove(Object o) {
+<span class="pc bpc" id="L812" title="1 of 2 branches missed.">            return AntiCollisionHashMap.this.removeEntryForKey(o) != null;</span>
+        }
+
+        public void clear() {
+<span class="fc" id="L816">            AntiCollisionHashMap.this.clear();</span>
+<span class="fc" id="L817">        }</span>
+    }
+
+    /**
+     * Returns a {@link Collection} view of the values contained in this map.
+     * The collection is backed by the map, so changes to the map are reflected
+     * in the collection, and vice-versa. If the map is modified while an
+     * iteration over the collection is in progress (except through the
+     * iterator's own &lt;tt&gt;remove&lt;/tt&gt; operation), the results of the iteration
+     * are undefined. The collection supports element removal, which removes the
+     * corresponding mapping from the map, via the &lt;tt&gt;Iterator.remove&lt;/tt&gt;,
+     * &lt;tt&gt;Collection.remove&lt;/tt&gt;, &lt;tt&gt;removeAll&lt;/tt&gt;, &lt;tt&gt;retainAll&lt;/tt&gt; and
+     * &lt;tt&gt;clear&lt;/tt&gt; operations. It does not support the &lt;tt&gt;add&lt;/tt&gt; or
+     * &lt;tt&gt;addAll&lt;/tt&gt; operations.
+     */
+    public Collection&lt;V&gt; values() {
+<span class="fc" id="L833">        Collection&lt;V&gt; vs = values;</span>
+<span class="fc bfc" id="L834" title="All 2 branches covered.">        return (vs != null ? vs : (values = new Values()));</span>
+    }
+
+<span class="fc" id="L837">    private final class Values extends AbstractCollection&lt;V&gt; {</span>
+        public Iterator&lt;V&gt; iterator() {
+<span class="fc" id="L839">            return newValueIterator();</span>
+        }
+
+        public int size() {
+<span class="fc" id="L843">            return size;</span>
+        }
+
+        public boolean contains(Object o) {
+<span class="fc" id="L847">            return containsValue(o);</span>
+        }
+
+        public void clear() {
+<span class="fc" id="L851">            AntiCollisionHashMap.this.clear();</span>
+<span class="fc" id="L852">        }</span>
+    }
+
+    /**
+     * Returns a {@link Set} view of the mappings contained in this map. The set
+     * is backed by the map, so changes to the map are reflected in the set, and
+     * vice-versa. If the map is modified while an iteration over the set is in
+     * progress (except through the iterator's own &lt;tt&gt;remove&lt;/tt&gt; operation, or
+     * through the &lt;tt&gt;setValue&lt;/tt&gt; operation on a map entry returned by the
+     * iterator) the results of the iteration are undefined. The set supports
+     * element removal, which removes the corresponding mapping from the map,
+     * via the &lt;tt&gt;Iterator.remove&lt;/tt&gt;, &lt;tt&gt;Set.remove&lt;/tt&gt;, &lt;tt&gt;removeAll&lt;/tt&gt;
+     * , &lt;tt&gt;retainAll&lt;/tt&gt; and &lt;tt&gt;clear&lt;/tt&gt; operations. It does not support
+     * the &lt;tt&gt;add&lt;/tt&gt; or &lt;tt&gt;addAll&lt;/tt&gt; operations.
+     *
+     * @return a set view of the mappings contained in this map
+     */
+    public Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet() {
+<span class="fc" id="L870">        return entrySet0();</span>
+    }
+
+    private Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet0() {
+<span class="fc" id="L874">        Set&lt;Map.Entry&lt;K, V&gt;&gt; es = entrySet;</span>
+<span class="fc bfc" id="L875" title="All 2 branches covered.">        return es != null ? es : (entrySet = new EntrySet());</span>
+    }
+
+<span class="fc" id="L878">    private final class EntrySet extends AbstractSet&lt;Map.Entry&lt;K, V&gt;&gt; {</span>
+        public Iterator&lt;Map.Entry&lt;K, V&gt;&gt; iterator() {
+<span class="fc" id="L880">            return newEntryIterator();</span>
+        }
+
+        public boolean contains(Object o) {
+<span class="fc bfc" id="L884" title="All 2 branches covered.">            if (!(o instanceof Map.Entry))</span>
+<span class="fc" id="L885">                return false;</span>
+<span class="fc" id="L886">            Map.Entry&lt;K, V&gt; e = (Map.Entry&lt;K, V&gt;) o;</span>
+<span class="fc" id="L887">            Entry&lt;K, V&gt; candidate = getEntry(e.getKey());</span>
+<span class="pc bpc" id="L888" title="2 of 4 branches missed.">            return candidate != null &amp;&amp; candidate.equals(e);</span>
+        }
+
+        public boolean remove(Object o) {
+<span class="fc bfc" id="L892" title="All 2 branches covered.">            return removeMapping(o) != null;</span>
+        }
+
+        public int size() {
+<span class="fc" id="L896">            return size;</span>
+        }
+
+        public void clear() {
+<span class="fc" id="L900">            AntiCollisionHashMap.this.clear();</span>
+<span class="fc" id="L901">        }</span>
+    }
+
+    /**
+     * Save the state of the &lt;tt&gt;SafelyHashMap&lt;/tt&gt; instance to a stream (i.e.,
+     * serialize it).
+     *
+     * @serialData The &lt;i&gt;capacity&lt;/i&gt; of the SafelyHashMap (the length of the
+     *             bucket array) is emitted (int), followed by the &lt;i&gt;size&lt;/i&gt;
+     *             (an int, the number of key-value mappings), followed by the
+     *             key (Object) and value (Object) for each key-value mapping.
+     *             The key-value mappings are emitted in no particular order.
+     */
+    private void writeObject(java.io.ObjectOutputStream s) throws IOException {
+<span class="fc bfc" id="L915" title="All 2 branches covered.">        Iterator&lt;Map.Entry&lt;K, V&gt;&gt; i = (size &gt; 0) ? entrySet0().iterator()</span>
+                : null;
+
+        // Write out the threshold, loadfactor, and any hidden stuff
+<span class="fc" id="L919">        s.defaultWriteObject();</span>
+
+        // Write out number of buckets
+<span class="fc" id="L922">        s.writeInt(table.length);</span>
+
+        // Write out size (number of Mappings)
+<span class="fc" id="L925">        s.writeInt(size);</span>
+
+        // Write out keys and values (alternating)
+<span class="fc bfc" id="L928" title="All 2 branches covered.">        if (i != null) {</span>
+<span class="fc bfc" id="L929" title="All 2 branches covered.">            while (i.hasNext()) {</span>
+<span class="fc" id="L930">                Map.Entry&lt;K, V&gt; e = i.next();</span>
+<span class="fc" id="L931">                s.writeObject(e.getKey());</span>
+<span class="fc" id="L932">                s.writeObject(e.getValue());</span>
+<span class="fc" id="L933">            }</span>
+        }
+<span class="fc" id="L935">    }</span>
+
+    private static final long serialVersionUID = 362498820763181265L;
+
+    /**
+     * Reconstitute the &lt;tt&gt;SafelyHashMap&lt;/tt&gt; instance from a stream (i.e.,
+     * deserialize it).
+     */
+    private void readObject(java.io.ObjectInputStream s) throws IOException,
+            ClassNotFoundException {
+        // Read in the threshold, loadfactor, and any hidden stuff
+<span class="fc" id="L946">        s.defaultReadObject();</span>
+
+        // Read in number of buckets and allocate the bucket array;
+<span class="fc" id="L949">        int numBuckets = s.readInt();</span>
+<span class="fc" id="L950">        table = new Entry[numBuckets];</span>
+
+<span class="fc" id="L952">        init(); // Give subclass a chance to do its thing.</span>
+
+        // Read in size (number of Mappings)
+<span class="fc" id="L955">        int size = s.readInt();</span>
+
+        // Read the keys and values, and put the mappings in the SafelyHashMap
+<span class="fc bfc" id="L958" title="All 2 branches covered.">        for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc" id="L959">            K key = (K) s.readObject();</span>
+<span class="fc" id="L960">            V value = (V) s.readObject();</span>
+<span class="fc" id="L961">            putForCreate(key, value);</span>
+        }
+<span class="fc" id="L963">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

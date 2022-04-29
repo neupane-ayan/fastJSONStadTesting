@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EnumerationSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">EnumerationSerializer.java</span></div><h1>EnumerationSerializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Enumeration;
+
+
+<span class="fc" id="L9">public class EnumerationSerializer implements ObjectSerializer {</span>
+<span class="fc" id="L10">    public static EnumerationSerializer instance = new EnumerationSerializer();</span>
+    
+    public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType, int features) throws IOException {
+<span class="fc" id="L13">        SerializeWriter out = serializer.out;</span>
+
+<span class="fc bfc" id="L15" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L16">            out.writeNull(SerializerFeature.WriteNullListAsEmpty);</span>
+<span class="fc" id="L17">            return;</span>
+        }
+        
+<span class="fc" id="L20">        Type elementType = null;</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if (out.isEnabled(SerializerFeature.WriteClassName)) {</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">            if (fieldType instanceof ParameterizedType) {</span>
+<span class="fc" id="L23">                ParameterizedType param = (ParameterizedType) fieldType;</span>
+<span class="fc" id="L24">                elementType = param.getActualTypeArguments()[0];</span>
+            }
+        }
+        
+<span class="fc" id="L28">        Enumeration&lt;?&gt; e = (Enumeration&lt;?&gt;) object;</span>
+        
+<span class="fc" id="L30">        SerialContext context = serializer.context;</span>
+<span class="fc" id="L31">        serializer.setContext(context, object, fieldName, 0);</span>
+
+        try {
+<span class="fc" id="L34">            int i = 0;</span>
+<span class="fc" id="L35">            out.append('[');</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            while (e.hasMoreElements()) {</span>
+<span class="fc" id="L37">                Object item = e.nextElement();</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">                if (i++ != 0) {</span>
+<span class="fc" id="L39">                    out.append(',');</span>
+                }
+
+<span class="fc bfc" id="L42" title="All 2 branches covered.">                if (item == null) {</span>
+<span class="fc" id="L43">                    out.writeNull();</span>
+<span class="fc" id="L44">                    continue;</span>
+                }
+
+<span class="fc" id="L47">                ObjectSerializer itemSerializer = serializer.getObjectWriter(item.getClass());</span>
+<span class="fc" id="L48">                itemSerializer.write(serializer, item, i - 1, elementType, 0);</span>
+<span class="fc" id="L49">            }</span>
+<span class="fc" id="L50">            out.append(']');</span>
+        } finally {
+<span class="fc" id="L52">            serializer.context = context;</span>
+        }
+<span class="fc" id="L54">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
